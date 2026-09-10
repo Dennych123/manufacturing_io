@@ -34,8 +34,11 @@ In Studio:
    `plc/MioProbe.xml`. Importing global variables *adds* them. Importing a POU whose name
    already exists *replaces* it.
 3. **Build (F8)** must be clean.
-4. **Task Settings → PrimaryTask → Program Assignment → add `PRG_MIO_PROBE`.** XML cannot do
-   this. An unassigned program **does not run, and Studio does not complain**.
+4. **Task Settings → PrimaryTask → Program Assignment → add `PRG_MIO_PROBE`.** XML import cannot
+   do this. An unassigned program **does not run, and Studio does not complain**.
+
+Steps 2 and 4 in one go, with the project **closed** in Studio:
+`node tools/smc2.js plc/PROJECT.smc2 --probe` (docs/SMC2.md). Then open the project and Build.
 
 ## 2. Simulator + OPC UA server
 
@@ -146,6 +149,11 @@ node tools/gen_sysmac.js --scene cyl-on-slide     # -> scenes/cyl-on-slide.sysma
 The XML holds one `PublishOnly` global per tag the scene binds, typed from the component
 schema, plus `PRG_CYL_ON_SLIDE` built from `scenes/cyl-on-slide.st`. That file starts with a
 `VAR ... END_VAR` block of program locals; the generator adds the `MIO_HEARTBEAT` line.
+
+**Steps 1 and 2 without Studio**, while the project is **closed** in it:
+`node tools/smc2.js plc/PROJECT.smc2 --scene cyl-on-slide`. It writes the globals, the program
+and the PrimaryTask assignment, with a `.bak` next to the file. This was proven in Studio on
+2026-09-10 (docs/SMC2.md). Then open the project, Build, and go to step 3. The manual way:
 
 1. Import `scenes/cyl-on-slide.sysmac.xml`, Build (F8).
 2. **Assign `PRG_CYL_ON_SLIDE` to the primary task.**

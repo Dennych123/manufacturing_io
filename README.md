@@ -18,6 +18,7 @@ npm install
 node tests/run.js
 node server/main.js --internal          # plant + viewer at http://127.0.0.1:7660/, no PLC needed
 node tools/gen_sysmac.js --scene cyl-on-slide   # scenes/cyl-on-slide.sysmac.xml, import into Studio
+node tools/smc2.js plc/P.smc2 --scene cyl-on-slide   # or straight into a CLOSED project: globals, program, task
 node server/main.js                     # the same scene against the simulator (opc.tcp://127.0.0.1:4840)
 node tools/gen_sysmac.js --probe        # plc/MioProbe.xml, for:
 node server/main.js --latency           # IO timing, with the simulator running

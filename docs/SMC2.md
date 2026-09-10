@@ -100,13 +100,53 @@ attribute, which fits the globals file carrying no publish attribute. On a real 
 `PublishOnly` is still what exposes a tag. So the generator keeps emitting it. This is not tested
 on hardware.
 
-## Automation plan (not built yet)
+## The tool: `tools/smc2.js`
 
-- **Task assignment** is four small, textual edits. It is safe to automate:
-  1. with Studio's project closed;
-  2. after a byte-exact backup (`../smc2-backup/`);
-  3. keeping the ZIP entry order and each file's line endings.
-- **Import** looks feasible the same way: Program entity plus three children, plus lines in the
-  globals file. It touches more entities, and Build must regenerate the Cxil output. Try it on a
-  copy first, then open it in Studio and Build.
-- **Run (F5), OPC UA on, Transfer** stay UI actions: those are not stored in the project.
+```bash
+node tools/smc2.js plc/PROJECT.smc2 --list                        # programs, tasks, globals
+node tools/smc2.js plc/PROJECT.smc2 --scene cyl-on-slide --dry-run
+node tools/smc2.js plc/PROJECT.smc2 --scene cyl-on-slide          # globals + PRG_CYL_ON_SLIDE + PrimaryTask
+node tools/smc2.js plc/PROJECT.smc2 --probe                       # the same for PRG_MIO_PROBE
+```
+
+It does everything above, from the same `sceneProject()` the XML generator uses, so the XML path
+and the `.smc2` path cannot drift. How it behaves:
+
+- **Running it again is a no-op.** A changed `.st` updates the program's body and variables in
+  place, keeping the same ids and the same single task assignment.
+- **What it writes looks like Studio's own writing.** Unchanged entries are copied byte for byte
+  (the ZIP round trip on a real project is identical). New entries copy Studio's header layout.
+- **Nothing is overwritten unchecked.** Before the file is touched, the new container is
+  unpacked and compared entry by entry, and every untouched entry must still equal the original
+  (the sysmac repo's rule). Then comes a `.bak` next to the file, and an atomic rename.
+- **It refuses instead of guessing:** arrays, initial values, AT, retain and constant globals;
+  `P_` names; an unknown task. It warns when Sysmac Studio is running.
+
+Rules taken from the sysmac repo (`scripts/smc2_*.js`, proven in Studio there):
+
+- ZIP entry order does not matter.
+- The thin `PouBodySourceHolder` is enough, because Build regenerates it.
+- The SLWD field order is `D N AT R G Com`.
+- A program that is missing from the task file is **silently not executed**.
+
+**Status.** Golden check: the tool was run on the backup taken before the manual import, then
+compared with what Studio saved after importing the same XML and assigning the task.
+
+- Globals, program variables, the ST body, bookmarks, the debug setting, the source holder, the
+  task file, the OPC UA settings and the `.oem` are all identical, once ids and dates are
+  normalised.
+
+**Proven in Studio on 2026-09-10** (Studio 1.66, NJ501-1500 1.70). The tool imported
+`cyl-on-slide` into `plc/test_mio_auto.smc2`, a copy of the probe-only project, and Studio then
+opened the result:
+
+1. `PRG_CYL_ON_SLIDE` shows under Programs.
+2. Task Settings → PrimaryTask lists both `PRG_MIO_PROBE` and `PRG_CYL_ON_SLIDE`.
+3. Build is clean.
+4. Run, the OPC UA server and Transfer work.
+
+It is the first time a whole new program plus its task assignment was written into a `.smc2`
+without Studio. The sysmac repo had proven comments, renames, ladder sections and variables,
+but not this.
+
+Run (F5), OPC UA on and Transfer stay UI actions: they are not stored in the project.

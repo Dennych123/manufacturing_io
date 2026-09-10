@@ -88,21 +88,28 @@ export function globalsXml(list) {
   return out.join('\n');
 }
 
-const stText = (/** @type {string} */ s) => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+/** ST as it goes into Studio: LF, no trailing whitespace. @param {string} s */
+export const stText = s => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
 
 /**
  * ExternalVars are PER PROGRAM, not inherited. A global the program uses but does not
  * declare passes the XSD, passes import, and shows up red in Studio. So they are derived
- * from the identifiers the ST body actually uses.
- * @param {{name: string, locals?: Var[], st: string}} p @param {Var[]} globals
+ * from the identifiers the ST body actually uses. One copy: the XML and the .smc2 writer
+ * (tools/smc2.js) both call this.
+ * @param {{locals?: Var[], st: string}} p @param {Var[]} globals
  */
+export function externalVars(p, globals) {
+  const code = stText(p.st).split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
+  const used = new Set(code.match(/[A-Za-z_]\w*/g) || []);
+  const localNames = new Set((p.locals || []).map(v => v.name));
+  return globals.filter(v => used.has(v.name) && !localNames.has(v.name));
+}
+
+/** @param {{name: string, locals?: Var[], st: string}} p @param {Var[]} globals */
 export function programXml(p, globals) {
   if (/^P_/i.test(p.name)) throw new Error('POU name "' + p.name + '" starts with P_: Studio silently renames it to PR_');
   const locals = p.locals || [];
-  const code = stText(p.st).split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
-  const used = new Set(code.match(/[A-Za-z_]\w*/g) || []);
-  const localNames = new Set(locals.map(v => v.name));
-  const ext = globals.filter(v => used.has(v.name) && !localNames.has(v.name));
+  const ext = externalVars(p, globals);
   const b = ['      <Program name="' + esc(p.name) + '">', '        <ExternalVars>'];
   ext.forEach(v => b.push(varXml({ name: v.name, type: v.type }, '          ')));
   b.push('        </ExternalVars>', '        <Vars accessSpecifier="private">');

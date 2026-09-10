@@ -44,7 +44,7 @@ in the code but break things silently** when violated. Most were paid for once i
 | browse MUST follow `browseNext` | without it nodes vanish silently and look like "tag missing" |
 | `server/pki/` is gitignored | it contains a private key |
 | typed arrays → `Array` in `plain()` | `Float64Array` stringifies to `{"0":..}` and the page silently gets NaN |
-| the program must be **assigned to a task** by hand | XML cannot do it. An unassigned program does not run and Studio does not complain. The heartbeat check exists for this |
+| the program must be **assigned to a task** | XML import cannot do it; `tools/smc2.js` can (proven in Studio). An unassigned program does not run and Studio does not complain. The heartbeat check exists for this |
 | a tag with a coil in the PLC cannot be forced from OPC UA | the PLC overwrites it every scan. The plant's overwrite detection warns about it |
 | no POU names starting with `P_` | Studio silently renames them to `PR_...` |
 | never index an FB instance's array output | copy the whole array first |
@@ -52,6 +52,9 @@ in the code but break things silently** when violated. Most were paid for once i
 | importing GlobalVars adds; importing an existing POU name replaces | |
 | `<ST>` in XML uses LF; `.smc2` entries use CRLF | XML normalises line endings; the ZIP does not |
 | no `ATAN2` in generated ST | not in the W560 list of 353 instructions |
+| `.smc2` edits need the project CLOSED in Studio | Studio rewrites the whole file on Save. `tools/smc2.js` backs up and verifies every entry before writing |
+| the solution id (the `.smc2` root folder) changes on every Save | find it through the manifest, never hard-code it |
+| a program missing from `<task>.xml` never runs, silently | the task file, the `.oem` node, the AssociatedProgramModel and the OPC UA node are written together (docs/SMC2.md) |
 
 ## IO timing
 

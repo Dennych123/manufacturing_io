@@ -1,3 +1,7 @@
 node_modules/
 server/pki/
 runs/
+# Sysmac Studio projects: 2 MB of build output each, and Studio's own .backup copies
+plc/*.smc2
+plc/*.smc2.backup
+plc/*.bak
