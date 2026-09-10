@@ -77,29 +77,41 @@ const round2 = (/** @type {any} */ v) => (typeof v === 'number' ? Math.round(v *
  */
 export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, internal = false, lan = false, lanControl = false, log = console.log }) {
   if (!NAME_RE.test(sceneName)) throw new Error('scene name must match ' + NAME_RE);
-  const scene = JSON.parse(fs.readFileSync(path.join(root, 'scenes', sceneName + '.json'), 'utf8'));
+  let scene = JSON.parse(fs.readFileSync(path.join(root, 'scenes', sceneName + '.json'), 'utf8'));
   const errs = validate(scene);
   if (errs.length) throw new Error('scenes/' + sceneName + '.json is invalid:\n  ' + errs.join('\n  '));
-  if (scene.io?.mode === 'twin') throw new Error('twin mode arrives in P7 (docs/PLAN.md §8)');
 
-  const usePlc = !internal && scene.io?.driver === 'opcua';
-  let controller = null;
-  const ctlFile = path.join(root, 'scenes', sceneName + '.ctl.js');
-  if (!usePlc && fs.existsSync(ctlFile)) controller = (await import(pathToFileURL(ctlFile).href)).create(scene);
-  const t = [...sceneTags(scene)];
+  /**
+   * One scene's driver, recorder and plant. The driver hooks reach THIS plant only, so a driver
+   * that is still closing never feeds the next one.
+   * @param {any} sc
+   */
+  async function build(sc) {
+    if (sc.io?.mode === 'twin') throw new Error('twin mode arrives in P7 (docs/PLAN.md §8)');
+    const plc = !internal && sc.io?.driver === 'opcua';
+    let controller = null;
+    const ctlFile = path.join(root, 'scenes', sceneName + '.ctl.js');
+    if (!plc && fs.existsSync(ctlFile)) controller = (await import(pathToFileURL(ctlFile).href)).create(sc);
+    const t = [...sceneTags(sc)];
+    /** @type {any} */
+    let p = null;
+    const drv = plc ? createDriver({
+      endpoint: sc.io.endpoint, prefix: sc.io.prefix,
+      outs: t.filter(([, i]) => i.dir === 'out').map(([n]) => n), ins: t.filter(([, i]) => i.dir === 'in').map(([n]) => n),
+    }, {
+      onOut: (tag, v, src) => p?.fromPlc(tag, v, src),
+      onIn: (tag, v, pub) => p?.plcSaw(tag, v, pub),
+      onUp: () => p?.driverUp(),
+      warn: msg => p?.warn(msg),
+    }) : null;
+    const rec = createRecorder(path.join(root, 'runs'), sc, plc ? 'opcua' : 'internal');
+    p = await createPlant(sc, { driver: drv, controller, recorder: rec });
+    p.warnListeners.push((/** @type {string} */ msg, /** @type {number} */ tt) => { log('warn  ' + msg); broadcast('warn', { t: tt, msg }); });
+    return { plant: p, driver: drv, recorder: rec, usePlc: plc };
+  }
   /** @type {any} */
-  let plant = null;
-  const driver = usePlc ? createDriver({
-    endpoint: scene.io.endpoint, prefix: scene.io.prefix,
-    outs: t.filter(([, i]) => i.dir === 'out').map(([n]) => n), ins: t.filter(([, i]) => i.dir === 'in').map(([n]) => n),
-  }, {
-    onOut: (tag, v, src) => plant?.fromPlc(tag, v, src),
-    onIn: (tag, v, pub) => plant?.plcSaw(tag, v, pub),
-    onUp: () => plant?.driverUp(),
-    warn: msg => plant?.warn(msg),
-  }) : null;
-  const recorder = createRecorder(path.join(root, 'runs'), scene, usePlc ? 'opcua' : 'internal');
-  plant = await createPlant(scene, { driver, controller, recorder });
+  let plant, driver, recorder, usePlc;
+  ({ plant, driver, recorder, usePlc } = await build(scene));
 
   // ------------------------------------------------------------ SSE
   /** @type {Set<http.ServerResponse>} */
@@ -135,7 +147,35 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
     broadcast('state', m);
   }, FRAME_MS);
   const status = setInterval(() => clients.size && broadcast('status', plant.status()), STATUS_MS);
-  plant.warnListeners.push((/** @type {string} */ msg, /** @type {number} */ tt) => { log('warn  ' + msg); broadcast('warn', { t: tt, msg }); });
+
+  // ------------------------------------------------------------ rebuild on save (docs/PLAN.md §10)
+  /** @type {Promise<any>} */
+  let rebuilding = Promise.resolve();
+  /**
+   * A saved scene replaces the running one: same URL and viewers, a new plant. The new plant is
+   * built BEFORE the old one stops, so a scene that fails to build leaves the old one running.
+   * The old driver closes before the new one connects: one session to the PLC at a time.
+   * @param {any} sc
+   */
+  function rebuild(sc) {
+    rebuilding = rebuilding.catch(() => {}).then(async () => {
+      const next = await build(sc);
+      const wasRunning = plant.mode === 'run';
+      const old = plant, oldRec = recorder;
+      old.stop();
+      ({ plant, driver, recorder, usePlc } = next);
+      scene = sc;
+      lastFull = 0;
+      broadcast('scene', sceneMsg());
+      await old.close();
+      await oldRec.close();
+      await driver?.start();
+      if (wasRunning) plant.start();
+      broadcast('status', plant.status());
+      log('rebuilt from scenes/' + sceneName + '.json   recording ' + path.relative(root, recorder.file));
+    });
+    return rebuilding;
+  }
 
   // ------------------------------------------------------------ routes
   /** @param {http.ServerResponse} res @param {number} code @param {any} data */
@@ -165,9 +205,13 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       if (sm && req.method === 'PUT') {
         if (!postAllowed(req, { lanControl })) return json(res, 403, { error: 'saving only from this PC (start with --lan-control to allow the LAN)' });
         const b = await body(req, 4 << 20);
-        const r = saveScene(root, decodeURIComponent(sm[1]), b.baseVersion ?? null, b.scene);
-        // ponytail: the running plant keeps the scene it started with; rebuilding it on save comes next.
-        return json(res, 200, { ok: true, ...r, active: sm[1] === sceneName });
+        const name = decodeURIComponent(sm[1]);
+        const r = saveScene(root, name, b.baseVersion ?? null, b.scene);
+        if (name !== sceneName || !r.changed) return json(res, 200, { ok: true, ...r, rebuilt: false });
+        try { await rebuild(readScene(root, name).scene); } catch (e) {
+          return json(res, 200, { ok: true, ...r, rebuilt: false, rebuildError: String(/** @type {any} */ (e).message || e) });
+        }
+        return json(res, 200, { ok: true, ...r, rebuilt: true });
       }
       if (req.method === 'POST' && url.pathname.startsWith('/api/')) {
         if (!postAllowed(req, { lanControl })) return json(res, 403, { error: 'POST only from this PC (start with --lan-control to allow the LAN)' });
@@ -210,6 +254,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
   return {
     server, plant, recorder,
     async close() {
+      await rebuilding.catch(() => {});
       clearInterval(frame); clearInterval(status);
       for (const c of clients) c.end();
       await new Promise(r => server.close(() => r(null)));

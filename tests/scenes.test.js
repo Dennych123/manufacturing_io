@@ -45,6 +45,31 @@ try {
   const n = structuredClone(s); n.name = 'copy';
   chk('create with baseVersion null', saveScene(root, 'copy', null, n).changed && fs.existsSync(path.join(root, 'scenes/copy.json')));
   chk('create over an existing scene -> 409', code(() => saveScene(root, 'copy', null, n)) === 409);
+
+  // Live: a PUT on the running scene rebuilds the plant behind the same server.
+  fs.copyFileSync(path.join(ROOT, 'scenes/cyl-on-slide.ctl.js'), path.join(root, 'scenes/cyl-on-slide.ctl.js'));
+  fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}');
+  const { serve } = await import('../server/http.js');
+  const srv = await serve({ root, sceneName: 'cyl-on-slide', port: 0, internal: true, log: () => {} });
+  try {
+    const base = 'http://127.0.0.1:' + srv.server.address().port;
+    const got = await (await fetch(base + '/api/scene/cyl-on-slide')).json();
+    chk('GET /api/scene returns the file version', got.version === versionOf(fs.readFileSync(file)));
+    const e = structuredClone(got.scene); e.components.find(c => c.id === 'part1').at[0] += 5;
+    const put = (bv, sc, headers = {}) => fetch(base + '/api/scene/cyl-on-slide',
+      { method: 'PUT', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify({ baseVersion: bv, scene: sc }) });
+    const r1 = await put(got.version, e), j1 = await r1.json();
+    chk('PUT on the running scene saves and rebuilds the plant', r1.status === 200 && j1.changed && j1.rebuilt === true, JSON.stringify(j1));
+    chk('PUT with a stale version -> 409', (await put(got.version, e)).status === 409);
+    chk('PUT from another site -> 403', (await put(j1.version, e, { origin: 'http://evil.example' })).status === 403);
+    const ping = async () => (await (await fetch(base + '/api/ping')).json()).t;
+    const t0 = await ping();
+    await new Promise(r => setTimeout(r, 200));
+    const t1 = await ping();
+    chk('the rebuilt plant runs', t1 > t0, t0 + ' -> ' + t1 + ' ms');
+  } finally {
+    await srv.close();
+  }
 } finally {
   fs.rmSync(root, { recursive: true, force: true });
 }
