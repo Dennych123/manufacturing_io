@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-// manufacturing_io server entry. Phase 0 is CLI only; the HTTP/SSE plant server arrives in P1.
+// manufacturing_io server entry.
 //
+//   node server/main.js [--scene cyl-on-slide] [--internal] [--port 7660] [--lan] [--lan-control]
+//                                                   the plant + viewer at http://127.0.0.1:7660/
+//                                                   --internal: the scene's .ctl.js instead of the PLC
 //   node server/main.js --tree [filter]             the OPC UA tree as it really is
 //   node server/main.js --list [filter]             GlobalVars whose name contains filter, with values
 //   node server/main.js --write NAME=v "ARR[i]=v"   one batched write
@@ -14,8 +17,9 @@ import { fileURLToPath } from 'node:url';
 import { connect, parseValue, diagnoseEmpty, globalName } from './opcua.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const MODES = ['--tree', '--list', '--write', '--watch', '--latency'];
-const WITH_VALUE = ['--endpoint', '--prefix', '--user', '--pass', '--samples'];
+const MODES = ['--tree', '--list', '--write', '--watch', '--latency', '--help'];
+const WITH_VALUE = ['--endpoint', '--prefix', '--user', '--pass', '--samples', '--scene', '--port'];
+const FLAGS = ['--internal', '--lan', '--lan-control'];
 
 const argv = process.argv.slice(2);
 const opt = (name, dflt) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt; };
@@ -24,6 +28,7 @@ const rest = [];
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (WITH_VALUE.includes(a)) { i++; continue; }
+  if (FLAGS.includes(a)) continue;
   if (MODES.includes(a)) mode = a;
   else if (a.startsWith('--')) die('unknown option ' + a);
   else rest.push(a);
@@ -218,10 +223,22 @@ async function latency(c) {
 }
 
 // ---------------------------------------------------------------------------- run
-if (!mode) {
-  die('usage: node server/main.js --tree [filter] | --list [filter] | --write NAME=v ... | --watch NAME ... | --latency\n'
-    + '       [--endpoint ' + ENDPOINT + '] [--prefix ' + PREFIX + '] [--user U --pass P] [--samples 200]');
+if (mode === '--help') {
+  die('usage: node server/main.js [--scene NAME] [--internal] [--port 7660] [--lan] [--lan-control]\n'
+    + '       node server/main.js --tree [filter] | --list [filter] | --write NAME=v ... | --watch NAME ... | --latency\n'
+    + '       [--endpoint ' + ENDPOINT + '] [--prefix ' + PREFIX + '] [--user U --pass P] [--samples 200]', 0);
 }
+if (!mode) {
+  // Loaded only here: the CLI modes never pay for Rapier.
+  const { serve } = await import('./http.js');
+  try {
+    const s = await serve({ root: ROOT, sceneName: opt('--scene', 'cyl-on-slide'), port: +opt('--port', 7660),
+                            internal: argv.includes('--internal'), lan: argv.includes('--lan'), lanControl: argv.includes('--lan-control') });
+    process.on('SIGINT', async () => { await s.close(); process.exit(0); });
+  } catch (e) {
+    die('FAILED: ' + (e.message || e), 2);
+  }
+} else {
 const collected = mode === '--tree' ? [] : undefined;
 const c = await open(collected);
 try {
@@ -237,3 +254,4 @@ try {
   await c.close();
 }
 process.exit();
+}

@@ -1,0 +1,122 @@
+{
+  "format": "mio-scene/1",
+  "name": "cyl-on-slide",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Press",
+      "members": ["slide1", "bracket", "cyl1"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "AS_ST1_PRSS_CYL_UP",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    { "id": "base", "type": "frame", "params": { "size": [1000, 600, 800] } },
+    {
+      "id": "slide1",
+      "type": "servoLinear",
+      "label": "PRESS SLIDE",
+      "station": "ST1",
+      "parent": "base",
+      "socket": "top",
+      "at": [0, -100, 0],
+      "params": { "mode": "plant", "stroke": 500, "vmax": 300, "acc": 1500, "body": [640, 90, 70] },
+      "io": {
+        "target": "SV1_TGT",
+        "exec": "SV1_EXEC",
+        "done": "SV1_DONE",
+        "actPos": "SV1_ACT_POS",
+        "inPos": "SV1_INPOS"
+      }
+    },
+    {
+      "id": "bracket",
+      "type": "plate",
+      "station": "ST1",
+      "parent": "slide1",
+      "socket": "carriage",
+      "at": [0, -56, 0],
+      "params": { "size": [100, 12, 250] }
+    },
+    {
+      "id": "cyl1",
+      "type": "cylinder",
+      "label": "PRESS CYLINDER",
+      "station": "ST1",
+      "parent": "bracket",
+      "socket": "top",
+      "at": [0, -30, 0],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 32,
+        "stroke": 100,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 380,
+        "cushionMm": 8,
+        "valveMs": 15,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "switches": [{ "id": "ret", "pos": 2 }, { "id": "ext", "pos": 97 }]
+      },
+      "io": {
+        "solExt": "SOL_ST1_PRSS_CYL_DN",
+        "solRet": "SOL_ST1_PRSS_CYL_UP",
+        "sw.ret": "AS_ST1_PRSS_CYL_UP",
+        "sw.ext": "AS_ST1_PRSS_CYL_DN"
+      }
+    },
+    {
+      "id": "part1",
+      "type": "workpiece",
+      "parent": "base",
+      "socket": "top",
+      "at": [150, -186, 0],
+      "params": { "kind": "box", "size": [80, 60, 40] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "base",
+      "socket": "top",
+      "at": [-420, -250, 0],
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "base",
+      "socket": "top",
+      "at": [-360, -250, 0],
+      "params": { "kind": "momentary", "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "base",
+      "socket": "top",
+      "at": [-300, -250, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

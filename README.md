@@ -4,15 +4,23 @@ A browser-based 3D plant simulator for **special purpose machines (SPM)**, in th
 Factory I/O, built on **three.js** (rendering) and **Rapier** (physics). The controller is a real
 PLC program: first target is the **Omron Sysmac Studio NX/NJ simulator over OPC UA**.
 
-Status: **Phase 0**: the OPC UA port, the probe program and latency measurement against the
-Sysmac simulator. The full plan is in [docs/PLAN.md](docs/PLAN.md); the Studio steps are in
-[docs/SETUP.md](docs/SETUP.md).
+Status: **Phase 1**: the first SPM primitives run end to end. The `cyl-on-slide` scene has a
+servo slide carrying a double-acting cylinder with reed switches, plus a start button and lamps.
+It runs in a headless Node plant (Rapier, fixed 2 ms step, recording). The browser viewer
+renders it and drives it through an IO/force panel. The scene runs either with its internal
+controller, or against the Sysmac simulator through generated XML. The IO timing is measured:
+~39 ms round trip at p50, and the PLC counts 10 ms pulses (docs/SETUP.md §4). Still open from
+Phase 0: whether AT-assigned variables are writable. The full plan is in
+[docs/PLAN.md](docs/PLAN.md); the Studio steps are in [docs/SETUP.md](docs/SETUP.md).
 
 ```bash
 npm install
 node tests/run.js
-node tools/gen_sysmac.js --probe        # plc/MioProbe.xml, import into Sysmac Studio
-node server/main.js --latency           # with the simulator running
+node server/main.js --internal          # plant + viewer at http://127.0.0.1:7660/, no PLC needed
+node tools/gen_sysmac.js --scene cyl-on-slide   # scenes/cyl-on-slide.sysmac.xml, import into Studio
+node server/main.js                     # the same scene against the simulator (opc.tcp://127.0.0.1:4840)
+node tools/gen_sysmac.js --probe        # plc/MioProbe.xml, for:
+node server/main.js --latency           # IO timing, with the simulator running
 ```
 
 ## What it is for

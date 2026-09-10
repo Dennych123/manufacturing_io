@@ -59,6 +59,9 @@ in the code but break things silently** when violated. Most were paid for once i
   until Done. 50 ms sampling misses a 4 ms pulse.
 - **Plant → PLC blips are held** (`offDelayMs` per sensor, `minPulseMs` per scene), and every
   stretch is recorded as a `warn`. Do not silence it.
+- **Replies to PLC commands are `hold: false`** in the io schema (servo `done`/`busy`/`inPos`).
+  Their short pulses are caused by the PLC itself. Holding them reports "in position" while
+  the axis already moves, and warns on every move.
 - One-shot events (counts, drops, rejects) are published as **counters**.
 - The browser sends button **edges**, and the PLC enforces the conditions. Conditions enforced in
   the browser do not apply when the same tag is written from anywhere else.

@@ -334,3 +334,80 @@ export async function connect({ endpoint = 'opc.tcp://127.0.0.1:4840', user = nu
   conn.onLost = cb => { for (const ev of ['connection_lost', 'close', 'abort']) client.on(ev, () => cb(ev)); };
   return conn;
 }
+
+/**
+ * The plant's PLC driver: one session, PLC outputs subscribed, sensors written in batches,
+ * reconnect with a fresh browse. Tags missing in the PLC are reported, not fatal: the plant
+ * keeps running and shows which ones.
+ *
+ * Sampling: 10 ms is asked for PLC outputs. The Studio 1.66 simulator delivers ~16 ms samples
+ * in 50 ms publishes (docs/SETUP.md), and each sample carries the PLC source timestamp.
+ * The plant also subscribes to the sensor tags it writes, for overwrite detection.
+ *
+ * @param {{endpoint?: string, prefix?: string, readOnly?: boolean, outs: string[], ins: string[]}} cfg
+ * @param {{onOut: (tag: string, v: any, srcWall?: number) => void, onIn: (tag: string, v: any, publishingMs: number) => void,
+ *          onUp: () => void, warn: (msg: string) => void}} hooks
+ */
+export function createDriver({ endpoint = 'opc.tcp://127.0.0.1:4840', prefix = 'GlobalVars.', readOnly = false, outs, ins }, hooks) {
+  /** @type {any} */
+  let conn = null, retry = null, closed = false, hbAt = 0, hbKnown = false;
+  let writable = new Set();
+  /** @type {any} */
+  let st = { driver: 'opcua', ok: false, msg: 'connecting to ' + endpoint, samplingMs: null, publishingMs: null, rttMs: null };
+
+  async function up() {
+    if (closed) return;
+    /** @type {any} */
+    let c = null;
+    try {
+      c = await connect({ endpoint, prefix, readOnly, writable: new Set(ins) });
+      const { found, missing } = await c.resolve([...outs, ...ins, 'MIO_HEARTBEAT']);
+      const has = new Set(found);
+      const miss = missing.filter(n => n !== 'MIO_HEARTBEAT');
+      if (miss.length) hooks.warn('tags missing in the PLC (' + miss.length + '): ' + miss.join(' ') + '  - Transfer done? Network Publish = Publish Only? (--tree)');
+      writable = new Set(ins.filter(n => has.has(n)));
+      const fOuts = outs.filter(n => has.has(n));
+      for (const n of fOuts) hooks.onOut(n, c.values[n]);
+      let g = { samplingMs: [null], publishingMs: null };
+      if (fOuts.length) g = await c.subscribe(fOuts, (/** @type {string} */ n, /** @type {any} */ v, /** @type {any} */ dv) => hooks.onOut(n, v, dv.sourceTimestamp?.getTime?.()), { samplingMs: 10 });
+      const pub = g.publishingMs || 50;
+      if (writable.size) await c.subscribe([...writable], (/** @type {string} */ n, /** @type {any} */ v) => hooks.onIn(n, v, pub), { samplingMs: 50 });
+      hbKnown = has.has('MIO_HEARTBEAT');
+      if (hbKnown) await c.subscribe(['MIO_HEARTBEAT'], () => { hbAt = Date.now(); }, { samplingMs: 200 });
+      c.onLost((/** @type {string} */ ev) => { if (conn === c) down('connection ' + ev); });
+      conn = c;
+      st = { driver: 'opcua', ok: true, msg: (fOuts.length + writable.size) + ' tags' + (miss.length ? ', ' + miss.length + ' MISSING' : ''),
+             samplingMs: g.samplingMs[0], publishingMs: g.publishingMs, rttMs: null };
+      hooks.onUp();
+    } catch (e) {
+      if (c) c.close().catch(() => {});
+      down(String(/** @type {any} */ (e).message || e).split('\n')[0]);
+    }
+  }
+
+  /** @param {string} msg */
+  function down(msg) {
+    const c = conn;
+    conn = null;
+    st = { ...st, ok: false, msg: msg + ' - retrying every 3 s' };
+    if (c) c.close().catch(() => {});
+    clearTimeout(retry);
+    if (!closed) retry = setTimeout(up, 3000);
+  }
+
+  return {
+    name: 'opcua',
+    start: up,
+    /** Only tags the PLC actually has; twin mode refuses inside createConn().write. @param {Array<{name: string, value: any}>} changes */
+    async write(changes) {
+      if (!conn) throw new Error('not connected');
+      const f = changes.filter(x => writable.has(x.name));
+      if (!f.length) return;
+      const t0 = Date.now();
+      await conn.write(f);
+      st.rttMs = Date.now() - t0;
+    },
+    status() { return { ...st, heartbeat: st.ok && hbKnown ? Date.now() - hbAt < 2000 : null }; },
+    async close() { closed = true; clearTimeout(retry); const c = conn; conn = null; if (c) await c.close(); },
+  };
+}

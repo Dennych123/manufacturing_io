@@ -92,15 +92,37 @@ not imported yet, so these were taken **read-only** from rb4axis's running `SIM_
 - **Queued samples carry the PLC's source timestamp.** The recorder stamps `out` edges with it,
   which gives ~16 ms resolution in the time chart instead of 50 ms.
 
-Still to measure with the probe (`--latency`):
+**Measured with the probe.** Taken 2026-09-10 on Studio 1.66.0 with the NX simulator:
+`--latency`, 200 echoes per row with random spacing, raw data in
+`runs/latency-2026-09-10T15-04-36-295Z.json`.
 
 | | |
 |---|---|
-| task period (heartbeat) | |
-| echo round trip p50 / p95 / max | |
-| write-call latency | |
-| smallest pulse counted 20/20 | |
-| suggested `minPulseMs` | |
+| Node timer (asked 1 ms) | p50 2 / p95 2.4 / max 5 ms |
+| task period (heartbeat) | ~1.1 ms (876 scans/s) |
+| echo round trip, sampling 10 ms | p50 **38.7** / p95 **63.9** / max 79.6 ms, 0 of 200 lost |
+| echo round trip, sampling 20 ms | p50 49.2 / p95 75.9 / max 83.6 ms |
+| echo round trip, sampling 50 ms | p50 61.9 / p95 106.2 / max 135.7 ms |
+| legs at 10 ms sampling, write / read (p50) | 11 / 27 ms |
+| write-call latency | p50 ~2.5 ms |
+| pulses counted | every width tested, 10 to 200 ms: 20/20 |
+| `minPulseMs` | **20** (scenes and the plant default) |
+
+What it means:
+
+- **Plant → PLC is fast.** A write lands about 11 ms after it is sent, and the PLC reads it on
+  its next ~1 ms scan. Even a 10 ms sensor pulse, written as two separate writes, was counted
+  every time.
+- **PLC → plant is the slow leg** (~27 ms p50), set by the 50 ms publishing floor. An output
+  pulse shorter than ~16 ms can still fall between samples, so commands stay levels or counters.
+- **Asking for 10 ms sampling is worth it.** It is what the driver asks for, and it cuts the round
+  trip from 62 to 39 ms at p50 and from 106 to 64 ms at p95.
+- **The risk for a short sensor pulse is the plant's own batching**, not the PLC: one batch in
+  flight, one exchange per tick. `minPulseMs = 20` covers one exchange tick plus the write, with
+  margin. The old placeholder, 100 ms, would have stretched real sensor pulses for nothing.
+- **A PLC reaction** (sensor edge in the plant → PLC output back in the plant) takes ~40 ms
+  typically and ~65 ms at worst. That delay is inside every time the PLC measures. The analyzer's
+  ±1 sampling interval tolerance (P4) rests on it.
 
 ## 5. Manual check: are AT-assigned variables writable?
 
@@ -113,6 +135,40 @@ unmapped copies.
 3. Record here whether the value stuck, was rejected, or was overwritten on the next scan.
 
 **Result:** not tested yet.
+
+## 6. Run a scene against the simulator (Phase 1)
+
+```bash
+node server/main.js --internal                    # first WITHOUT a PLC: the scene's .ctl.js runs the sequence
+node tools/gen_sysmac.js --scene cyl-on-slide     # -> scenes/cyl-on-slide.sysmac.xml (committed; --check verifies it)
+```
+
+The XML holds one `PublishOnly` global per tag the scene binds, typed from the component
+schema, plus `PRG_CYL_ON_SLIDE` built from `scenes/cyl-on-slide.st`. That file starts with a
+`VAR ... END_VAR` block of program locals; the generator adds the `MIO_HEARTBEAT` line.
+
+1. Import `scenes/cyl-on-slide.sysmac.xml`, Build (F8).
+2. **Assign `PRG_CYL_ON_SLIDE` to the primary task.**
+3. Run (F5), OPC UA server on, Transfer (§2).
+4. `node server/main.js` (the scene's `io.driver` is `opcua`), then open http://127.0.0.1:7660/.
+   The header must say `opcua: 16 tags`. A `MISSING` count names the tags Studio does not publish.
+5. Click the green START button in 3D. Watch `ST1_STEP`, `AS_ST1_PRSS_CYL_UP/DN` in Studio.
+
+The probe and a scene program both declare `MIO_HEARTBEAT`. Import a scene into a project
+without the probe, or delete the probe's globals first. Which way Studio resolves the duplicate
+is not tested yet.
+
+**Phase 1 exit, with the simulator** (not run yet):
+
+| check | result |
+|---|---|
+| 3D START starts the PLC sequence | |
+| the PLC sees the reed switches at the configured positions (Watch) | |
+| moving a switch's `pos` changes when the PLC sees it | |
+| 0 overruns in 10 minutes (status line) | |
+| the NDJSON in `runs/` holds every edge | |
+
+The internal-controller versions of these checks are in `tests/plant.test.js`.
 
 ## When it goes wrong
 

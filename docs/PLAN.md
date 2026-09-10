@@ -261,9 +261,18 @@ never dynamic bodies, and nothing in physics writes to the PLC.**
 **Short sensor pulses.** A blip that falls between two write batches never reaches the PLC. Two
 layers stop that:
 - the sensor's own `offDelayMs`, a real setting on Omron and Keyence photo-eyes;
-- a scene-level `minPulseMs` hold, whose default comes from the Phase 0 measurement.
+- a scene-level `minPulseMs` hold, whose default comes from the Phase 0 measurement:
+  **20 ms**. The simulator counted every pulse from 10 ms up, so the hold covers the plant's own
+  exchange tick, not the PLC (docs/SETUP.md §4).
 
 Each stretch is recorded as a `warn` event, e.g. `PH_ST1_EXIST 12 ms → 100 ms`. Do not silence it.
+
+The hold is for **physical events the PLC does not cause**: reed switches, photo-eyes,
+pushbuttons. Replies to PLC commands are exempt with `hold: false` in the type's io schema
+(servo `done`, `busy`, `inPos`). Every short pulse of theirs is caused by the PLC: Done falls
+because Execute dropped, InPos falls because the next move started. Found in P1: stretching them
+slowed every handshake by 100 ms, warned on every move, and reported "in position" while the
+axis was already moving.
 
 **PLC → plant commands must be levels or counters, never one-scan pulses.** Events shorter than
 sampling (part counts, drops, rejects) are published as **counters** in both directions.

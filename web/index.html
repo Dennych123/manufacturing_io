@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>manufacturing_io</title>
+<link rel="icon" href="data:,">
+<!-- three is served from node_modules by the server: offline on factory PCs, pinned by the lockfile, never a CDN. -->
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+<style>
+  :root {
+    --bg: #eef0f2; --panel: #ffffff; --ink: #1d2126; --muted: #6b7480; --line: #d9dde2;
+    --on: #1f9d55; --out: #2a6fdb; --in: #b7791f; --warn: #c0392b; --forced: #8e44ad; --banner: #f5c400;
+    --view: #dfe3e7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15181c; --panel: #1d2126; --ink: #e6e9ed; --muted: #8e98a4; --line: #2c3238;
+            --on: #3ccf7c; --out: #6aa1ff; --in: #e0a948; --warn: #ff6b5b; --forced: #c38be0; --view: #262b31; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  #banner { background: var(--banner); color: #000; font-weight: 700; text-align: center; padding: 4px; letter-spacing: .05em; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #view { flex: 1; min-width: 0; position: relative; background: var(--view); }
+  #view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  #hint { position: absolute; left: 10px; bottom: 8px; color: var(--muted); font-size: 12px; pointer-events: none; }
+  aside { width: 450px; max-width: 48vw; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  aside > * { padding: 8px 12px; }
+  header { display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); }
+  header b { font-size: 15px; }
+  #conn { margin-left: auto; font-size: 12px; }
+  #conn.ok { color: var(--on); } #conn.bad { color: var(--warn); }
+  #status { color: var(--muted); font: 12px ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+  #hb { color: var(--warn); font-weight: 600; }
+  .cmds { display: flex; gap: 6px; border-bottom: 1px solid var(--line); }
+  button { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  .tablewrap { flex: 1; overflow: auto; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font: 12px ui-monospace, Consolas, monospace; }
+  th { position: sticky; top: 0; background: var(--panel); text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 4px 6px; }
+  td { padding: 2px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td.dir { width: 1%; } .dir-out { color: var(--out); } .dir-in { color: var(--in); }
+  td.src { color: var(--muted); overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
+  td.val { width: 1%; min-width: 60px; }
+  tr.on td.val { color: var(--on); font-weight: 700; }
+  tr.forced td.val { color: var(--forced); }
+  td.frc button { padding: 0 5px; font-size: 11px; }
+  td.frc input { width: 54px; font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; }
+  h3 { margin: 0; font-size: 12px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--line); }
+  #warns { list-style: none; margin: 0; max-height: 22vh; overflow: auto; font: 12px ui-monospace, Consolas, monospace; color: var(--warn); }
+  #warns li { padding: 1px 0; }
+  @media (max-width: 800px) { main { flex-direction: column; } aside { width: auto; max-width: none; height: 50vh; border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div id="banner" hidden>INTERNAL CONTROLLER - not a PLC</div>
+<main>
+  <div id="view"><div id="hint">drag: orbit · right-drag: pan · wheel: zoom · click a pushbutton to press it</div></div>
+  <aside>
+    <header><b id="scene-name">…</b><span id="conn">connecting…</span></header>
+    <div id="status"></div>
+    <div id="hb" hidden></div>
+    <div class="cmds"><button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button></div>
+    <div class="tablewrap">
+      <table id="io"><thead><tr><th></th><th>tag</th><th>source</th><th>value</th><th>force</th></tr></thead><tbody></tbody></table>
+    </div>
+    <h3>warnings</h3>
+    <ul id="warns"></ul>
+  </aside>
+</main>
+<script type="module" src="/web/app.js"></script>
+</body>
+</html>
