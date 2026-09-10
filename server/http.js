@@ -7,6 +7,7 @@
 //   GET  /api/stream           SSE: scene, state (30 Hz deltas, full every 5 s), status (1 Hz), warn
 //   GET  /api/ping /api/scenes /api/tags
 //   POST /api/cmd {op: run|stop|reset}   /api/press {id, key, down}   /api/force {tag, value|null}
+//   GET  /api/scene/:name -> {version, scene}   PUT /api/scene/:name {baseVersion, scene} (409 when stale)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +15,7 @@ import { pathToFileURL } from 'node:url';
 import { validate, bindings, tags as sceneTags, NAME_RE } from '../lib/scene.js';
 import { createPlant, createRecorder } from './plant.js';
 import { createDriver } from './opcua.js';
+import { readScene, saveScene, SceneError } from './scenes.js';
 
 const MIME = /** @type {Record<string, string>} */ ({
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -54,12 +56,12 @@ export function postAllowed(req, { lanControl = false } = {}) {
   return true;
 }
 
-/** @param {http.IncomingMessage} req @returns {Promise<any>} */
-function body(req) {
+/** @param {http.IncomingMessage} req @param {number} [max] @returns {Promise<any>} */
+function body(req, max = 65536) {
   return new Promise((res, rej) => {
     let s = '';
     req.setEncoding('utf8');
-    req.on('data', d => { s += d; if (s.length > 65536) { rej(new Error('body too large')); req.destroy(); } });
+    req.on('data', d => { s += d; if (s.length > max) { rej(new Error('body too large')); req.destroy(); } });
     req.on('end', () => { try { res(s ? JSON.parse(s) : {}); } catch { rej(new Error('body is not JSON')); } });
     req.on('error', rej);
   });
@@ -158,6 +160,15 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       }
       // ponytail: the scene's own tags. The PLC browse cache for editor autocomplete arrives with P2.
       if (req.method === 'GET' && url.pathname === '/api/tags') return json(res, 200, bindings(scene).map(b => ({ tag: b.tag, dir: b.dir, type: b.type, comp: b.comp, key: b.key })));
+      const sm = /^\/api\/scene\/([^/]+)$/.exec(url.pathname);
+      if (sm && req.method === 'GET') return json(res, 200, readScene(root, decodeURIComponent(sm[1])));
+      if (sm && req.method === 'PUT') {
+        if (!postAllowed(req, { lanControl })) return json(res, 403, { error: 'saving only from this PC (start with --lan-control to allow the LAN)' });
+        const b = await body(req, 4 << 20);
+        const r = saveScene(root, decodeURIComponent(sm[1]), b.baseVersion ?? null, b.scene);
+        // ponytail: the running plant keeps the scene it started with; rebuilding it on save comes next.
+        return json(res, 200, { ok: true, ...r, active: sm[1] === sceneName });
+      }
       if (req.method === 'POST' && url.pathname.startsWith('/api/')) {
         if (!postAllowed(req, { lanControl })) return json(res, 403, { error: 'POST only from this PC (start with --lan-control to allow the LAN)' });
         const b = await body(req);
@@ -180,6 +191,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
         res.end(req.method === 'HEAD' ? undefined : data);
       });
     } catch (e) {
+      if (e instanceof SceneError) return json(res, e.code, { error: e.message, ...e.extra });
       json(res, 400, { error: String(/** @type {any} */ (e).message || e) });
     }
   });
