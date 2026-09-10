@@ -154,19 +154,32 @@ schema, plus `PRG_CYL_ON_SLIDE` built from `scenes/cyl-on-slide.st`. That file s
    The header must say `opcua: 16 tags`. A `MISSING` count names the tags Studio does not publish.
 5. Click the green START button in 3D. Watch `ST1_STEP`, `AS_ST1_PRSS_CYL_UP/DN` in Studio.
 
-The probe and a scene program both declare `MIO_HEARTBEAT`. Import a scene into a project
-without the probe, or delete the probe's globals first. Which way Studio resolves the duplicate
-is not tested yet.
+The probe and a scene program both declare `MIO_HEARTBEAT`. **Tested on Studio 1.66 (NJ501):**
+importing the scene into a project that already holds the probe is accepted. The global stays a
+single variable, and with both programs assigned it counts twice per scan (~1750/s at 1 ms).
+That is harmless: the plant only checks that it moves.
 
-**Phase 1 exit, with the simulator** (not run yet):
+**Phase 1 exit, with the simulator.** Run 2026-09-10 on Studio 1.66, NJ501-1500 1.70, primary
+task 1 ms, with the probe and `PRG_CYL_ON_SLIDE` both assigned:
 
 | check | result |
 |---|---|
-| 3D START starts the PLC sequence | |
-| the PLC sees the reed switches at the configured positions (Watch) | |
-| moving a switch's `pos` changes when the PLC sees it | |
-| 0 overruns in 10 minutes (status line) | |
-| the NDJSON in `runs/` holds every edge | |
+| 3D START starts the PLC sequence | ✔ PB_START edge → PLC step 0 → 10 → … → 70 → 10, cycling until STOP |
+| the PLC sees the reed switches at the configured positions | ✔ SOL_DN → AS_DN 376 ms in all 155 cycles (model 376.7) |
+| moving a switch's `pos` changes when the PLC sees it | ✔ `ext` 97 → 60 mm: 376 → 222 ms (model 223.9) |
+| 0 overruns in 10 minutes | ✔ 600 s window: 0 overruns, no warnings, step ~107 µs, plant time exactly 1× |
+| the NDJSON in `runs/` holds every edge | ✔ CYCLE_CNT 28..182 with no gap, 1084 step events, 0 out of order |
+| stroke-time error ≤ 1 step | ✔ internal: 450/380 ms exact for all four valve types (`tests/lib.test.js`) |
+
+Also measured: the PLC reacts to a sensor in 30–35 ms (e.g. SV1_DONE → SV1_EXEC off). The
+out-to-out cycle time from PLC source stamps is 4218–4425 ms, mean 4313. After a plant restart
+the PLC resumed mid-cycle on its own, because commands are levels.
+
+Two startup stalls found and fixed on the way. node-opcua loaded synchronously inside the first
+connect (1.2 s, 612 overruns). After that, connect's own setup still ran while the plant timer
+was going (102 ms at t = 8 ms). Now the driver loads node-opcua when it is created, and the plant
+starts only after the first connect attempt. Every stall is recorded as a `warn` with its
+duration.
 
 The internal-controller versions of these checks are in `tests/plant.test.js`.
 
@@ -179,6 +192,7 @@ The internal-controller versions of these checks are in `tests/plant.test.js`.
 | OPC UA menu is grey | the simulator is not running (F5 first) |
 | client rejected with what looks like a wrong password | security policy `None` is not ticked |
 | hangs at "Creating default certificate" | the certificate manager has no explicit `rootFolder` (fixed in `server/opcua.js`; do not remove it) |
+| a tag is visible in the simulator but not on the real controller | the simulator's OPC UA settings had `OnlyNetworkPublishVariablesFlag = False`, which most likely publishes every global. A real controller needs Network Publish = `Publish Only` (docs/SMC2.md) |
 | `(Import failed)` with no line number | run the XSD check (`node tests/run.js` does it when sysmac's validator is present); it names the element and line, Studio does not |
 | program name in the error list is not the one you imported | Studio renamed a POU that started with `P_`, without saying so |
 | `Cannot use an element of array ... function block instance variables` | an FB instance's array output was indexed; copy the whole array first |

@@ -187,8 +187,11 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
   // Viewers on the LAN may watch (GET); POST stays local unless --lan-control.
   const host = lan || lanControl ? '0.0.0.0' : '127.0.0.1';
   await new Promise((res, rej) => { server.once('error', rej); server.listen(port, host, () => res(null)); });
+  // Connect BEFORE the plant's timer runs: connect() has synchronous setup (client, certificate
+  // manager) that stalled the plant ~100 ms at t = 8 ms (measured). A failed first attempt
+  // returns quickly and retries on its own.
+  await driver?.start();
   plant.start();
-  driver?.start();
   log('manufacturing_io  http://127.0.0.1:' + port + '/   scene ' + scene.name + '   ' + (usePlc ? 'PLC ' + scene.io.endpoint : 'INTERNAL CONTROLLER - not a PLC'));
   log('recording ' + path.relative(root, recorder.file));
 

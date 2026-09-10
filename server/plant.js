@@ -253,7 +253,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   /** The ONE path from the plant to the PLC: one batch, at most one in flight. */
   let inFlight = false;
   function exchange() {
-    if (!driver || inFlight || !dirty.size) return;
+    if (!driver || inFlight || !dirty.size || driver.ready === false) return;   // driverUp() resends all on connect
     const batch = [...dirty].map(tag => ({ name: tag, value: io[tag] }));
     dirty.clear();
     inFlight = true;
@@ -328,7 +328,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     acc += now - last;
     last = now;
     let n = Math.floor(acc / dtMs);
-    if (n > MAX_STEPS) { plant.overruns += n - MAX_STEPS; n = MAX_STEPS; acc = 0; } else acc -= n * dtMs;
+    if (n > MAX_STEPS) {
+      // Sim time falls behind wall time here. Say when and how long, so a stall can be traced
+      // to what blocked the event loop (a synchronous require, a browse, GC).
+      warn('plant stalled ' + Math.round(n * dtMs) + ' ms: ' + (n - MAX_STEPS) + ' steps dropped (overruns)');
+      plant.overruns += n - MAX_STEPS; n = MAX_STEPS; acc = 0;
+    } else acc -= n * dtMs;
     const t0 = performance.now();
     for (let i = 0; i < n; i++) step();
     if (n) plant.stepUs = Math.round(plant.stepUs * 0.9 + (performance.now() - t0) / n * 1000 * 0.1);

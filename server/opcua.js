@@ -349,6 +349,9 @@ export async function connect({ endpoint = 'opc.tcp://127.0.0.1:4840', user = nu
  *          onUp: () => void, warn: (msg: string) => void}} hooks
  */
 export function createDriver({ endpoint = 'opc.tcp://127.0.0.1:4840', prefix = 'GlobalVars.', readOnly = false, outs, ins }, hooks) {
+  // node-opcua loads SYNCHRONOUSLY (~1 s). Loaded here, before the plant's timer starts:
+  // loaded inside the first connect it froze the plant for ~1.2 s (612 overruns, measured).
+  loadUa();
   /** @type {any} */
   let conn = null, retry = null, closed = false, hbAt = 0, hbKnown = false;
   let writable = new Set();
@@ -398,6 +401,7 @@ export function createDriver({ endpoint = 'opc.tcp://127.0.0.1:4840', prefix = '
   return {
     name: 'opcua',
     start: up,
+    get ready() { return !!conn; },
     /** Only tags the PLC actually has; twin mode refuses inside createConn().write. @param {Array<{name: string, value: any}>} changes */
     async write(changes) {
       if (!conn) throw new Error('not connected');
