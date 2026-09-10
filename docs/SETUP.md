@@ -72,14 +72,33 @@ It reports:
 - which pulse widths the PLC counted, 20 of each;
 - a suggested `minPulseMs`.
 
-**Results:** not measured yet. Paste the summary here with the date and the Studio version.
+**Results so far.** Measured 2026-09-10 on Studio 1.66.0 with the NX simulator. The probe was
+not imported yet, so these were taken **read-only** from rb4axis's running `SIM_HEARTBEAT`,
+3 s per row:
+
+| asked sampling | granted sampling / publishing | samples arriving | publishes |
+|---|---|---|---|
+| 50 ms | 50 / 50 | 16/s (one every ~62 ms) | ~16/s |
+| 20 ms | 20 / 50 | 32/s (one every ~31 ms) | ~19/s |
+| 10 ms | 10 / 50 | 63/s (one every ~16 ms) | ~19/s |
+| 5 ms | 5 / 50 | 64/s (one every ~16 ms) | ~19/s |
+
+- **The effective sampling floor is ≈ 16 ms**, the Windows timer tick, whatever is granted on
+  paper. Asking for less than 10 ms buys nothing.
+- **Publishing is floored at 50 ms.** Anything lower is revised to 50, so PLC outputs reach the
+  plant in batches every ~50 ms, with about 3 queued samples per batch.
+- **PLC → plant:** an output pulse shorter than ~16 ms can fall between samples, so commands
+  must be levels or counters. The reaction delay is up to ~50 ms plus one sample.
+- **Queued samples carry the PLC's source timestamp.** The recorder stamps `out` edges with it,
+  which gives ~16 ms resolution in the time chart instead of 50 ms.
+
+Still to measure with the probe (`--latency`):
 
 | | |
 |---|---|
-| timer granularity | |
-| task period | |
-| granted sampling / publishing | |
-| round trip p50 / p95 / max | |
+| task period (heartbeat) | |
+| echo round trip p50 / p95 / max | |
+| write-call latency | |
 | smallest pulse counted 20/20 | |
 | suggested `minPulseMs` | |
 

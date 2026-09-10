@@ -247,8 +247,14 @@ never dynamic bodies, and nothing in physics writes to the PLC.**
   with a PLC and warns that sensors get missed; this plan forbids it.
 
 **IO exchange (OPC UA)**
-- PLC outputs come through one subscription. Request 10 ms sampling and log what the server
-  revises it to.
+- PLC outputs come through one subscription at 10 ms sampling. **Measured on the Studio 1.66
+  simulator** (docs/SETUP.md):
+  - the effective sampling floor is ~16 ms, the Windows timer tick;
+  - publishing is floored at 50 ms, so outputs arrive in batches every ~50 ms, about 3
+    samples per batch.
+
+  The recorder stamps `out` edges with each sample's PLC source timestamp, which gives ~16 ms
+  resolution instead of 50 ms.
 - Changed sensor values go out in **one batched `write`** per exchange, with at most one batch in
   flight.
 
