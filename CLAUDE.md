@@ -19,6 +19,10 @@ in the code but break things silently** when violated. Most were paid for once i
   exactly one constant, `SK = 0.001`. No axis remapping anywhere.
 - **Actuators are kinematic models. Only free workpieces are Rapier-dynamic.** Physics never
   gates safety or sequence, and nothing in physics writes to the PLC.
+- **Workpieces never sleep** (`setCanSleep(false)`). Measured on Rapier 0.20: a kinematic
+  pusher sweeps straight through a part that fell asleep while resting. It does not wake the
+  part, the part stays put, and there is no error. `tests/rapier.test.js` pins both halves:
+  the trap and the rule.
 - **A held part is kinematic and follows its holder at a stored relative pose.** No fixed joints
   between dynamic bodies: they fight the solver.
 - **Sensors about the machine (reed switch, in-position, origin) are analytic, from DOF values.**

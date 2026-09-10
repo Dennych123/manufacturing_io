@@ -599,7 +599,7 @@ Each phase ends runnable, with a written exit criterion.
 | Windows timer granularity (~15 ms) | accumulator + 50-step cap + overrun counter |
 | Rapier 0.14 → 0.20 API changes | P0 smoke test |
 | determinism | deterministic build; tests still allow ±1 step on edge times |
-| many parts | part cap with recycling, sleeping bodies, deltas only, `dtMs` knob |
+| many parts | part cap with recycling, deltas only, `dtMs` knob. Parts must NOT sleep: Rapier 0.20 kinematic links do not wake them (measured, `rapier.test.js`). If CPU matters, wake parts that touch a moving link |
 | three `TransformControls` API change | exact pin + `getHelper()` note |
 | two people editing at once | `baseVersion` → 409 |
 | writing to a real machine by accident | twin read-only inside the driver |

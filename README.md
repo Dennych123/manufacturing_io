@@ -4,7 +4,16 @@ A browser-based 3D plant simulator for **special purpose machines (SPM)**, in th
 Factory I/O, built on **three.js** (rendering) and **Rapier** (physics). The controller is a real
 PLC program: first target is the **Omron Sysmac Studio NX/NJ simulator over OPC UA**.
 
-Status: **planning.** The full plan is in [docs/PLAN.md](docs/PLAN.md). No code yet.
+Status: **Phase 0**: the OPC UA port, the probe program and latency measurement against the
+Sysmac simulator. The full plan is in [docs/PLAN.md](docs/PLAN.md); the Studio steps are in
+[docs/SETUP.md](docs/SETUP.md).
+
+```bash
+npm install
+node tests/run.js
+node tools/gen_sysmac.js --probe        # plc/MioProbe.xml, import into Sysmac Studio
+node server/main.js --latency           # with the simulator running
+```
 
 ## What it is for
 

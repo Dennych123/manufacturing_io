@@ -1,0 +1,16 @@
+{
+  "name": "manufacturing_io",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser plant simulator for special purpose machines, controlled by a Sysmac NX simulator over OPC UA",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-deterministic-compat": "0.20.0",
+    "node-opcua-certificate-manager": "2.181.0",
+    "node-opcua-client": "2.181.1",
+    "three": "0.186.0"
+  }
+}
