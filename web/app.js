@@ -116,6 +116,19 @@ function build(sc) {
   partsGroup.visible = !editorRef?.active;
   place(curDof);
   fitLight();
+  if (sc.name !== framed) { framed = sc.name; fitCamera(); }       // a new scene, not a rebuild after Save
+}
+
+let framed = null;
+/** Look at the machine: orbit target at its bounding-box centre, from the front-right, above. */
+function fitCamera() {
+  const box = new THREE.Box3();
+  for (const l of model.links) box.expandByObject(l.g);
+  if (box.isEmpty()) return;
+  const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() / 2;
+  controls.target.copy(c);
+  camera.position.copy(c).add(new THREE.Vector3(0.5, -0.7, 0.5).normalize().multiplyScalar(r * 2.4));
+  controls.update();
 }
 
 // ------------------------------------------------------------------ loose parts (streamed transforms)

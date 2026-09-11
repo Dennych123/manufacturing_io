@@ -27,6 +27,18 @@ in the code but break things silently** when violated. Most were paid for once i
   between dynamic bodies: they fight the solver.
 - **Sensors about the machine (reed switch, in-position, origin) are analytic, from DOF values.**
   Only sensors about parts use Rapier queries.
+- **Part sensors query PARTS only** (collision groups `G_PART`/`PART_RAYS` in `server/plant.js`).
+  A ray that could hit the machine trips on the belt guide it looks through.
+- **Loose parts stream transforms; machine links stream DOF values.** Parts are Rapier-dynamic,
+  so no DOF describes them. Everything with a DOF still goes through `worldPoses()`.
+- **The belt drives parts by friction-clamped slip plus a friction torque** (`beltDv`,
+  `beltSpin`), and the belt collider has friction 0 (combine `Min`). This was measured:
+  - a velocity override stacks a queue on top of itself;
+  - a frictionless belt with no torque lets a landing spin grow to 9° of yaw in 4 s.
+- **Zone tests use a part's shape centre, not its origin.** The origin is the part's
+  underside, which rests a hair inside the belt, so an origin test in a remover box misses
+  every part.
+- **Templates** (workpieces an emitter copies) are never simulated and never drawn.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
 - **Time scale is 1× whenever a PLC is connected.** Sysmac timers run on wall time.

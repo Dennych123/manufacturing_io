@@ -30,6 +30,16 @@ saved first). The server writes the canonical text and rebuilds the running plan
 
 Run `MIO_BROWSER=1 node tests/browser.test.js` to test the editor end to end in headless Chrome.
 
+**Phase 3 (parts and material flow): in progress.** Workpieces can be loose Rapier parts: they
+fall, ride belts, queue against stoppers and get pushed. The kit now has:
+- a belt conveyor (friction-clamped slip, measured against a velocity override in `docs/PLAN.md` §3);
+- a part emitter and a part remover;
+- a photo-eye and a proximity sensor;
+- Stopper/Pusher/Lifter cylinder presets.
+
+The first material-flow scene, `a-to-b`, runs with its PLC program: run
+`node server/main.js --scene a-to-b --internal`.
+
 ```bash
 npm install
 node tests/run.js
