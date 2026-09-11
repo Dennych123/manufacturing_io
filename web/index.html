@@ -52,6 +52,23 @@
   h3 { margin: 0; font-size: 12px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--line); }
   #warns { list-style: none; margin: 0; max-height: 22vh; overflow: auto; font: 12px ui-monospace, Consolas, monospace; color: var(--warn); }
   #warns li { padding: 1px 0; }
+  button.right { margin-left: auto; }
+  button:disabled { opacity: .45; cursor: default; }
+  #editor { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 6px; padding-block: 8px; }
+  #editor[hidden] { display: none; }
+  .ed-bar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  #editor select, #editor input { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; }
+  #ed-msg { min-height: 1.4em; color: var(--muted); font-size: 12px; } #ed-msg.bad { color: var(--warn); }
+  #ed-tree { max-height: 24vh; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 12px ui-monospace, Consolas, monospace; }
+  .ed-row { padding: 2px 6px; cursor: pointer; white-space: nowrap; color: var(--muted); } .ed-row b { color: var(--ink); font-weight: 600; }
+  .ed-row:hover { background: var(--bg); } .ed-row.sel { background: var(--out); color: #fff; } .ed-row.sel b { color: #fff; }
+  #ed-props h4 { margin: 8px 0 2px; font-size: 12px; color: var(--muted); }
+  .ed-f { display: flex; gap: 6px; align-items: center; padding: 1px 0; font-size: 12px; }
+  .ed-f > span:first-child { width: 150px; flex: none; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ed-in { display: flex; gap: 3px; flex: 1; min-width: 0; } .ed-in input[type=text], .ed-in select { flex: 1; min-width: 0; }
+  .ed-in input.v3, .ed-in input[type=number] { width: 70px; min-width: 0; }
+  .ed-hint { color: var(--muted); margin: 4px 0; }
+  #ed-errs { list-style: none; margin: 0; padding: 0; font: 12px ui-monospace, Consolas, monospace; color: var(--warn); }
   @media (max-width: 800px) { main { flex-direction: column; } aside { width: auto; max-width: none; height: 50vh; border-left: 0; border-top: 1px solid var(--line); } }
 </style>
 </head>
@@ -63,7 +80,17 @@
     <header><b id="scene-name">…</b><span id="conn">connecting…</span></header>
     <div id="status"></div>
     <div id="hb" hidden></div>
-    <div class="cmds"><button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button></div>
+    <div class="cmds"><button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button><button id="edit-btn" class="right">Edit</button></div>
+    <section id="editor" hidden>
+      <div class="ed-bar"><select id="ed-type" title="component type"></select><button id="ed-add" title="mounts on the selected part">Add</button><button id="ed-dup" title="Ctrl+D">Duplicate</button><button id="ed-del" title="Delete">Delete</button><button id="ed-undo" title="Ctrl+Z">Undo</button><button id="ed-redo" title="Ctrl+Y">Redo</button></div>
+      <div class="ed-bar"><button id="ed-move" title="W">Move</button><select id="ed-snap" title="move snap"><option value="1">1 mm</option><option value="5">5 mm</option><option value="10" selected>10 mm</option></select><button id="ed-rot" title="E">Rotate</button><select id="ed-rsnap" title="rotate snap"><option value="15" selected>15°</option><option value="90">90°</option></select><button id="ed-save" class="right" title="Ctrl+S">Save</button></div>
+      <div id="ed-msg"></div>
+      <div id="ed-tree"></div>
+      <div id="ed-props"></div>
+      <h3 id="ed-errs-h"></h3>
+      <ul id="ed-errs"></ul>
+      <datalist id="ed-tags"></datalist>
+    </section>
     <div class="tablewrap">
       <table id="io"><thead><tr><th></th><th>tag</th><th>source</th><th>value</th><th>force</th></tr></thead><tbody></tbody></table>
     </div>

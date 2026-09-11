@@ -35,6 +35,18 @@ chk('panel text throttled to about 8 per second', pm && +pm[1] >= 100 && +pm[1] 
 chk('inputs send on change, never on input', !/addEventListener\(\s*['"]input['"]|\.oninput\s*=/.test(app));
 chk('no innerHTML in web/app.js (tag names never become markup)', !/innerHTML/.test(app));
 
+// web/editor.js: the same rules, plus the editor's own
+const edj = read('web/editor.js');
+chk('editor: mount math only from lib/scene.js (mountPoses/mountFrom), no Euler, no compose', /import\s*\{[^}]*\bmountFrom\b[^}]*\}\s*from\s*'\/lib\/scene\.js'/.test(edj) && !/Euler|\bcompose\(|\binvert\(/.test(edj));
+chk('editor: saves only after the shared validate()', /import\s*\{[^}]*\bvalidate\b[^}]*\}\s*from\s*'\/lib\/scene\.js'/.test(edj) && /async function save\(\)\s*\{\s*const errs = validate\(scene\)/.test(edj));
+chk('editor: PUT carries baseVersion (409 on stale)', /baseVersion:\s*base/.test(edj));
+chk('editor: TransformControls added through getHelper() (r169+)', /tc\.getHelper\(\)/.test(edj) && !/scene3\.add\([^)]*\btc\b[,)]/.test(edj));
+chk('editor: undo is capped at 100 snapshots', /UNDO_MAX\s*=\s*100\b/.test(edj));
+chk('editor: inputs send on change, never on input; no innerHTML', !/addEventListener\(\s*['"]input['"]|\boninput\b/.test(edj) && !/innerHTML/.test(edj));
+chk('editor: every #id it uses exists in index.html', [...edj.matchAll(/\$\('([\w-]+)'\)/g)].map(m => m[1]).every(id => html.includes('id="' + id + '"')),
+  [...new Set([...edj.matchAll(/\$\('([\w-]+)'\)/g)].map(m => m[1]))].filter(id => !html.includes('id="' + id + '"')).join(' '));
+chk('viewer: pressing parts is off in edit mode', /editor\.active\)\s*return/.test(app));
+
 // staticPath: fixed prefixes only, never out of them
 const is = (u, rel) => staticPath(ROOT, u) === (rel && path.join(ROOT, ...rel.split('/')));
 chk('/ -> web/index.html', is('/', 'web/index.html'));

@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { compile, worldPoses, bindings } from '/lib/scene.js';
 import { TYPES } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
+import { createEditor } from '/web/editor.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);          // Z-up in mm, like the scene and the plant
 
@@ -82,7 +83,7 @@ let model = null;          // { scene, links: [{id, link, g}], glows: [...], pic
 function build(sc) {
   if (model) for (const l of model.links) { scene3.remove(l.g); l.g.traverse(o => o.geometry?.dispose()); }
   const { order, defs } = compile(sc);
-  const links = [], glows = [], pick = [], byKey = new Map();
+  const links = [], glows = [], pick = [], meshes = [], byKey = new Map();
   for (const c of order) {
     const d = defs.get(c.id);
     for (const l of d.links) { const g = new THREE.Group(); scene3.add(g); links.push({ id: c.id, link: l.name, g }); byKey.set(c.id + '/' + l.name, g); }
@@ -96,9 +97,10 @@ function build(sc) {
       byKey.get(c.id + '/' + s.link).add(mesh);
       if (tag) glows.push({ mesh, tag, color: new THREE.Color(MAT[s.mat]?.glow || s.color || '#ffffff'), on: null });
       if (d.t.pressKey) pick.push(mesh);
+      meshes.push(mesh);
     }
   }
-  model = { scene: sc, links, glows, pick };
+  model = { scene: sc, links, glows, pick, meshes };
   place(curDof);
   fitLight();
 }
@@ -254,12 +256,15 @@ for (const b of document.querySelectorAll('.cmds button')) b.onclick = () => pos
 // The browser sends EDGES; the PLC enforces the conditions.
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let pressed = null;
-renderer.domElement.addEventListener('pointerdown', e => {
-  if (!model || e.button !== 0) return;
+function pickAt(e, list) {
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  const hit = ray.intersectObjects(model.pick, false)[0];
+  return ray.intersectObjects(list, false)[0] || null;
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (!model || e.button !== 0 || editor.active) return;       // edit mode selects instead
+  const hit = pickAt(e, model.pick);
   if (!hit) return;
   const id = hit.object.userData.id, c = model.scene.components.find(x => x.id === id);
   pressed = { id, key: TYPES[c.type].pressKey };
@@ -273,13 +278,25 @@ addEventListener('pointerup', () => {
   controls.enabled = true;
 });
 
+// ------------------------------------------------------------------ editor (web/editor.js)
+let serverScene = null;
+const editor = createEditor({
+  scene3, camera, renderer, controls, post,
+  rebuild: sc => build(sc),
+  preview: sc => { model.scene = sc; place(curDof); },          // same links, new mount: no new meshes
+  model: () => model, dof: () => curDof,
+  pick: e => (model ? pickAt(e, model.meshes) : null),
+  sceneName: () => serverScene?.name, serverScene: () => serverScene,
+});
+
 // ------------------------------------------------------------------ stream
 const es = new EventSource('/api/stream');
 es.addEventListener('scene', e => {
   const { scene } = JSON.parse(e.data);
+  serverScene = scene;
   $('scene-name').textContent = scene.name;
   document.title = scene.name + ' · manufacturing_io';
-  build(scene);
+  if (!editor.onServerScene(scene)) build(scene);
   buildPanel(scene);
   ioDirty = true;
 });

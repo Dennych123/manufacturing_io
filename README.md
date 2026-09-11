@@ -13,10 +13,22 @@ controller, or against the Sysmac simulator through generated XML. The IO timing
 Phase 0: whether AT-assigned variables are writable. The full plan is in
 [docs/PLAN.md](docs/PLAN.md); the Studio steps are in [docs/SETUP.md](docs/SETUP.md).
 
-**Phase 2 (editor) has started, server side only.** `GET/PUT /api/scene/:name` read and save
-scenes with a version check (409 when stale), validation (422) and canonical, byte-identical
-output ([server/scenes.js](server/scenes.js)). Not done yet: rebuilding the running plant when
-its own scene is saved (until then, restart the server), and the browser editor itself.
+**Phase 2 (editor): first cut works.** Press **Edit** in the viewer. The plant stops, and you
+can:
+- pick parts in 3D or in the tree;
+- move and rotate them with the gizmo (snapped in the parent's frame);
+- edit the mount, the parameters and the io tags (autocomplete) in a panel generated from the
+  component type;
+- add, duplicate (without io tags), delete, undo and redo (100 snapshots).
+
+**Save** validates with the server's own `validate()` and PUTs with a version (409 when someone
+saved first). The server writes the canonical text and rebuilds the running plant. Not done yet:
+- socket markers and Shift-snap;
+- draggable reed switches;
+- saved camera views;
+- the PLC browse cache for autocomplete.
+
+Run `MIO_BROWSER=1 node tests/browser.test.js` to test the editor end to end in headless Chrome.
 
 ```bash
 npm install
