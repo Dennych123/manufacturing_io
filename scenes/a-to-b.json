@@ -1,0 +1,115 @@
+{
+  "format": "mio-scene/1",
+  "name": "a-to-b",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Transfer",
+      "members": ["cv1", "em1", "pe1", "rm1"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PE_END",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cv1",
+      "type": "conveyor",
+      "label": "TRANSFER BELT",
+      "station": "ST1",
+      "params": { "length": 2000, "width": 200, "height": 800, "speed": 300 },
+      "io": { "run": "CV1_RUN" }
+    },
+    {
+      "id": "wp",
+      "type": "workpiece",
+      "label": "PART TEMPLATE",
+      "at": [0, 600, 0],
+      "params": { "size": [60, 40, 30], "color": "#2a6fdb", "material": "alu" }
+    },
+    {
+      "id": "em1",
+      "type": "emitter",
+      "label": "LOADER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "start",
+      "at": [80, 0, 50],
+      "params": { "template": "wp", "mode": "tag" },
+      "io": { "emit": "EM1_EMIT", "count": "EM1_CNT" }
+    },
+    {
+      "id": "pe1",
+      "type": "photoEye",
+      "label": "END SENSOR",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "end",
+      "at": [-250, -140, 15],
+      "rot": [0, 0, 90],
+      "params": { "range": 300 },
+      "io": { "out": "PE_END" }
+    },
+    {
+      "id": "rm1",
+      "type": "remover",
+      "label": "UNLOADER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "end",
+      "at": [-60, 0, 0],
+      "params": { "size": [120, 260, 200] },
+      "io": { "count": "RM1_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-800, -450, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

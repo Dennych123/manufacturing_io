@@ -168,6 +168,10 @@ for (const [[from, to, vmax, acc, dt], steps, marks] of VECTORS) {
 const once = stringify(scene), twice = stringify(JSON.parse(once));
 chk('two saves are byte-identical', once === twice);
 chk('scenes/cyl-on-slide.json is in canonical form', fs.readFileSync(path.join(ROOT, 'scenes', 'cyl-on-slide.json'), 'utf8') === once);
+for (const f of fs.readdirSync(path.join(ROOT, 'scenes')).filter(f => /^[a-z0-9_-]+\.json$/.test(f))) {
+  const txt = fs.readFileSync(path.join(ROOT, 'scenes', f), 'utf8'), sc = JSON.parse(txt), errs = validate(sc);
+  chk('scenes/' + f + ' is valid and canonical', errs.length === 0 && txt === stringify(sc) && sc.name + '.json' === f, errs.join('; '));
+}
 const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());
 chk('key order in the input does not change the output', stringify(shuffled) === once);

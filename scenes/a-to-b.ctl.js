@@ -1,0 +1,48 @@
+// INTERNAL CONTROLLER - not a PLC. The same sequence as a-to-b.st, for tests and demos
+// without Sysmac. Keep the two in step: a change to one is a change to both.
+// Loaded from disk only, never through the API.
+
+export function create() {
+  let pbLast = false, stopReq = false, dwellFrom = -1, dwellQ = false, emLast = 0, rmLast = 0;
+  return {
+    /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
+    scan(io, t) {
+      const startEdge = io.PB_START && !pbLast;
+      pbLast = io.PB_START;
+      if (io.PB_STOP) stopReq = true;
+
+      switch (io.ST1_STEP) {
+        case 0:
+          io.CV1_RUN = false;
+          io.EM1_EMIT = false;
+          if (startEdge) { stopReq = false; io.ST1_STEP = 10; }
+          break;
+        case 10:
+          io.EM1_EMIT = true;
+          if (io.EM1_CNT !== emLast) { emLast = io.EM1_CNT; io.EM1_EMIT = false; io.ST1_STEP = 20; }
+          break;
+        case 20:
+          io.CV1_RUN = true;
+          if (io.PE_END) { io.CV1_RUN = false; io.ST1_STEP = 30; }
+          break;
+        case 30:
+          if (dwellQ) io.ST1_STEP = 40;
+          break;
+        case 40:
+          io.CV1_RUN = true;
+          if (io.RM1_CNT !== rmLast) { rmLast = io.RM1_CNT; io.CV1_RUN = false; io.ST1_STEP = 50; }
+          break;
+        case 50:
+          io.CYCLE_CNT += 1;
+          io.ST1_STEP = stopReq ? 0 : 10;
+          break;
+      }
+
+      // TON after the CASE, as in the ST: its Q is read by the NEXT scan.
+      if (io.ST1_STEP === 30) { if (dwellFrom < 0) dwellFrom = t; } else dwellFrom = -1;
+      dwellQ = dwellFrom >= 0 && t - dwellFrom >= 500;
+      io.AUTO_RUN = io.ST1_STEP !== 0;
+      io.PL_START = io.AUTO_RUN;
+    },
+  };
+}

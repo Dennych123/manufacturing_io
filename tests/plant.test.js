@@ -178,6 +178,29 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await px.close(); await pc.close();
 }
 
+// ---------------------------------------------------------------- scene a-to-b with its internal controller
+{
+  const ab = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'a-to-b.json'), 'utf8'));
+  const { create: createAB } = await import('../scenes/a-to-b.ctl.js');
+  const run = async () => {
+    const q = await createPlant(ab, { controller: createAB() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(40000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('a-to-b: the sequence completes cycles', q.io.CYCLE_CNT >= 5, 'CYCLE_CNT ' + q.io.CYCLE_CNT);
+  chk('a-to-b: every loaded part is unloaded (in = out + inside), none lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0 && q.parts.size <= 1,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside');
+  chk('a-to-b: PLC-visible counters agree with the plant', q.io.EM1_CNT === pev('spawn') && q.io.RM1_CNT === pev('remove'));
+  chk('a-to-b: the end sensor sees one part per cycle', Math.abs(edges(q, 'PE_END', true).length - q.io.CYCLE_CNT) <= 1);
+  chk('a-to-b: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).join(' | '));
+  const q2 = await run();
+  chk('a-to-b: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
 // ---------------------------------------------------------------- pusher and stopper presets
 {
   const push = {
