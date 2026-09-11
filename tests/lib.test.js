@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pose, compose, invert, apply, qeuler } from '../lib/math.js';
+import { pose, compose, invert, apply, qeuler, qrot, eulerOf } from '../lib/math.js';
 import { TYPES, trapStep, withDefaults, cylSpeeds } from '../lib/components.js';
 import { validate, worldPoses, bindings, tags, stringify } from '../lib/scene.js';
 
@@ -171,5 +171,37 @@ chk('scenes/cyl-on-slide.json is in canonical form', fs.readFileSync(path.join(R
 const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());
 chk('key order in the input does not change the output', stringify(shuffled) === once);
+
+// eulerOf inverts qeuler (same rotation, compared as rotated vectors), incl. gimbal lock
+{
+  const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
+  const same = (r1, r2) => [[1, 0, 0], [0, 1, 0], [0, 0, 1]].every(v => near(qrot(qeuler(r1), v), qrot(qeuler(r2), v)));
+  const cases = [[0, 0, 0], [180, 0, 0], [30, -45, 120], [-170, 89, 5], [10, 90, 30], [10, -90, 30], [0, 0, -179], [90, 0, 90]];
+  const badE = cases.filter(r => !same(r, eulerOf(qeuler(r))));
+  chk('eulerOf(qeuler(rot)) is the same rotation (' + cases.length + ' cases, gimbal included)', badE.length === 0, JSON.stringify(badE));
+  chk('eulerOf keeps simple angles simple', near(eulerOf(qeuler([30, -45, 120])), [30, -45, 120]) && near(eulerOf(qeuler([0, 0, 0])), [0, 0, 0]));
+}
+
+// mountFrom undoes mountPoses: a drag to the current frame gives back the same at/rot
+{
+  const { mountPoses, mountFrom } = await import('../lib/scene.js');
+  const W = worldPoses(scene, { slide1: 120 });
+  const bad = [];
+  for (const c of scene.components) {
+    const m = mountPoses(scene, { slide1: 120 }, c.id);
+    const back = mountFrom(m.base, m.frame);
+    const want = pose(c.at, c.rot);
+    const got = pose(back.at, back.rot);
+    if (!want.p.every((v, i) => Math.abs(v - got.p[i]) < 1e-3) || ![[1, 0, 0], [0, 0, 1]].every(v => qrot(want.q, v).every((x, i) => Math.abs(x - qrot(got.q, v)[i]) < 1e-6))) bad.push(c.id);
+  }
+  chk('mountFrom(mountPoses) returns every component\'s own at/rot', bad.length === 0, bad.join(' '));
+  const cm = mountPoses(scene, { slide1: 120 }, 'cyl1');
+  const moved = { p: [cm.frame.p[0] + 10, cm.frame.p[1], cm.frame.p[2]], q: cm.frame.q };
+  const cyl = scene.components.find(c => c.id === 'cyl1');
+  const nm = mountFrom(cm.base, moved);
+  chk('a +10 mm world X drag of cyl1 (on the carriage) moves its at by +10 in X', Math.abs(nm.at[0] - ((cyl.at?.[0] ?? 0) + 10)) < 1e-3 && Math.abs(nm.at[1] - (cyl.at?.[1] ?? 0)) < 1e-3, JSON.stringify(nm));
+  chk('mountPoses of the base frame is the world', mountPoses(scene, {}, 'base').base.p.every(v => v === 0) && !!W.base);
+  chk('mountPoses of an unknown id is null', mountPoses(scene, {}, 'nope') === null);
+}
 
 process.exit(fail ? 1 : 0);
