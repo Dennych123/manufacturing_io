@@ -174,9 +174,22 @@ In mirror mode the plant smooths the irregular PLC samples by predicting from ve
 **Vacuum cup:** ON with a part within 2 mm → the vacuum switch turns on after `buildMs` and the
 part attaches.
 
-**Conveyor:** a thin query slab above the belt sets loose parts' along-belt velocity to the belt
-speed. `// ponytail: velocity override, not friction; parts never slip. Upgrade: contact-force
-model.` Spike this at the start of Phase 3.
+**Conveyor: friction-clamped slip** (spike A0, 2026-09-12). The belt collider has friction 0
+(combine rule `Min`), so Rapier's own friction never brakes a part against the static belt.
+Each step, a part in contact with the belt (`contactPair`, at least one contact) gets an
+impulse. The impulse pulls its in-plane velocity toward the belt's by at most `μ·g·dt`
+(`beltDv()` in `server/plant.js`), so a blocked part **slips**, as it does on a real belt.
+
+Measured on a 3 m belt at 0.3 m/s, with 60×40×30 mm alu parts, μ 0.5, and 5 parts against a
+stopper for 10 s:
+
+| model | 1 m arrival | queue gaps (60 mm parts) | jitter | parts climb |
+|---|---|---|---|---|
+| velocity override (the first plan) | 3.336 s | 0.6 / 49.8 / 45.3 / 52.7 mm | 0.005 mm | yes, zmax 42.8 mm |
+| **friction-clamped slip** | 3.366 s = d/v + v/(2μg) | 59.3 / 59.5 / 59.7 / 59.8 mm | 0.000 mm | no, z 15.08 mm |
+
+Override keeps shoving blocked parts (residual 128 mm/s) and stacks them. Slip costs 76 µs
+per step with 5 parts. Both runs are deterministic. `tests/rapier.test.js` pins these numbers.
 
 **Others**
 - emitter and remover;

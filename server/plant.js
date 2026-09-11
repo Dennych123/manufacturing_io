@@ -24,6 +24,22 @@ const RING = 200000;
 /** Rapier cylinders run along Y; scene cylinders run along Z. */
 const Y_TO_Z = qaxis([1, 0, 0], 90);
 
+/**
+ * Belt drive, friction-clamped slip (docs/PLAN.md §3, spike A0): the velocity change one step
+ * gives a part touching a belt. The part's in-plane velocity is pulled toward the belt's by at
+ * most μ·g·dt, so a part blocked by a stopper slips on the belt instead of being shoved into
+ * the stopper (velocity override stacked parts on top of each other, measured). m/s.
+ * @param {number[]} v part velocity @param {number[]} vb belt surface velocity @param {number[]} n belt normal (unit)
+ * @param {number} mu @param {number} dt @returns {number[]}
+ */
+export function beltDv(v, vb, n, mu, dt, g = 9.81) {
+  const r = [vb[0] - v[0], vb[1] - v[1], vb[2] - v[2]];
+  const k = r[0] * n[0] + r[1] * n[1] + r[2] * n[2];
+  const d = [r[0] - k * n[0], r[1] - k * n[1], r[2] - k * n[2]];
+  const lim = mu * g * dt * Math.max(0, n[2]), m = Math.hypot(d[0], d[1], d[2]);
+  return m <= lim ? d : d.map(x => x * lim / m);
+}
+
 /** @type {any} */
 let RAPIER = null;
 export async function loadRapier() {
