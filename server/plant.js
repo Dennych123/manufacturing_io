@@ -161,7 +161,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   };
   const roles = partRoles(scene);
   const W0 = worldPoses(scene, dofOf());
-  /** @type {Array<{id: string, link: string, body: any, kinematic: boolean}>} */
+  /** @type {Array<{id: string, link: string, body: any, kinematic: boolean, cols: any[], last: number[]|null, moved: boolean, off: boolean}>} */
   const bodies = [];
   /** Belt surfaces: friction 0 (combine Min), so beltDv is the belt's only grip. @type {Array<{id: string, link: string, col: any}>} */
   const belts = [];
@@ -176,13 +176,15 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         .setTranslation(P.p[0] * SK, P.p[1] * SK, P.p[2] * SK)
         .setRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
       const body = world.createRigidBody(desc);
+      const cols = [];
       for (const s of shapes) {
         const cd = colliderDesc(s).setCollisionGroups(G_MACHINE);
         if (s.belt) cd.setFriction(0).setFrictionCombineRule(R.CoefficientCombineRule.Min);
         const col = world.createCollider(cd, body);
+        cols.push(col);
         if (s.belt) belts.push({ id: c.id, link: l.name, col });
       }
-      bodies.push({ id: c.id, link: l.name, body, kinematic });
+      bodies.push({ id: c.id, link: l.name, body, kinematic, cols, last: /** @type {number[]|null} */ (null), moved: false, off: false });
     }
   }
   const kin = bodies.filter(b => b.kinematic);
@@ -355,6 +357,16 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const P = W[b.id][b.link];
       b.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
       b.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
+      // Contact refresh (measured, tests/rapier.test.js): a part that was pressed against a
+      // kinematic stopper keeps a stale blocking contact after the stopper moves clear, even
+      // 20 mm clear. When a kinematic link comes to rest, its colliders sit out one step, so
+      // the next contacts are computed fresh from the real geometry.
+      if (b.off) { for (const c of b.cols) c.setEnabled(true); b.off = false; }
+      const now = [...P.p, ...P.q];
+      const moving = !!b.last && now.some((v, i) => Math.abs(v - /** @type {number[]} */ (b.last)[i]) > 1e-9);
+      if (b.moved && !moving) { for (const c of b.cols) c.setEnabled(false); b.off = true; }
+      b.moved = moving;
+      b.last = now;
     }
     // 4. conveyors: friction-clamped slip toward the belt velocity (beltDv, spike A0). A stopped
     // belt brakes parts the same way, as a real one does.

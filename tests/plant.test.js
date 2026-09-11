@@ -201,6 +201,29 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await q.close(); await q2.close();
 }
 
+// ---------------------------------------------------------------- scene stopper-pusher with its internal controller
+{
+  const sp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'stopper-pusher.json'), 'utf8'));
+  const { create: createSP } = await import('../scenes/stopper-pusher.ctl.js');
+  const run = async () => {
+    const q = await createPlant(sp, { controller: createSP() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('stopper-pusher: one cycle per part fed (2.5 s)', q.io.CYCLE_CNT >= 20, 'CYCLE_CNT ' + q.io.CYCLE_CNT);
+  chk('stopper-pusher: odd parts slide down the chute into the bin, even parts reach the outfeed', q.io.RM_NG_CNT >= 10 && Math.abs(q.io.RM_NG_CNT - q.io.RM_OK_CNT) <= 1,
+    'bin ' + q.io.RM_NG_CNT + ', outfeed ' + q.io.RM_OK_CNT);
+  chk('stopper-pusher: in = out + inside, none lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('stopper-pusher: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('stopper-pusher: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
 // ---------------------------------------------------------------- pusher and stopper presets
 {
   const push = {

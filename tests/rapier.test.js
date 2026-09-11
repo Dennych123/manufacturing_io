@@ -122,4 +122,41 @@ function belt(model, n, stopperX) {
   chk('trap: velocity override stacks a queue (a gap under 50 mm or a part lifted)', o.gaps.some(g => g < 50) || o.zmax > 20, 'gaps ' + o.gaps.map(g => g.toFixed(1)).join(' / ') + ', zmax ' + o.zmax.toFixed(1));
 }
 
+// ---------------------------------------------------------------- stale contact on a lifted stopper
+// A part queued against a kinematic stopper (belt slip presses it on) keeps a BLOCKING contact
+// after the stopper lifts clear: measured stuck even with the stopper 20 mm above the part,
+// for a cylinder and a box alike, CCD on or off. Rule (server/plant.js): when a kinematic link
+// comes to rest, its colliders sit out one step and the contacts are recomputed. With that, a
+// box stopper releases at any clearance; a cylinder still needs about 12 mm (so the Stopper
+// preset is a square block). If the trap check starts failing, Rapier fixed it.
+{
+  const Y_TO_Z = { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 };
+  const lifted = ({ shape, clear, refresh }) => {
+    const w = new R.World({ x: 0, y: 0, z: -9.81 });
+    w.timestep = DT;
+    const bc = w.createCollider(R.ColliderDesc.cuboid(1, 0.1, 0.01).setTranslation(0, 0, -0.01).setFriction(0).setFrictionCombineRule(R.CoefficientCombineRule.Min), w.createRigidBody(R.RigidBodyDesc.fixed()));
+    const part = w.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0.2, 0, 0.0151).setCanSleep(false).setCcdEnabled(true));
+    const pc = w.createCollider(R.ColliderDesc.cuboid(0.03, 0.02, 0.015).setDensity(2700).setFriction(0.5), part);
+    const down = 0.005 + 0.0125, up = 0.030 + clear / 1000 + 0.0125;       // 25 mm stopper, 5 mm above the belt when down
+    const pin = w.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(0.3, 0, down));
+    const col = w.createCollider(shape === 'cyl' ? R.ColliderDesc.cylinder(0.0125, 0.006).setRotation(Y_TO_Z) : R.ColliderDesc.cuboid(0.006, 0.006, 0.0125), pin);
+    const step = z => {
+      pin.setNextKinematicTranslation({ x: 0.3, y: 0, z });
+      let touch = false;
+      w.contactPair(bc, pc, m => { if (m.numContacts() > 0) touch = true; });
+      if (touch) { const v = part.linvel(), dv = beltDv([v.x, v.y, v.z], [V, 0, 0], [0, 0, 1], 0.6, DT), m = part.mass(); part.applyImpulse({ x: m * dv[0], y: m * dv[1], z: m * dv[2] }, true); }
+      w.step();
+    };
+    for (let i = 0; i < 400; i++) step(down);                              // the part rides up and queues on the stopper
+    for (let i = 1; i <= 60; i++) step(down + (up - down) * i / 60);       // the stopper lifts clear
+    if (refresh) { col.setEnabled(false); step(up); col.setEnabled(true); }
+    for (let i = 0; i < 300; i++) step(up);
+    return part.translation().x * 1000;
+  };
+  const t1 = lifted({ shape: 'cyl', clear: 20, refresh: false }), t2 = lifted({ shape: 'box', clear: 20, refresh: false });
+  chk('trap: a part pressed against a stopper stays stuck after it lifts 20 mm clear (cylinder and box)', t1 < 270 && t2 < 270, 'part x ' + t1.toFixed(1) + ' / ' + t2.toFixed(1) + ' mm');
+  const r1 = lifted({ shape: 'box', clear: 5, refresh: true }), r2 = lifted({ shape: 'cyl', clear: 15, refresh: true });
+  chk('rule: with the contact refresh, a box stopper 5 mm clear (and a cylinder 15 mm clear) releases the part', r1 > 330 && r2 > 330, 'part x ' + r1.toFixed(1) + ' / ' + r2.toFixed(1) + ' mm');
+}
+
 process.exit(fail ? 1 : 0);

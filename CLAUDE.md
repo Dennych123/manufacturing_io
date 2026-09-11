@@ -39,6 +39,12 @@ in the code but break things silently** when violated. Most were paid for once i
   underside, which rests a hair inside the belt, so an origin test in a remover box misses
   every part.
 - **Templates** (workpieces an emitter copies) are never simulated and never drawn.
+- **A kinematic link that comes to rest takes its colliders out for one step** (the contact
+  refresh in `server/plant.js`). This was measured on Rapier 0.20: a part that was pressed
+  against a stopper keeps a stale blocking contact after the stopper lifts clear. The part stays
+  stuck even with the stopper 20 mm above it, whether the stopper is a cylinder or a box, and
+  with CCD on or off. With the refresh, a box releases the part at any clearance, but a cylinder
+  needs about 12 mm, so stoppers are square blocks. `tests/rapier.test.js` pins both halves.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
 - **Time scale is 1× whenever a PLC is connected.** Sysmac timers run on wall time.
