@@ -132,9 +132,11 @@ export function createEditor(ctx) {
     return stem + n;
   }
   function add() {
-    const type = $('ed-type').value;
-    const id = freshId(new Set(scene.components.map(c => c.id)), type.replace(/[^A-Za-z0-9_]/g, ''));
+    const [type, pi] = $('ed-type').value.split(':');                  // 'cylinder:1' = the type's preset #1
+    const pr = pi != null ? TYPES[type].presets[+pi] : null;
+    const id = freshId(new Set(scene.components.map(c => c.id)), (pr ? pr.label.toLowerCase() : type).replace(/[^A-Za-z0-9_]/g, ''));
     const c = { id, type };
+    if (pr) c.params = structuredClone(pr.params);
     const p = sel && find(scene, sel);
     if (p) {
       c.parent = p.id;
@@ -321,7 +323,10 @@ export function createEditor(ctx) {
   }
 
   // ---------------------------------------------------------------- toolbar and keys
-  $('ed-type').replaceChildren(...Object.entries(TYPES).map(([k, t]) => el('option', { value: k, textContent: t.label })));
+  $('ed-type').replaceChildren(...Object.entries(TYPES).flatMap(([k, t]) => [
+    el('option', { value: k, textContent: t.label }),
+    ...(t.presets || []).map((pr, i) => el('option', { value: k + ':' + i, textContent: '  ' + t.label + ' – ' + pr.label })),
+  ]));
   $('edit-btn').onclick = () => (ed.active ? exit() : enter());
   $('ed-add').onclick = add;
   $('ed-dup').onclick = duplicate;

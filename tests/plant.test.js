@@ -178,6 +178,35 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await px.close(); await pc.close();
 }
 
+// ---------------------------------------------------------------- pusher and stopper presets
+{
+  const push = {
+    format: 'mio-scene/1', name: 'pushtest',
+    components: [
+      { id: 'base', type: 'frame', params: { size: [1000, 600, 800] } },
+      { id: 'part', type: 'workpiece', parent: 'base', socket: 'top', at: [30, 0, 0], params: { dynamic: true } },
+      // horizontal along +X; retracted, the plate face sits 20 mm short of the part
+      { id: 'push', type: 'cylinder', parent: 'base', socket: 'top', at: [-250, 0, 40], rot: [0, 90, 0],
+        params: { ...TYPES.cylinder.presets.find(p => p.label === 'Pusher').params, headSize: [40, 60, 8] }, io: { solExt: 'SOL_PUSH' } },
+    ],
+  };
+  const { validate: v3 } = await import('../lib/scene.js');
+  chk('every cylinder preset is a valid parameter set', TYPES.cylinder.presets.every(pr => v3({ ...push, components: [{ id: 'c', type: 'cylinder', params: pr.params }] }).length === 0));
+  const pp = await createPlant(push, {});
+  pp.run(300);
+  const x0 = pp.parts.get('part').body.translation().x / SK;
+  pp.force('SOL_PUSH', true); pp.run(1500);
+  const x1 = pp.parts.get('part').body.translation().x / SK;
+  // Extended, the face is at -20 + 150 = 130, so the part (60 long, origin at its centre) is
+  // pushed to at least 160. The plate slows into the cushion 5 mm before the end (part at 155);
+  // the part leaves it at full speed and slides v^2/(2 mu g) on the frame (mu 0.5): real physics.
+  const pv = cylSpeeds(withDefaults(TYPES.cylinder, push.components[2].params)).ext * 1000 / 1000;   // m/s
+  const slide = pv * pv / (2 * 0.5 * 9.81) * 1000;
+  chk('the pusher plate really pushes the part (kinematic head vs dynamic part)', x1 >= 159.5 && x1 <= 155 + slide + 1,
+    x0.toFixed(1) + ' -> ' + x1.toFixed(1) + ' mm (160 .. ' + (155 + slide).toFixed(1) + ')');
+  await pp.close();
+}
+
 // A blip shorter than minPulseMs is held for minPulseMs, plus a warning
 const MIN = scene.io.minPulseMs, BLIP = MIN - 8;
 const b = await createPlant(scene, {});
