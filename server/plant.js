@@ -14,8 +14,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { compile, worldPoses, tags as sceneTags, validate, stringify } from '../lib/scene.js';
+import { compile, worldPoses, tags as sceneTags, validate, stringify, partRoles } from '../lib/scene.js';
 import { qmul, qaxis, qeuler } from '../lib/math.js';
+import { DENSITY } from '../lib/components.js';
+
+// Collision groups, (memberships << 16) | filter. Machine and parts collide with everything;
+// part sensors cast with PART_RAYS so they see parts only, never the machine.
+const G_MACHINE = (0x0001 << 16) | 0xffff, G_PART = (0x0002 << 16) | 0xffff;
+export const PART_RAYS = (0xffff << 16) | 0x0002;
+/** Below this a part has fallen off the machine: removed, and reported. mm */
+const LOST_Z = -1000;
 
 /** mm -> m. The ONLY unit conversion between the scene and Rapier. */
 export const SK = 0.001;
@@ -126,10 +134,20 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     movesMemo.set(key, m);
     return m;
   };
+  /** A shape (lib/components.js) as a Rapier collider, placed in its link's frame. @param {any} s */
+  const colliderDesc = s => {
+    let q = qeuler(s.rot), cd;
+    if (s.kind === 'box') cd = R.ColliderDesc.cuboid(s.size[0] / 2 * SK, s.size[1] / 2 * SK, s.size[2] / 2 * SK);
+    else if (s.kind === 'cyl') { cd = R.ColliderDesc.cylinder(s.h / 2 * SK, s.r * SK); q = qmul(q, Y_TO_Z); }
+    else cd = R.ColliderDesc.ball(s.r * SK);
+    return cd.setTranslation(s.at[0] * SK, s.at[1] * SK, s.at[2] * SK).setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
+  };
+  const roles = partRoles(scene);
   const W0 = worldPoses(scene, dofOf());
   /** @type {Array<{id: string, link: string, body: any, kinematic: boolean}>} */
   const bodies = [];
   for (const c of order) {
+    if (roles.has(c.id)) continue;                          // loose parts are not machine bodies
     const d = defs.get(c.id);
     for (const l of d.links) {
       const shapes = d.shapes.filter((/** @type {any} */ s) => s.link === l.name && s.collide !== false);
@@ -139,18 +157,43 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         .setTranslation(P.p[0] * SK, P.p[1] * SK, P.p[2] * SK)
         .setRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
       const body = world.createRigidBody(desc);
-      for (const s of shapes) {
-        let q = qeuler(s.rot), cd;
-        if (s.kind === 'box') cd = R.ColliderDesc.cuboid(s.size[0] / 2 * SK, s.size[1] / 2 * SK, s.size[2] / 2 * SK);
-        else if (s.kind === 'cyl') { cd = R.ColliderDesc.cylinder(s.h / 2 * SK, s.r * SK); q = qmul(q, Y_TO_Z); }
-        else cd = R.ColliderDesc.ball(s.r * SK);
-        cd.setTranslation(s.at[0] * SK, s.at[1] * SK, s.at[2] * SK).setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
-        world.createCollider(cd, body);
-      }
+      for (const s of shapes) world.createCollider(colliderDesc(s).setCollisionGroups(G_MACHINE), body);
       bodies.push({ id: c.id, link: l.name, body, kinematic });
     }
   }
   const kin = bodies.filter(b => b.kinematic);
+
+  // ------------------------------------------------------------ loose parts
+  // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
+  // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
+  // shapes and physics params the part has.
+  /** @type {Map<string, {uid: string, tpl: string, body: any}>} */
+  const parts = new Map();
+  /** @param {string} tpl @param {import('../lib/math.js').Pose} P @param {string} uid */
+  function spawnPart(tpl, P, uid) {
+    const d = defs.get(tpl), pp = d.p;
+    const body = world.createRigidBody(R.RigidBodyDesc.dynamic().setCanSleep(false).setCcdEnabled(true)
+      .setTranslation(P.p[0] * SK, P.p[1] * SK, P.p[2] * SK).setRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] }));
+    for (const s of d.shapes) {
+      if (s.collide === false) continue;
+      world.createCollider(colliderDesc(s).setDensity(DENSITY[pp.material] ?? 1000).setFriction(pp.friction)
+        .setRestitution(pp.restitution).setCollisionGroups(G_PART), body);
+    }
+    parts.set(uid, { uid, tpl, body });
+    rec({ t: plant.t, k: 'part', uid, ev: 'spawn' });
+  }
+  /** @param {string} uid @param {'remove'|'lost'|'reset'} ev */
+  function removePart(uid, ev) {
+    const pt = parts.get(uid);
+    if (!pt) return;
+    world.removeRigidBody(pt.body);
+    parts.delete(uid);
+    rec({ t: plant.t, k: 'part', uid, ev });
+  }
+  function spawnSceneParts() {
+    const W = worldPoses(scene, dofOf());
+    for (const id of roles.keys()) spawnPart(id, W[id][defs.get(id).root], id);
+  }
 
   // ------------------------------------------------------------ IO image
   /** What the PLC sees for `in` tags, and what the plant uses for `out` tags. */
@@ -172,7 +215,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const warned = new Set();
 
   const plant = {
-    scene, world, bodies, io, dtMs, inTags, outTags,
+    scene, world, bodies, parts, io, dtMs, inTags, outTags,
     t: 0, mode: 'stop', overruns: 0, stepUs: 0, events,
     /** @type {Array<(msg: string, t: number) => void>} */
     warnListeners: [],
@@ -201,6 +244,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     Object.assign(ctlIo, io);
   }
   initIo();
+  spawnSceneParts();
 
   /** @param {string} tag @param {any} v @param {number} [tp] PLC-stamped sim time */
   function applyOut(tag, v, tp) {
@@ -262,6 +306,13 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     // 5. physics
     world.step();
+    // A part with a NaN pose, or below the floor, is gone: say so instead of streaming garbage.
+    for (const pt of parts.values()) {
+      const t = pt.body.translation();
+      if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z) && t.z >= LOST_Z * SK) continue;
+      warn('part lost ' + pt.uid + ' at ' + [t.x, t.y, t.z].map(v => Math.round(v / SK)).join(', ') + ' mm');
+      removePart(pt.uid, 'lost');
+    }
     // 7. sensors -> PLC image
     for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]);
   }
@@ -332,6 +383,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     forced.clear();
     stretched.clear();
     initIo();
+    for (const uid of [...parts.keys()]) removePart(uid, 'reset');
+    spawnSceneParts();
     driverUp();
     rec({ t: plant.t, k: 'mark', label: 'reset' });
   }
@@ -370,12 +423,19 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
 
   function snapshot() {
-    return { t: plant.t, dof: plant.dof, io: { ...io }, forced: Object.fromEntries(forced), parts: [] };
+    /** @type {Record<string, number[]>} */
+    const ps = {}, tpl = /** @type {Record<string, string>} */ ({});
+    for (const pt of parts.values()) {
+      const t = pt.body.translation(), q = pt.body.rotation();
+      ps[pt.uid] = [t.x / SK, t.y / SK, t.z / SK, q.x, q.y, q.z, q.w];
+      tpl[pt.uid] = pt.tpl;
+    }
+    return { t: plant.t, dof: plant.dof, io: { ...io }, forced: Object.fromEntries(forced), parts: ps, ptpl: tpl };
   }
   function status() {
     return {
       io: driver ? driver.status() : { driver: 'internal', ok: true, msg: 'INTERNAL CONTROLLER - not a PLC', heartbeat: null },
-      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs },
+      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, parts: parts.size },
     };
   }
   async function close() {

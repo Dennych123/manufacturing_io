@@ -69,6 +69,35 @@ chk('carriage body lines up with its link (mid-move)', k.dof.slide1 > 10 && err(
 chk('rod body rides the carriage', rod.kinematic && err(rod) < 0.01, 'err ' + err(rod).toExponential(1));
 chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic);
 
+// ---------------------------------------------------------------- loose parts (P3)
+{
+  const sc = clone(scene);
+  sc.components.push({ id: 'drop1', type: 'workpiece', parent: 'base', socket: 'top', at: [300, 150, 100], params: { dynamic: true, material: 'alu' } });
+  sc.components.push({ id: 'lost1', type: 'workpiece', at: [3000, 0, 500], params: { dynamic: true } });
+  const pl = await createPlant(sc, {});
+  chk('a dynamic workpiece is a loose part, not a machine body', pl.parts.has('drop1') && !pl.bodies.some(b => b.id === 'drop1'));
+  chk('the static press part stays a machine body', pl.bodies.some(b => b.id === 'part1') && !pl.parts.has('part1'));
+  const b = pl.parts.get('drop1').body;
+  chk('loose parts never sleep and use CCD', b.isSleeping() === false && b.isCcdEnabled());
+  pl.run(1500);
+  const z = b.translation().z / SK;
+  chk('dropped 100 mm onto the frame top, it rests there (z 800 mm)', Math.abs(z - 800) < 0.5, z.toFixed(3) + ' mm');
+  chk('a part that falls off the machine is removed and reported', !pl.parts.has('lost1') && pl.events.some(e => e.k === 'warn' && /part lost lost1/.test(e.msg))
+    && pl.events.some(e => e.k === 'part' && e.uid === 'lost1' && e.ev === 'lost'));
+  const snap = pl.snapshot();
+  chk('snapshot streams loose-part transforms in mm with their template', Math.abs(snap.parts.drop1[2] - 800) < 0.5 && snap.ptpl.drop1 === 'drop1' && !('part1' in snap.parts));
+  const rest = { ...b.translation() };                      // `b` is freed by reset(): read it first
+  pl.reset();
+  // Rapier stores f32: 0.9 m reads back as 899.99997 mm.
+  chk('reset puts every scene part back at its start pose', pl.parts.has('lost1') && Math.abs(pl.parts.get('drop1').body.translation().z / SK - 900) < 0.01);
+  const pl3 = await createPlant(sc, {}); pl3.run(1500);
+  const a = pl3.parts.get('drop1').body.translation();
+  chk('two runs give bit-identical part poses', a.x === rest.x && a.y === rest.y && a.z === rest.z);
+  const bal = ev => pl3.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('part balance: spawned = removed + lost + inside', bal('spawn') === bal('remove') + bal('lost') + bal('reset') + pl3.parts.size, [bal('spawn'), bal('lost'), pl3.parts.size].join(' '));
+  await pl.close(); await pl3.close();
+}
+
 // A blip shorter than minPulseMs is held for minPulseMs, plus a warning
 const MIN = scene.io.minPulseMs, BLIP = MIN - 8;
 const b = await createPlant(scene, {});

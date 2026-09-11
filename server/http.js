@@ -120,12 +120,16 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
   const broadcast = (ev, data) => { const s = 'event: ' + ev + '\ndata: ' + JSON.stringify(data) + '\n\n'; for (const c of clients) c.write(s); };
   const sendTo = (/** @type {http.ServerResponse} */ c, /** @type {string} */ ev, /** @type {any} */ data) => c.write('event: ' + ev + '\ndata: ' + JSON.stringify(data) + '\n\n');
   const sceneMsg = () => ({ v: 1, scene });
+  // Free parts stream as transforms (mm, then quaternion): they are Rapier-dynamic, so no DOF
+  // describes them. Machine links still stream DOF values only.
+  const partPose = (/** @type {number[]} */ a) => a.map((v, i) => (i < 3 ? Math.round(v * 100) / 100 : Math.round(v * 1e5) / 1e5));
   const full = () => {
     const s = plant.snapshot();
-    return { t: s.t, full: true, dof: Object.fromEntries(Object.entries(s.dof).map(([k, v]) => [k, round2(v)])), io: s.io, forced: s.forced, parts: s.parts };
+    const parts = Object.fromEntries(Object.entries(s.parts).map(([k, v]) => [k, partPose(v)]));
+    return { t: s.t, full: true, dof: Object.fromEntries(Object.entries(s.dof).map(([k, v]) => [k, round2(v)])), io: s.io, forced: s.forced, parts, ptpl: s.ptpl };
   };
   /** @type {Record<string, any>} */
-  let lastDof = {}, lastIo = {}, lastForced = '', lastFull = 0;
+  let lastDof = {}, lastIo = {}, lastForced = '', lastFull = 0, lastParts = {};
   const frame = setInterval(() => {
     if (!clients.size) return;
     const now = Date.now();
@@ -133,6 +137,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       lastFull = now;
       const f = full();
       lastDof = { ...f.dof }; lastIo = { ...f.io }; lastForced = JSON.stringify(f.forced);
+      lastParts = Object.fromEntries(Object.entries(f.parts).map(([k, v]) => [k, v.join()]));
       broadcast('state', f);
       return;
     }
@@ -144,6 +149,14 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
     for (const [k, v] of Object.entries(s.io)) if (lastIo[k] !== v) m.io[k] = lastIo[k] = v;
     const f = JSON.stringify(s.forced);
     if (f !== lastForced) { m.forced = s.forced; lastForced = f; }
+    for (const [uid, a] of Object.entries(s.parts)) {
+      const r = partPose(a), key = r.join();
+      if (lastParts[uid] === key) continue;
+      if (lastParts[uid] === undefined) (m.ptpl ??= {})[uid] = s.ptpl[uid];
+      (m.parts ??= {})[uid] = r;
+      lastParts[uid] = key;
+    }
+    for (const uid of Object.keys(lastParts)) if (!(uid in s.parts)) { (m.pgone ??= []).push(uid); delete lastParts[uid]; }
     broadcast('state', m);
   }, FRAME_MS);
   const status = setInterval(() => clients.size && broadcast('status', plant.status()), STATUS_MS);

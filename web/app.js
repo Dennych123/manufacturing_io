@@ -4,7 +4,7 @@
 // from the component types' shapes in lib/components.js.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { compile, worldPoses, bindings } from '/lib/scene.js';
+import { compile, worldPoses, bindings, partRoles } from '/lib/scene.js';
 import { TYPES } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
 import { createEditor } from '/web/editor.js';
@@ -78,21 +78,30 @@ function geometry(s) {
   return g;
 }
 
+/** A shape from lib/components.js as a mesh in its link's frame. */
+function shapeMesh(s, own) {
+  const mesh = new THREE.Mesh(geometry(s), material(s, own));
+  mesh.position.set(s.at[0], s.at[1], s.at[2]);
+  if (s.rot) mesh.quaternion.fromArray(qeuler(s.rot));      // the rot rule lives in lib/math.js only
+  mesh.castShadow = mesh.receiveShadow = true;
+  return mesh;
+}
+
 // ------------------------------------------------------------------ model
 let model = null;          // { scene, links: [{id, link, g}], glows: [...], pick: [meshes] }
+let editorRef = null;      // set once the editor exists; in edit mode loose parts show at their start pose
 function build(sc) {
   if (model) for (const l of model.links) { scene3.remove(l.g); l.g.traverse(o => o.geometry?.dispose()); }
   const { order, defs } = compile(sc);
+  const loose = editorRef?.active ? new Map() : partRoles(sc);   // streamed, not drawn as machine
   const links = [], glows = [], pick = [], meshes = [], byKey = new Map();
   for (const c of order) {
+    if (loose.has(c.id)) continue;
     const d = defs.get(c.id);
     for (const l of d.links) { const g = new THREE.Group(); scene3.add(g); links.push({ id: c.id, link: l.name, g }); byKey.set(c.id + '/' + l.name, g); }
     for (const s of d.shapes) {
       const tag = s.glow && c.io?.[s.glow];
-      const mesh = new THREE.Mesh(geometry(s), material(s, !!tag));
-      mesh.position.set(s.at[0], s.at[1], s.at[2]);
-      if (s.rot) mesh.quaternion.fromArray(qeuler(s.rot));    // the rot rule lives in lib/math.js only
-      mesh.castShadow = mesh.receiveShadow = true;
+      const mesh = shapeMesh(s, !!tag);
       mesh.userData.id = c.id;
       byKey.get(c.id + '/' + s.link).add(mesh);
       if (tag) glows.push({ mesh, tag, color: new THREE.Color(MAT[s.mat]?.glow || s.color || '#ffffff'), on: null });
@@ -101,8 +110,40 @@ function build(sc) {
     }
   }
   model = { scene: sc, links, glows, pick, meshes };
+  for (const uid of [...partObjs.keys()]) dropPart(uid);          // templates may have changed
+  partsGroup.visible = !editorRef?.active;
   place(curDof);
   fitLight();
+}
+
+// ------------------------------------------------------------------ loose parts (streamed transforms)
+const partsGroup = new THREE.Group();
+scene3.add(partsGroup);
+const partObjs = new Map();                                     // uid -> Group of the template's meshes
+function dropPart(uid) {
+  const g = partObjs.get(uid);
+  if (!g) return;
+  partsGroup.remove(g);
+  g.traverse(o => o.geometry?.dispose());
+  partObjs.delete(uid);
+}
+function placeParts(ps) {
+  for (const uid of partObjs.keys()) if (!(uid in ps)) dropPart(uid);
+  if (!model) return;
+  const { defs } = compile(model.scene);
+  for (const [uid, a] of Object.entries(ps)) {
+    let g = partObjs.get(uid);
+    if (!g) {
+      const d = defs.get(partTpl[uid]);
+      if (!d) continue;
+      g = new THREE.Group();
+      for (const s of d.shapes) { const m = shapeMesh(s, false); m.userData.part = uid; g.add(m); }
+      partsGroup.add(g);
+      partObjs.set(uid, g);
+    }
+    g.position.set(a[0], a[1], a[2]);
+    g.quaternion.set(a[3], a[4], a[5], a[6]);
+  }
 }
 
 function place(dof) {
@@ -131,14 +172,22 @@ function fitLight() {
 // ------------------------------------------------------------------ frames and interpolation
 const frames = [];
 let curDof = {}, curIo = {}, forced = {}, offset = null, ioDirty = false;
+let curParts = {}, partTpl = {};
 
 function onState(m) {
   if (frames.length && m.t < frames[frames.length - 1].t) frames.length = 0;   // server restarted
-  if (m.full) { curDof = { ...m.dof }; curIo = { ...m.io }; } else { Object.assign(curDof, m.dof); Object.assign(curIo, m.io); }
+  if (m.full) {
+    curDof = { ...m.dof }; curIo = { ...m.io }; curParts = { ...m.parts }; partTpl = { ...m.ptpl };
+  } else {
+    Object.assign(curDof, m.dof); Object.assign(curIo, m.io);
+    if (m.parts) Object.assign(curParts, m.parts);
+    if (m.ptpl) Object.assign(partTpl, m.ptpl);
+    for (const uid of m.pgone || []) { delete curParts[uid]; delete partTpl[uid]; }
+  }
   if (m.forced) forced = m.forced;
   const est = m.t - performance.now();
   offset = offset == null || Math.abs(est - offset) > 500 ? est : offset + 0.05 * (est - offset);
-  frames.push({ t: m.t, dof: { ...curDof } });
+  frames.push({ t: m.t, dof: { ...curDof }, parts: { ...curParts } });
   if (frames.length > 90) frames.splice(0, frames.length - 90);
   ioDirty = true;
 }
@@ -158,9 +207,36 @@ function dofAt(t) {
   return frames[frames.length - 1].dof;
 }
 
+/** Loose-part poses at sim time t: position lerp, quaternion nlerp. A part absent from either frame is taken as is. */
+function partsAt(t) {
+  if (!frames.length) return curParts;
+  if (t <= frames[0].t) return frames[0].parts;
+  for (let i = frames.length - 1; i > 0; i--) {
+    const a = frames[i - 1], b = frames[i];
+    if (a.t <= t && t <= b.t) {
+      const u = b.t === a.t ? 1 : (t - a.t) / (b.t - a.t), o = {};
+      for (const k in b.parts) {
+        const p = a.parts[k], q = b.parts[k];
+        if (!p) { o[k] = q; continue; }
+        const s = p[3] * q[3] + p[4] * q[4] + p[5] * q[5] + p[6] * q[6] < 0 ? -1 : 1;   // shortest arc
+        const r = p.map((v, j) => v + ((j < 3 ? q[j] : s * q[j]) - v) * u);
+        const n = Math.hypot(r[3], r[4], r[5], r[6]) || 1;
+        for (let j = 3; j < 7; j++) r[j] /= n;
+        o[k] = r;
+      }
+      return o;
+    }
+  }
+  return frames[frames.length - 1].parts;
+}
+
 function loop() {
   requestAnimationFrame(loop);
-  if (model && offset != null) place(dofAt(performance.now() + offset - RENDER_DELAY_MS));
+  if (model && offset != null) {
+    const t = performance.now() + offset - RENDER_DELAY_MS;
+    place(dofAt(t));
+    if (!editorRef?.active) placeParts(partsAt(t));
+  }
   controls.update();
   renderer.render(scene3, camera);
 }
@@ -288,6 +364,7 @@ const editor = createEditor({
   pick: e => (model ? pickAt(e, model.meshes) : null),
   sceneName: () => serverScene?.name, serverScene: () => serverScene,
 });
+editorRef = editor;
 
 // ------------------------------------------------------------------ stream
 const es = new EventSource('/api/stream');
