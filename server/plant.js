@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { compile, worldPoses, tags as sceneTags, validate, stringify, partRoles } from '../lib/scene.js';
-import { qmul, qaxis, qeuler } from '../lib/math.js';
+import { qmul, qaxis, qeuler, qrot, pose, compose, invert, apply, rng, hash32 } from '../lib/math.js';
 import { DENSITY } from '../lib/components.js';
 
 // Collision groups, (memberships << 16) | filter. Machine and parts collide with everything;
@@ -106,6 +106,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
              outs: bound.filter(b => b[2] === 'out'), ins: bound.filter(b => b[2] === 'in') };
   });
   const byId = new Map(comps.map(r => [r.id, r]));
+  const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null) }));
+  const removers = comps.filter(r => r.t.flow === 'remover');
   /** Handshake replies the PLC provably saw (schema `hold: false`): no minPulseMs hold. */
   const noHold = new Set(order.flatMap((/** @type {any} */ c) => Object.entries(c.io || {})
     .filter(([key]) => defs.get(c.id).io[key].hold === false).map(([, tag]) => tag)));
@@ -146,8 +148,10 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const W0 = worldPoses(scene, dofOf());
   /** @type {Array<{id: string, link: string, body: any, kinematic: boolean}>} */
   const bodies = [];
+  /** Belt surfaces: friction 0 (combine Min), so beltDv is the belt's only grip. @type {Array<{id: string, link: string, col: any}>} */
+  const belts = [];
   for (const c of order) {
-    if (roles.has(c.id)) continue;                          // loose parts are not machine bodies
+    if (roles.has(c.id)) continue;                          // loose parts and templates are not machine bodies
     const d = defs.get(c.id);
     for (const l of d.links) {
       const shapes = d.shapes.filter((/** @type {any} */ s) => s.link === l.name && s.collide !== false);
@@ -157,7 +161,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         .setTranslation(P.p[0] * SK, P.p[1] * SK, P.p[2] * SK)
         .setRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
       const body = world.createRigidBody(desc);
-      for (const s of shapes) world.createCollider(colliderDesc(s).setCollisionGroups(G_MACHINE), body);
+      for (const s of shapes) {
+        const cd = colliderDesc(s).setCollisionGroups(G_MACHINE);
+        if (s.belt) cd.setFriction(0).setFrictionCombineRule(R.CoefficientCombineRule.Min);
+        const col = world.createCollider(cd, body);
+        if (s.belt) belts.push({ id: c.id, link: l.name, col });
+      }
       bodies.push({ id: c.id, link: l.name, body, kinematic });
     }
   }
@@ -167,20 +176,40 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[]}>} */
   const parts = new Map();
-  /** @param {string} tpl @param {import('../lib/math.js').Pose} P @param {string} uid */
-  function spawnPart(tpl, P, uid) {
+  /** @param {string} tpl @param {import('../lib/math.js').Pose} P @param {string} uid @param {string} [src] */
+  function spawnPart(tpl, P, uid, src) {
     const d = defs.get(tpl), pp = d.p;
     const body = world.createRigidBody(R.RigidBodyDesc.dynamic().setCanSleep(false).setCcdEnabled(true)
       .setTranslation(P.p[0] * SK, P.p[1] * SK, P.p[2] * SK).setRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] }));
+    const cols = [];
     for (const s of d.shapes) {
       if (s.collide === false) continue;
-      world.createCollider(colliderDesc(s).setDensity(DENSITY[pp.material] ?? 1000).setFriction(pp.friction)
-        .setRestitution(pp.restitution).setCollisionGroups(G_PART), body);
+      cols.push(world.createCollider(colliderDesc(s).setDensity(DENSITY[pp.material] ?? 1000).setFriction(pp.friction)
+        .setRestitution(pp.restitution).setCollisionGroups(G_PART), body));
     }
-    parts.set(uid, { uid, tpl, body });
-    rec({ t: plant.t, k: 'part', uid, ev: 'spawn' });
+    // ctr: the first solid shape's centre in the part's frame. The origin sits on the part's
+    // underside, which rests a hair INSIDE the belt (contact penetration), so zone tests use this.
+    parts.set(uid, { uid, tpl, body, cols, ctr: d.shapes.find((/** @type {any} */ s) => s.collide !== false)?.at ?? [0, 0, 0] });
+    rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
+  }
+  /** World centre of a part in mm. @param {{body: any, ctr: number[]}} pt */
+  function partCentre(pt) {
+    const t = pt.body.translation(), q = pt.body.rotation();
+    return apply({ p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] }, pt.ctr);
+  }
+  /** True when no part overlaps where a new copy of `tpl` would appear. @param {any} d @param {import('../lib/math.js').Pose} P */
+  function spawnClear(d, P) {
+    for (const s of d.shapes) {
+      if (s.collide === false) continue;
+      const c = apply(P, s.at), r = s.kind === 'box' ? Math.max(...s.size) / 2 : s.kind === 'cyl' ? Math.max(s.r, s.h / 2) : s.r;
+      let hit = false;
+      world.intersectionsWithShape({ x: c[0] * SK, y: c[1] * SK, z: c[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r * SK),
+        () => { hit = true; return false; }, undefined, PART_RAYS);
+      if (hit) return false;
+    }
+    return true;
   }
   /** @param {string} uid @param {'remove'|'lost'|'reset'} ev */
   function removePart(uid, ev) {
@@ -192,7 +221,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
   function spawnSceneParts() {
     const W = worldPoses(scene, dofOf());
-    for (const id of roles.keys()) spawnPart(id, W[id][defs.get(id).root], id);
+    for (const [id, role] of roles) if (role === 'free') spawnPart(id, W[id][defs.get(id).root], id);
   }
 
   // ------------------------------------------------------------ IO image
@@ -304,6 +333,19 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       b.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
       b.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
     }
+    // 4. conveyors: friction-clamped slip toward the belt velocity (beltDv, spike A0). A stopped
+    // belt brakes parts the same way, as a real one does.
+    for (const bl of belts) {
+      const r = byId.get(bl.id), F = W[bl.id][bl.link], vb = r.s.v * SK;
+      const u = qrot(F.q, [1, 0, 0]), n = qrot(F.q, [0, 0, 1]), vbelt = [u[0] * vb, u[1] * vb, u[2] * vb];
+      for (const pt of parts.values()) {
+        let touch = false;
+        for (const pc of pt.cols) world.contactPair(bl.col, pc, (/** @type {any} */ m) => { if (m.numContacts() > 0) touch = true; });
+        if (!touch) continue;
+        const v = pt.body.linvel(), dv = beltDv([v.x, v.y, v.z], vbelt, n, r.p.mu, dt), m = pt.body.mass();
+        pt.body.applyImpulse({ x: m * dv[0], y: m * dv[1], z: m * dv[2] }, true);
+      }
+    }
     // 5. physics
     world.step();
     // A part with a NaN pose, or below the floor, is gone: say so instead of streaming garbage.
@@ -312,6 +354,27 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z) && t.z >= LOST_Z * SK) continue;
       warn('part lost ' + pt.uid + ' at ' + [t.x, t.y, t.z].map(v => Math.round(v / SK)).join(', ') + ' mm');
       removePart(pt.uid, 'lost');
+    }
+    // 6a. material flow: emitters spawn at their frame once the spot is clear; removers take
+    // every part whose centre is inside their box.
+    for (const em of emitters) {
+      const r = em.r;
+      if (r.s.req <= r.s.done) continue;
+      if (!em.next) {
+        const j = r.p.jitterMm;
+        em.next = compose(W[r.id][defs.get(r.id).root], pose(j > 0 ? [(em.rand() * 2 - 1) * j, (em.rand() * 2 - 1) * j, 0] : undefined));
+      }
+      if (!spawnClear(defs.get(r.p.template), em.next)) continue;
+      r.s.done++;
+      spawnPart(r.p.template, em.next, r.id + '.' + r.s.done, r.id);
+      em.next = null;
+    }
+    for (const r of removers) {
+      const F = invert(W[r.id][defs.get(r.id).root]), [sx, sy, sz] = r.p.size;
+      for (const pt of [...parts.values()]) {
+        const l = apply(F, partCentre(pt));
+        if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz) { removePart(pt.uid, 'remove'); r.s.n++; }
+      }
     }
     // 7. sensors -> PLC image
     for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]);

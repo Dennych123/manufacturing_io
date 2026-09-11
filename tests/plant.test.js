@@ -98,6 +98,43 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await pl.close(); await pl3.close();
 }
 
+// ---------------------------------------------------------------- material flow: emitter -> belt -> remover
+{
+  const flow = (run = true) => ({
+    format: 'mio-scene/1', name: 'flowtest',
+    components: [
+      { id: 'cv1', type: 'conveyor', params: { length: 1500, speed: 300 }, io: { run: 'CV1_RUN' } },
+      { id: 'wp', type: 'workpiece', at: [0, 1000, 0], params: { material: 'alu' } },
+      { id: 'em1', type: 'emitter', parent: 'cv1', socket: 'start', at: [100, 0, 60], params: { template: 'wp', intervalMs: 1500, max: 3 }, io: { count: 'EM1_CNT' } },
+      { id: 'rm1', type: 'remover', parent: 'cv1', socket: 'end', at: [-75, 0, 0], io: { count: 'RM1_CNT' } },
+    ],
+  });
+  const { validate: v2 } = await import('../lib/scene.js');
+  const bad = flow(); bad.components[2].params.template = 'cv1';
+  chk('an emitter template must name a workpiece', v2(flow()).length === 0 && v2(bad).some(e => /template must name a workpiece/.test(e)), v2(flow()).join('; '));
+  const go = async () => { const pl = await createPlant(flow(), {}); pl.force('CV1_RUN', true); pl.run(10000); return pl; };
+  const pl = await go();
+  const ev = pl.events.filter(e => e.k === 'part');
+  const spawns = ev.filter(e => e.ev === 'spawn'), removes = ev.filter(e => e.ev === 'remove');
+  chk('the template is neither a machine body nor a part', !pl.bodies.some(b => b.id === 'wp') && !spawns.some(e => e.uid === 'wp'));
+  // The first part leaves at the first step, then one every 1500 ms of sim time.
+  chk('the emitter spawns max 3 parts, every 1.5 s', spawns.length === 3 && spawns.map(e => e.t).join() === '2,1500,3000', spawns.map(e => e.uid + '@' + e.t).join(' '));
+  // spawn at x -650 (60 mm above the belt), removed once the centre passes x 600: 1250 mm at
+  // 300 mm/s, plus the fall and the mu*g spin-up.
+  const trip = removes[0] && removes[0].t - spawns[0].t;
+  chk('the belt carries a part 1250 mm to the remover in 1250/300 s + fall + spin-up', trip > 4167 && trip < 4500, trip + ' ms');
+  chk('every part reaches the remover; counters match', removes.length === 3 && pl.io.RM1_CNT === 3 && pl.io.EM1_CNT === 3 && pl.parts.size === 0, pl.io.RM1_CNT + ' / ' + pl.io.EM1_CNT);
+  chk('no warnings on the way', !pl.events.some(e => e.k === 'warn'), pl.events.filter(e => e.k === 'warn').map(e => e.msg).join(' | '));
+  chk('the stripes DOF is the belt travel (300 mm/s)', Math.abs(pl.dof.cv1 - 300 * 9.95) < 40, pl.dof.cv1.toFixed(0) + ' mm');
+  const pl2 = await go();
+  chk('two runs give identical event logs (parts included)', JSON.stringify(pl2.events) === JSON.stringify(pl.events), pl.events.length + ' events');
+  const still = await createPlant(flow(), {});
+  still.run(3000);
+  const x = still.parts.get('em1.1').body.translation().x / SK;
+  chk('a stopped belt holds the part where it landed', Math.abs(x - (-650)) < 2, x.toFixed(2) + ' mm');
+  await pl.close(); await pl2.close(); await still.close();
+}
+
 // A blip shorter than minPulseMs is held for minPulseMs, plus a warning
 const MIN = scene.io.minPulseMs, BLIP = MIN - 8;
 const b = await createPlant(scene, {});
