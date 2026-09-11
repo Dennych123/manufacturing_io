@@ -37,8 +37,13 @@ fall, ride belts, queue against stoppers and get pushed. The kit now has:
 - a photo-eye and a proximity sensor;
 - Stopper/Pusher/Lifter cylinder presets.
 
-The first material-flow scene, `a-to-b`, runs with its PLC program: run
-`node server/main.js --scene a-to-b --internal`.
+Two material-flow scenes run with their PLC programs. Both passed a 30-minute soak: parts
+balance, none lost.
+- `a-to-b`: loader, belt, end sensor, unloader.
+- `stopper-pusher`: a stopper holds each part at a pusher. Odd parts are pushed down a reject
+  chute into a bin.
+
+Run `node server/main.js --scene stopper-pusher --internal`.
 
 ```bash
 npm install

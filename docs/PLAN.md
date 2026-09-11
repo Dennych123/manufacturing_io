@@ -571,16 +571,26 @@ Each phase ends runnable, with a written exit criterion.
   - photo-eye/proximity;
   - cylinder `head` plus the Stopper/Pusher/Lifter presets;
   - the `ref` param type;
-  - the scene **a-to-b** with `.st` and `.ctl.js`.
+  - the scenes **a-to-b** and **stopper-pusher**, each with `.st` and `.ctl.js`;
+  - the contact refresh for kinematic links that come to rest.
+
+  Soak, 30 min of sim time with the internal controller:
+
+  | scene | cycles | parts in = out + inside | lost / NaN / warnings | worst step |
+  |---|---|---|---|---|
+  | a-to-b | 271 | 272 = 271 + 1 | 0 / 0 / 0 | 69 µs |
+  | stopper-pusher | 718 | 721 = 718 + 3 | 0 / 0 / 0 | 257 µs |
+
+  The budget is 1000 µs (50 % of dt).
 
   Open:
   - holding (nest, vacuum, gripper);
   - pallets;
-  - the other five scenes;
-  - the live PLC run of a-to-b.
+  - the other four scenes;
+  - the live PLC runs.
 
-  The second scene will be stopper + pusher + chute instead of a two-stopper escapement. Parts
-  queue touching, and a pin coming down between touching parts lands on a part.
+  stopper-pusher replaced the planned two-stopper escapement. Parts queue touching, so a stopper
+  coming down between them lands on a part.
 - Dynamic parts with CCD, conveyor (spike first), emitter/remover, holding (gripper/vacuum/nest),
   part sensors, pallets.
 - The six P3 scenes, each with a `.ctl.js`; the first two also get `.st` programs.
