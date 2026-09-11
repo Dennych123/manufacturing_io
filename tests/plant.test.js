@@ -128,11 +128,54 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('the stripes DOF is the belt travel (300 mm/s)', Math.abs(pl.dof.cv1 - 300 * 9.95) < 40, pl.dof.cv1.toFixed(0) + ' mm');
   const pl2 = await go();
   chk('two runs give identical event logs (parts included)', JSON.stringify(pl2.events) === JSON.stringify(pl.events), pl.events.length + ' events');
+  const yaw = await createPlant(flow(), {}); yaw.force('CV1_RUN', true); yaw.run(4000);
+  const yq = yaw.parts.get('em1.1').body.rotation(), yawDeg = 2 * Math.atan2(yq.z, yq.w) * 180 / Math.PI;
+  chk('the belt\'s friction torque keeps a riding part square (|yaw| < 0.5° after 4 s)', Math.abs(yawDeg) < 0.5, yawDeg.toFixed(3) + '°');
+  await yaw.close();
   const still = await createPlant(flow(), {});
   still.run(3000);
   const x = still.parts.get('em1.1').body.translation().x / SK;
   chk('a stopped belt holds the part where it landed', Math.abs(x - (-650)) < 2, x.toFixed(2) + ' mm');
   await pl.close(); await pl2.close(); await still.close();
+
+  // ---------------------------------------------------------------- part sensors
+  // A photo-eye 200 mm before the belt end, 15 mm above the belt, looking across it (+Y).
+  const withEye = (params = {}) => {
+    const sc = flow();
+    sc.components.push({ id: 'pe1', type: 'photoEye', parent: 'cv1', socket: 'end', at: [-200, -140, 15], rot: [0, 0, 90], params: { range: 300, ...params }, io: { out: 'PE1' } });
+    return sc;
+  };
+  const eye = async params => { const q = await createPlant(withEye(params), {}); q.force('CV1_RUN', true); q.run(9000); return q; };
+  const pe = await eye();
+  const on = edges(pe, 'PE1', true), off = edges(pe, 'PE1', false);
+  // beam at x 550: the 60 mm part's front reaches it when its centre is at 520 (1170 mm from the spawn)
+  chk('the photo-eye sees each part once, when its front reaches the beam', on.length === 3 && on[0] > 3900 && on[0] < 4300, on.join(' ') + ' ms');
+  const dur = off[0] - on[0];
+  chk('it stays on while the 60 mm part crosses at 300 mm/s (200 ms)', Math.abs(dur - 200) <= 8, dur + ' ms');
+  chk('the beam sees parts only: the belt guides and frame never trip it', !edges(pe, 'PE1', true).some(t => t < 3900));
+  const pd = await eye({ offDelayMs: 50 });
+  const d2 = edges(pd, 'PE1', false)[0] - edges(pd, 'PE1', true)[0];
+  chk('offDelayMs 50 holds the output 50 ms longer', Math.abs(d2 - 250) <= 8, d2 + ' ms');
+  const pn = await eye({ logic: 'NC' });
+  chk('NC: on while clear, off while a part is in the beam', pn.io.PE1 === true && edges(pn, 'PE1', false).length === 3);
+  await pe.close(); await pd.close(); await pn.close();
+
+  // Proximity: a steel and a plastic part at rest, each 4 mm in front of a sensor face.
+  const prox = metalOnly => ({
+    format: 'mio-scene/1', name: 'proxtest',
+    components: [
+      { id: 'base', type: 'frame', params: { size: [600, 400, 800] } },
+      { id: 'steel', type: 'workpiece', parent: 'base', socket: 'top', at: [-100, 0, 0], params: { dynamic: true, material: 'steel' } },
+      { id: 'plastic', type: 'workpiece', parent: 'base', socket: 'top', at: [100, 0, 0], params: { dynamic: true, material: 'plastic' } },
+      { id: 'px1', type: 'proximity', parent: 'base', socket: 'top', at: [-134, 0, 15], params: { metalOnly }, io: { out: 'PX_STEEL' } },
+      { id: 'px2', type: 'proximity', parent: 'base', socket: 'top', at: [66, 0, 15], params: { metalOnly }, io: { out: 'PX_PLASTIC' } },
+    ],
+  });
+  const px = await createPlant(prox(true), {}); px.run(500);
+  chk('inductive (metalOnly) proximity sees steel, not plastic', px.io.PX_STEEL === true && px.io.PX_PLASTIC === false);
+  const pc = await createPlant(prox(false), {}); pc.run(500);
+  chk('capacitive (metalOnly off) proximity sees both', pc.io.PX_STEEL === true && pc.io.PX_PLASTIC === true);
+  await px.close(); await pc.close();
 }
 
 // A blip shorter than minPulseMs is held for minPulseMs, plus a warning

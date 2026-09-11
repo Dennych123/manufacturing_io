@@ -48,6 +48,18 @@ export function beltDv(v, vb, n, mu, dt, g = 9.81) {
   return m <= lim ? d : d.map(x => x * lim / m);
 }
 
+/**
+ * The belt's friction torque: a part's spin about the belt normal is pulled toward the belt's
+ * (none) by at most mu*g*dt/r, r being the part's effective friction radius (m). Without it a
+ * few-millidegree landing spin persists forever on a frictionless belt surface (measured:
+ * -2.3°/s, 9° of yaw after 4 s, which widens a photo-eye pulse by 9%). rad/s.
+ * @param {number} wn spin about the normal @param {number} mu @param {number} dt @param {number} r
+ */
+export function beltSpin(wn, mu, dt, r, g = 9.81) {
+  const lim = mu * g * dt / Math.max(r, 1e-3);
+  return Math.max(-lim, Math.min(lim, -wn));
+}
+
 /** @type {any} */
 let RAPIER = null;
 export async function loadRapier() {
@@ -108,6 +120,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const byId = new Map(comps.map(r => [r.id, r]));
   const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null) }));
   const removers = comps.filter(r => r.t.flow === 'remover');
+  const sensors = comps.filter(r => r.t.sense);
+  /** Metal parts (inductive proximity sees them). */
+  const METAL = new Set(['steel', 'alu']);
   /** Handshake replies the PLC provably saw (schema `hold: false`): no minPulseMs hold. */
   const noHold = new Set(order.flatMap((/** @type {any} */ c) => Object.entries(c.io || {})
     .filter(([key]) => defs.get(c.id).io[key].hold === false).map(([, tag]) => tag)));
@@ -176,8 +191,10 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[]}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number}>} */
   const parts = new Map();
+  /** collider handle -> part, for sensors that must know WHAT they see (metal or not). */
+  const colPart = new Map();
   /** @param {string} tpl @param {import('../lib/math.js').Pose} P @param {string} uid @param {string} [src] */
   function spawnPart(tpl, P, uid, src) {
     const d = defs.get(tpl), pp = d.p;
@@ -191,7 +208,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     // ctr: the first solid shape's centre in the part's frame. The origin sits on the part's
     // underside, which rests a hair INSIDE the belt (contact penetration), so zone tests use this.
-    parts.set(uid, { uid, tpl, body, cols, ctr: d.shapes.find((/** @type {any} */ s) => s.collide !== false)?.at ?? [0, 0, 0] });
+    const s0 = d.shapes.find((/** @type {any} */ s) => s.collide !== false);
+    // rf: effective friction radius of the footprint (m), for the belt's friction torque
+    const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
+    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0] };
+    parts.set(uid, pt);
+    for (const c of cols) colPart.set(c.handle, pt);
     rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
   }
   /** World centre of a part in mm. @param {{body: any, ctr: number[]}} pt */
@@ -215,6 +237,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   function removePart(uid, ev) {
     const pt = parts.get(uid);
     if (!pt) return;
+    for (const c of pt.cols) colPart.delete(c.handle);
     world.removeRigidBody(pt.body);
     parts.delete(uid);
     rec({ t: plant.t, k: 'part', uid, ev });
@@ -344,6 +367,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         if (!touch) continue;
         const v = pt.body.linvel(), dv = beltDv([v.x, v.y, v.z], vbelt, n, r.p.mu, dt), m = pt.body.mass();
         pt.body.applyImpulse({ x: m * dv[0], y: m * dv[1], z: m * dv[2] }, true);
+        const w = pt.body.angvel(), dw = beltSpin(w.x * n[0] + w.y * n[1] + w.z * n[2], r.p.mu, dt, pt.rf);
+        pt.body.setAngvel({ x: w.x + n[0] * dw, y: w.y + n[1] * dw, z: w.z + n[2] * dw }, true);
       }
     }
     // 5. physics
@@ -375,6 +400,23 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         const l = apply(F, partCentre(pt));
         if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz) { removePart(pt.uid, 'remove'); r.s.n++; }
       }
+    }
+    // 6b. part sensors: Rapier queries against PARTS only (PART_RAYS). The component model
+    // turns s.hit into its output at the next step (NO/NC, off-delay).
+    for (const r of sensors) {
+      const F = W[r.id][defs.get(r.id).root], o = F.p, ax = qrot(F.q, [1, 0, 0]);
+      let hit = false;
+      if (r.t.sense === 'ray') {
+        hit = !!world.castRay(new R.Ray({ x: o[0] * SK, y: o[1] * SK, z: o[2] * SK }, { x: ax[0], y: ax[1], z: ax[2] }), r.p.range * SK, true, undefined, PART_RAYS);
+      } else {
+        const c = apply(F, [r.p.range / 2, 0, 0]);
+        world.intersectionsWithShape({ x: c[0] * SK, y: c[1] * SK, z: c[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r.p.range / 2 * SK), (/** @type {any} */ col) => {
+          const pt = colPart.get(col.handle);
+          if (pt && (!r.p.metalOnly || METAL.has(defs.get(pt.tpl).p.material))) { hit = true; return false; }
+          return true;
+        }, undefined, PART_RAYS);
+      }
+      r.s.hit = hit;
     }
     // 7. sensors -> PLC image
     for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]);
