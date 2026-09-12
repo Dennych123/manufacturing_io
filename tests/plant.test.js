@@ -248,6 +248,29 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await q.close(); await q2.close();
 }
 
+// ---------------------------------------------------------------- scene pick-place with its internal controller
+{
+  const pp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'pick-place.json'), 'utf8'));
+  const { create: createPP } = await import('../scenes/pick-place.ctl.js');
+  const run = async () => {
+    const q = await createPlant(pp, { controller: createPP() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('pick-place: the cycle repeats', q.io.CYCLE_CNT >= 3, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('pick-place: the nest hands each part to the cup (one holder at a time)', pev('hold') === 2 * pev('release') || pev('hold') >= 2 * q.io.CYCLE_CNT,
+    pev('hold') + ' holds, ' + pev('release') + ' releases');
+  chk('pick-place: every part placed on the belt reaches the unloader', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('pick-place: no warnings (servo replies are not stretched)', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('pick-place: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
 // ---------------------------------------------------------------- scene stopper-pusher with its internal controller
 {
   const sp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'stopper-pusher.json'), 'utf8'));

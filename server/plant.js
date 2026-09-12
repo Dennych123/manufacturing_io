@@ -194,7 +194,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any, off: boolean}>} */
   const parts = new Map();
   /** collider handle -> part, for sensors that must know WHAT they see (metal or not). */
   const colPart = new Map();
@@ -214,11 +214,22 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const s0 = d.shapes.find((/** @type {any} */ s) => s.collide !== false);
     // rf: effective friction radius of the footprint (m), for the belt's friction torque
     const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
-    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null) };
+    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null), off: false };
     parts.set(uid, pt);
     for (const c of cols) colPart.set(c.handle, pt);
     rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
   }
+  /**
+   * Drop a part's contacts for one step. Rapier keeps the contacts a part had while it was
+   * kinematic: a part laid on a running belt by a vacuum cup then sat still on it (measured),
+   * exactly like the lifted stopper. Called whenever a part's body type changes.
+   * @param {any} pt
+   */
+  function refreshPart(pt) {
+    for (const c of pt.cols) c.setEnabled(false);
+    pt.off = true;
+  }
+
   /** World centre of a part in mm. @param {{body: any, ctr: number[]}} pt */
   function partCentre(pt) {
     const t = pt.body.translation(), q = pt.body.rotation();
@@ -406,8 +417,10 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         pt.body.setAngvel({ x: w.x + n[0] * dw, y: w.y + n[1] * dw, z: w.z + n[2] * dw }, true);
       }
     }
-    // 4b. held parts ride their holder at the pose stored when it took them
+    // 4b. held parts ride their holder at the pose stored when it took them. A part whose body
+    // type just changed sat out one step (see the take/release below), so put it back first.
     for (const pt of parts.values()) {
+      if (pt.off) { for (const c of pt.cols) c.setEnabled(true); pt.off = false; }
       if (!pt.held) continue;
       const P = compose(W[pt.held.id][pt.held.link], pt.rel);
       pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
@@ -474,6 +487,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
           pt.rel = compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
           pt.held = { id: r.id, link };
           pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+          refreshPart(pt);
           r.s.uid = pt.uid;
           rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'hold', by: r.id });
         }
@@ -483,6 +497,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         if (pt) {
           pt.held = null;
           pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
+          refreshPart(pt);
           const v = h.prev ? F.p.map((x, i) => (x - h.prev.p[i]) / dt * SK) : [0, 0, 0];
           pt.body.setLinvel({ x: v[0], y: v[1], z: v[2] }, true);
           rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'release', by: r.id });

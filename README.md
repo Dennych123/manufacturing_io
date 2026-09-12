@@ -35,15 +35,20 @@ fall, ride belts, queue against stoppers and get pushed. The kit now has:
 - a belt conveyor (friction-clamped slip, measured against a velocity override in `docs/PLAN.md` §3);
 - a part emitter and a part remover;
 - a photo-eye and a proximity sensor;
-- Stopper/Pusher/Lifter cylinder presets.
+- Stopper/Pusher/Lifter cylinder presets;
+- holding: a vacuum cup and a nest. A held part rides its holder and is let go with the
+  holder's velocity.
 
-Two material-flow scenes run with their PLC programs. Both passed a 30-minute soak: parts
-balance, none lost.
+Three material-flow scenes run with their PLC programs.
 - `a-to-b`: loader, belt, end sensor, unloader.
 - `stopper-pusher`: a stopper holds each part at a pusher. Odd parts are pushed down a reject
   chute into a bin.
+- `pick-place`: a servo traverse with a pneumatic lift and a vacuum cup takes each part out of
+  a nest and lays it on the outfeed belt (a cycle every 6.5 s).
 
-Run `node server/main.js --scene stopper-pusher --internal`.
+The first two passed a 30-minute soak: parts balance, none lost.
+
+Run `node server/main.js --scene pick-place --internal`, then press the green START button.
 
 ```bash
 npm install

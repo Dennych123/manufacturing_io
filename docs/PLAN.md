@@ -571,8 +571,10 @@ Each phase ends runnable, with a written exit criterion.
   - photo-eye/proximity;
   - cylinder `head` plus the Stopper/Pusher/Lifter presets;
   - the `ref` param type;
-  - the scenes **a-to-b** and **stopper-pusher**, each with `.st` and `.ctl.js`;
-  - the contact refresh for kinematic links that come to rest.
+  - holding (vacuum cup, nest): one take/follow/release mechanism;
+  - the scenes **a-to-b**, **stopper-pusher** and **pick-place**, each with `.st` and `.ctl.js`;
+  - the contact refresh for kinematic links that come to rest and for parts whose body type
+    changes.
 
   Soak, 30 min of sim time with the internal controller:
 
@@ -584,9 +586,9 @@ Each phase ends runnable, with a written exit criterion.
   The budget is 1000 µs (50 % of dt).
 
   Open:
-  - holding (nest, vacuum, gripper);
+  - the 2-finger gripper;
   - pallets;
-  - the other four scenes;
+  - the other three scenes;
   - the live PLC runs.
 
   stopper-pusher replaced the planned two-stopper escapement. Parts queue touching, so a stopper
