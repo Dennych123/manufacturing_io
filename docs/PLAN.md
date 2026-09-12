@@ -582,8 +582,13 @@ Each phase ends runnable, with a written exit criterion.
   |---|---|---|---|---|
   | a-to-b | 271 | 272 = 271 + 1 | 0 / 0 / 0 | 69 µs |
   | stopper-pusher | 718 | 721 = 718 + 3 | 0 / 0 / 0 | 257 µs |
+  | pick-place | 277 | 278 = 278 + 0 | 0 / 0 / 0 | 108 µs |
 
   The budget is 1000 µs (50 % of dt).
+
+  **Read step times from a headless run, not from the viewer.** With headless Chrome on
+  SwiftShader next to the server, pick-place read 839 µs with overruns; the same scene soaks at
+  108 µs. The browser's software renderer takes the CPU, and the plant's accumulator reports it.
 
   Open:
   - the 2-finger gripper;
