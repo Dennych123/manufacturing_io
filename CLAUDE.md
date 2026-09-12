@@ -84,6 +84,11 @@ in the code but break things silently** when violated. Most were paid for once i
   Their short pulses are caused by the PLC itself. Holding them reports "in position" while
   the axis already moves, and warns on every move.
 - One-shot events (counts, drops, rejects) are published as **counters**.
+- **A counter the controller compares against must be reset with the plant.** `reset()` zeroes
+  the plant's counters, so a controller still holding the old value sees "it changed" and waits
+  for a part that never comes: the sequence stalls with the plant timer still running.
+  `plant.reset()` calls `controller.reset?.()`, and every `.ctl.js` has one. A real PLC keeps
+  its own copies: restart its program after a plant Reset.
 - The browser sends button **edges**, and the PLC enforces the conditions. Conditions enforced in
   the browser do not apply when the same tag is written from anywhere else.
 

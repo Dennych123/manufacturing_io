@@ -198,6 +198,12 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('a-to-b: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).join(' | '));
   const q2 = await run();
   chk('a-to-b: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  // Reset zeroes the plant's counters; a controller holding the old ones waits for a part that
+  // already "arrived" and the sequence stalls with the clock still running (measured).
+  q.reset();
+  q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+  q.run(25000);
+  chk('a-to-b: Reset then START runs again (the controller is reset too)', q.io.CYCLE_CNT >= 2, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
   await q.close(); await q2.close();
 }
 

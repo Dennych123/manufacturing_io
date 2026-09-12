@@ -502,6 +502,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     initIo();
     for (const uid of [...parts.keys()]) removePart(uid, 'reset');
     spawnSceneParts();
+    // The internal controller keeps its own copies of plant counters (the last emitter count it
+    // saw). Reset zeroes the plant's, so a controller that kept the old ones waits for a part
+    // that already "arrived" and the sequence stalls. A real PLC cannot be reset from here:
+    // restart its program (docs/SETUP.md).
+    controller?.reset?.();
     driverUp();
     rec({ t: plant.t, k: 'mark', label: 'reset' });
   }

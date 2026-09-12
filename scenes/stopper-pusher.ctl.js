@@ -6,6 +6,8 @@ export function create() {
   let pbLast = false, stopReq = false, n = 0;
   let settleFrom = -1, settleQ = false, gapFrom = -1, gapQ = false;
   return {
+    /** The plant was reset: start the sort count and the timers over. */
+    reset() { pbLast = false; stopReq = false; n = 0; settleFrom = -1; settleQ = false; gapFrom = -1; gapQ = false; },
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
       const startEdge = io.PB_START && !pbLast;

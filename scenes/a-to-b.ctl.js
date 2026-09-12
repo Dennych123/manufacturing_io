@@ -5,6 +5,8 @@
 export function create() {
   let pbLast = false, stopReq = false, dwellFrom = -1, dwellQ = false, emLast = 0, rmLast = 0;
   return {
+    /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
+    reset() { pbLast = false; stopReq = false; dwellFrom = -1; dwellQ = false; emLast = 0; rmLast = 0; },
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
       const startEdge = io.PB_START && !pbLast;

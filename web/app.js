@@ -320,8 +320,14 @@ function onStatus(s) {
   conn.textContent = (io.driver || '?') + ': ' + (io.msg || '');
   conn.className = io.ok ? 'ok' : 'bad';
   $('banner').hidden = io.driver !== 'internal';
+  // Run only starts the plant's clock. The machine waits for the sequence, which the PLC (or the
+  // internal controller) starts from the START button: say so instead of looking frozen.
+  const auto = serverScene?.cycle?.autoTag;
+  const idle = pl.mode === 'run' && auto && curIo[auto] === false;
   $('status').textContent = 'plant ' + pl.mode + '   t ' + (pl.t / 1000).toFixed(1) + ' s   step ' + pl.stepUs + ' µs   overruns ' + pl.overruns
-    + (io.samplingMs != null ? '\nsampling ' + io.samplingMs + ' ms   publishing ' + io.publishingMs + ' ms' + (io.rttMs != null ? '   write ' + io.rttMs + ' ms' : '') : '');
+    + (pl.parts != null ? '   parts ' + pl.parts : '')
+    + (io.samplingMs != null ? '\nsampling ' + io.samplingMs + ' ms   publishing ' + io.publishingMs + ' ms' + (io.rttMs != null ? '   write ' + io.rttMs + ' ms' : '') : '')
+    + (idle ? '\nidle: press the green START button in 3D (the sequence has not started)' : '');
   const hb = $('hb');
   hb.hidden = io.heartbeat !== false;
   hb.textContent = 'MIO_HEARTBEAT is not moving: the PLC program is not running, or not assigned to a task.';

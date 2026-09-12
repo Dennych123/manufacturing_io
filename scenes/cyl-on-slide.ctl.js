@@ -5,6 +5,8 @@
 export function create() {
   let pbLast = false, stopReq = false, dwellFrom = -1, dwellQ = false;
   return {
+    /** The plant was reset: start the dwell timer and the edge memories over. */
+    reset() { pbLast = false; stopReq = false; dwellFrom = -1; dwellQ = false; },
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
       const startEdge = io.PB_START && !pbLast;
