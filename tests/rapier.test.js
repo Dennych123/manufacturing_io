@@ -159,4 +159,29 @@ function belt(model, n, stopperX) {
   chk('rule: with the contact refresh, a box stopper 5 mm clear (and a cylinder 15 mm clear) releases the part', r1 > 330 && r2 > 330, 'part x ' + r1.toFixed(1) + ' / ' + r2.toFixed(1) + ' mm');
 }
 
+// ---------------------------------------------------------------- a part dropped into a pocket
+// Measured: a 70 x 50 x 20 mm part dropped into a pocket with 25 mm walls HANGS on speculative
+// contacts at the wall top edges (45° normals, 7 mm of reported distance) unless the clearance
+// is generous: 19.9 mm above the floor at 5 mm per side, landing only from 12 mm. Walls shorter
+// than the part need less. Hence the rule: a nest draws its walls but does not collide with
+// them, and any guide a part must drop between leaves >= 12 mm per side.
+{
+  const drop = (gapMm, wallH) => {
+    const w = new R.World({ x: 0, y: 0, z: -9.81 });
+    w.timestep = DT;
+    const floor = w.createRigidBody(R.RigidBodyDesc.fixed());
+    w.createCollider(R.ColliderDesc.cuboid(0.1, 0.1, 0.003).setTranslation(0, 0, -0.003), floor);
+    const g = gapMm / 1000, hx = 0.035 + g, hy = 0.025 + g;
+    for (const ix of [-1, 1]) w.createCollider(R.ColliderDesc.cuboid(0.004, hy + 0.008, wallH / 2).setTranslation(ix * (hx + 0.004), 0, wallH / 2), floor);
+    for (const iy of [-1, 1]) w.createCollider(R.ColliderDesc.cuboid(hx, 0.004, wallH / 2).setTranslation(0, iy * (hy + 0.004), wallH / 2), floor);
+    const b = w.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0, 0, 0.040).setCanSleep(false).setCcdEnabled(true));
+    w.createCollider(R.ColliderDesc.cuboid(0.035, 0.025, 0.010).setDensity(2700).setFriction(0.5), b);
+    for (let i = 0; i < 500; i++) w.step();
+    return (b.translation().z - 0.010) * 1000;                      // above the pocket floor, mm
+  };
+  const tight = drop(5, 0.025), wide = drop(12, 0.025), low = drop(5, 0.008);
+  chk('trap: a part dropped into a pocket with 5 mm clearance hangs above the floor', tight > 5, tight.toFixed(2) + ' mm up');
+  chk('rule: 12 mm of clearance per side lands it (and walls below the part need only 5 mm)', wide < 0.5 && low < 0.5, wide.toFixed(2) + ' / ' + low.toFixed(2) + ' mm');
+}
+
 process.exit(fail ? 1 : 0);

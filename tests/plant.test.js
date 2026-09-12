@@ -178,6 +178,47 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await px.close(); await pc.close();
 }
 
+// ---------------------------------------------------------------- holding: vacuum cup and nest
+{
+  // A cylinder pointing down on the frame, a cup on its rod end. Geometry: Lb = 120+25+20 = 165,
+  // so the cup face sits at 1141 - (165+27) - x: 949 retracted, 829 extended, on a part whose
+  // top is at 830.
+  const pick = {
+    format: 'mio-scene/1', name: 'picktest',
+    components: [
+      { id: 'base', type: 'frame', params: { size: [1000, 600, 800] } },
+      { id: 'p1', type: 'workpiece', parent: 'base', socket: 'top', at: [0, 0, 0], params: { dynamic: true, material: 'plastic' } },
+      { id: 'p2', type: 'workpiece', parent: 'base', socket: 'top', at: [300, 0, 30], params: { dynamic: true, size: [70, 50, 20] } },
+      { id: 'pick', type: 'cylinder', parent: 'base', socket: 'top', at: [0, 0, 341], rot: [180, 0, 0],
+        params: { bore: 25, stroke: 120, valve: '5/2-double' }, io: { solExt: 'SOL_DN', solRet: 'SOL_UP', 'sw.ext': 'AS_DN', 'sw.ret': 'AS_UP' } },
+      { id: 'cup1', type: 'vacuumCup', parent: 'pick', socket: 'rodEnd', at: [0, 0, 0], params: { d: 20, reach: 2, buildMs: 80, dropMs: 60 }, io: { on: 'VAC_ON', vac: 'VAC_SW' } },
+      { id: 'nest1', type: 'nest', parent: 'base', socket: 'top', at: [300, 0, 0], params: { size: [80, 60, 25] }, io: { present: 'NEST_P' } },
+    ],
+  };
+  const pk = await createPlant(pick, {});
+  pk.run(800);
+  chk('a nest holds a part dropped into its pocket and reports it', pk.io.NEST_P === true && pk.parts.get('p2').held?.id === 'nest1'
+    && pk.events.some(e => e.k === 'part' && e.ev === 'hold' && e.by === 'nest1'));
+  pk.force('SOL_DN', true);
+  pk.run(700);
+  chk('the cylinder reaches the part (AS_DN)', pk.io.AS_DN === true);
+  chk('nothing is held before the vacuum is on', !pk.parts.get('p1').held && pk.io.VAC_SW === false);
+  pk.force('VAC_ON', true);
+  pk.run(40);
+  chk('the cup takes the part at once; the switch lags by buildMs', !!pk.parts.get('p1').held && pk.io.VAC_SW === false);
+  pk.run(80);
+  chk('the vacuum switch comes on after buildMs', pk.io.VAC_SW === true);
+  pk.force('SOL_DN', false); pk.force('SOL_UP', true);
+  pk.run(700);
+  const zUp = pk.parts.get('p1').body.translation().z / SK;
+  chk('the part rides the rod up (its top stays on the cup face at 949)', Math.abs(zUp - 919) < 2, zUp.toFixed(2) + ' mm');
+  pk.force('VAC_ON', false);
+  pk.run(700);
+  const zDown = pk.parts.get('p1').body.translation().z / SK;
+  chk('releasing drops it back onto the frame', Math.abs(zDown - 800) < 1 && pk.io.VAC_SW === false && pk.events.some(e => e.k === 'part' && e.ev === 'release' && e.by === 'cup1'), zDown.toFixed(2) + ' mm');
+  await pk.close();
+}
+
 // ---------------------------------------------------------------- scene a-to-b with its internal controller
 {
   const ab = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'a-to-b.json'), 'utf8'));

@@ -39,6 +39,11 @@ in the code but break things silently** when violated. Most were paid for once i
   underside, which rests a hair inside the belt, so an origin test in a remover box misses
   every part.
 - **Templates** (workpieces an emitter copies) are never simulated and never drawn.
+- **A part must not have to drop into a tight pocket.** Measured: a 70×60×20 part dropped
+  between 25 mm walls hangs on speculative contacts at the wall top edges (45° normals) with
+  anything under 12 mm of clearance per side; at 5 mm it hung 20 mm above the floor. So a
+  `nest` draws its walls without colliding, and any guide a part drops between leaves ≥ 12 mm
+  per side (or is shorter than the part). `tests/rapier.test.js` pins it.
 - **A kinematic link that comes to rest takes its colliders out for one step** (the contact
   refresh in `server/plant.js`). This was measured on Rapier 0.20: a part that was pressed
   against a stopper keeps a stale blocking contact after the stopper lifts clear. The part stays

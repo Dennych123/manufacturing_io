@@ -121,6 +121,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null) }));
   const removers = comps.filter(r => r.t.flow === 'remover');
   const sensors = comps.filter(r => r.t.sense);
+  const holders = comps.filter(r => r.t.hold).map(r => ({ r, link: '', prev: /** @type {any} */ (null) }));
   /** Metal parts (inductive proximity sees them). */
   const METAL = new Set(['steel', 'alu']);
   /** Handshake replies the PLC provably saw (schema `hold: false`): no minPulseMs hold. */
@@ -193,7 +194,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any}>} */
   const parts = new Map();
   /** collider handle -> part, for sensors that must know WHAT they see (metal or not). */
   const colPart = new Map();
@@ -213,7 +214,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const s0 = d.shapes.find((/** @type {any} */ s) => s.collide !== false);
     // rf: effective friction radius of the footprint (m), for the belt's friction torque
     const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
-    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0] };
+    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null) };
     parts.set(uid, pt);
     for (const c of cols) colPart.set(c.handle, pt);
     rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
@@ -223,6 +224,27 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const t = pt.body.translation(), q = pt.body.rotation();
     return apply({ p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] }, pt.ctr);
   }
+  /**
+   * The part a holder would take: for a vacuum cup, the nearest free part within `reach` of its
+   * suction face; for a nest, a free part whose centre is in the pocket.
+   * @param {any} r @param {import('../lib/math.js').Pose} F
+   */
+  function candidate(r, F) {
+    if (r.t.hold === 'vacuum') {
+      let found = null;
+      world.intersectionsWithShape({ x: F.p[0] * SK, y: F.p[1] * SK, z: F.p[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r.p.reach * SK),
+        (/** @type {any} */ col) => { const pt = colPart.get(col.handle); if (pt && !pt.held) { found = pt; return false; } return true; }, undefined, PART_RAYS);
+      return found;
+    }
+    const inv = invert(F), [sx, sy, sz] = r.p.size;
+    for (const pt of parts.values()) {
+      if (pt.held) continue;
+      const l = apply(inv, partCentre(pt));
+      if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= -sz / 2 && l[2] <= sz) return pt;
+    }
+    return null;
+  }
+
   /** True when no part overlaps where a new copy of `tpl` would appear. @param {any} d @param {import('../lib/math.js').Pose} P */
   function spawnClear(d, P) {
     for (const s of d.shapes) {
@@ -374,6 +396,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const r = byId.get(bl.id), F = W[bl.id][bl.link], vb = r.s.v * SK;
       const u = qrot(F.q, [1, 0, 0]), n = qrot(F.q, [0, 0, 1]), vbelt = [u[0] * vb, u[1] * vb, u[2] * vb];
       for (const pt of parts.values()) {
+        if (pt.held) continue;                                // a held part follows its holder
         let touch = false;
         for (const pc of pt.cols) world.contactPair(bl.col, pc, (/** @type {any} */ m) => { if (m.numContacts() > 0) touch = true; });
         if (!touch) continue;
@@ -382,6 +405,13 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         const w = pt.body.angvel(), dw = beltSpin(w.x * n[0] + w.y * n[1] + w.z * n[2], r.p.mu, dt, pt.rf);
         pt.body.setAngvel({ x: w.x + n[0] * dw, y: w.y + n[1] * dw, z: w.z + n[2] * dw }, true);
       }
+    }
+    // 4b. held parts ride their holder at the pose stored when it took them
+    for (const pt of parts.values()) {
+      if (!pt.held) continue;
+      const P = compose(W[pt.held.id][pt.held.link], pt.rel);
+      pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
+      pt.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
     }
     // 5. physics
     world.step();
@@ -429,6 +459,36 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         }, undefined, PART_RAYS);
       }
       r.s.hit = hit;
+    }
+    // 6c. holding: ONE mechanism for the vacuum cup and the nest (docs/PLAN.md §3). Take = the
+    // part becomes kinematic at a stored relative pose; release = dynamic again, starting at the
+    // holder's velocity (rb4axis fisikaJatuhkan), so a part let go while moving flies on.
+    for (const h of holders) {
+      const r = h.r, link = h.link || (h.link = defs.get(r.id).root), F = W[r.id][link];
+      if (r.s.uid && !parts.has(r.s.uid)) r.s.uid = null;             // a remover took it
+      const want = r.t.hold === 'vacuum' ? !!r.cio.on : r.cio.clamp !== false;
+      if (want && !r.s.uid) {
+        const pt = candidate(r, F);
+        if (pt) {
+          const t = pt.body.translation(), q = pt.body.rotation();
+          pt.rel = compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
+          pt.held = { id: r.id, link };
+          pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+          r.s.uid = pt.uid;
+          rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'hold', by: r.id });
+        }
+      } else if (!want && r.s.uid) {
+        const pt = parts.get(r.s.uid);
+        r.s.uid = null;
+        if (pt) {
+          pt.held = null;
+          pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
+          const v = h.prev ? F.p.map((x, i) => (x - h.prev.p[i]) / dt * SK) : [0, 0, 0];
+          pt.body.setLinvel({ x: v[0], y: v[1], z: v[2] }, true);
+          rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'release', by: r.id });
+        }
+      }
+      h.prev = F;
     }
     // 7. sensors -> PLC image
     for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]);
