@@ -195,6 +195,12 @@ in the code but break things silently** when violated. Most were paid for once i
 
 ## Repo hygiene
 
+- **Never point a junction at the real `node_modules` from a directory you intend to delete.**
+  `git worktree remove --force` followed the junction and emptied the repo's own `node_modules`
+  (measured 2026-09-14; the symptom is `Cannot find package '@dimforge/rapier3d-deterministic-compat'`,
+  and `npm install` restores it from the lockfile). `tests/browser.test.js` already knew this and
+  unlinks its junctions first, non-recursively; a throwaway worktree needs the same care, or its
+  own `npm install`.
 - `.gitattributes` = `* -text`. Generated files are compared byte for byte.
 - Generators get `--check`, which exits 1 when committed output is stale.
 - Dependencies are pinned exactly (no `^`). three is served from `node_modules`, never from a CDN.
