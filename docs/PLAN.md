@@ -587,6 +587,7 @@ Each phase ends runnable, with a written exit criterion.
   | pick-place | 277 | 278 = 278 + 0 | 0 / 0 / 0 | 108 µs |
   | assembler | 539 | 1080 = 1075 + 5 | 0 / 0 / 0 | 251 µs |
   | sort-by-height | 245 | 246 = 245 + 1 | 0 / 0 / 0 | 408 µs |
+  | buffer-queue | 665 | 681 = 666 + 15 | 0 / 0 / 0 | 441 µs |
 
   The budget is 1000 µs (50 % of dt).
 
@@ -606,9 +607,15 @@ Each phase ends runnable, with a written exit criterion.
   controller never showed any of it, because there the counters only moved during the waiting
   step. `tests/ctl.test.js` drives each controller against a faked plant to pin it.
 
-  **Read step times from a headless run, not from the viewer.** With headless Chrome on
-  SwiftShader next to the server, pick-place read 839 µs with overruns; the same scene soaks at
-  108 µs. The browser's software renderer takes the CPU, and the plant's accumulator reports it.
+  **Read step times from a headless run with nothing else on the box.** The plant's accumulator
+  measures wall time, so anything sharing the CPU shows up as plant cost:
+  - with headless Chrome on SwiftShader beside the server, pick-place read 839 µs against the
+    108 µs it soaks at;
+  - buffer-queue soaked at 1232 µs (over budget) while the test suite and a browser shot ran
+    alongside, and at 441 µs alone — same 665 cycles and same part counts both times, because
+    the simulation is deterministic and only the clock moved.
+
+  A soak that shares the machine measures the machine, not the scene.
 
   Open:
   - pallets;

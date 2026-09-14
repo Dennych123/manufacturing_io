@@ -58,8 +58,8 @@ Three material-flow scenes run with their PLC programs.
   drop a lid on it, press it — and the table then carries each assembly one station on, with
   the lid riding its base on friction alone.
 
-All five passed a 30-minute soak: parts balance, none lost, no warnings, and the worst step was
-69–408 µs against a 1000 µs budget.
+All six passed a 30-minute soak: cycles keep completing, parts balance, none are lost, no
+warnings, and the worst step was 69–441 µs against a 1000 µs budget.
 
 Run `node server/main.js --scene pick-place --internal`, then press the green START button.
 
