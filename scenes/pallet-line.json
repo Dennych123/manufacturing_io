@@ -1,0 +1,170 @@
+{
+  "format": "mio-scene/1",
+  "name": "pallet-line",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Pallet station",
+      "members": ["cv1", "emP", "stp", "lift", "emW", "rm1"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PE_STN",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cv1",
+      "type": "conveyor",
+      "label": "PALLET BELT",
+      "station": "ST1",
+      "params": { "length": 2400, "width": 300, "height": 800, "speed": 250, "guides": 30 },
+      "io": { "run": "CV1_RUN" }
+    },
+    {
+      "id": "plt",
+      "type": "pallet",
+      "label": "PALLET TEMPLATE",
+      "at": [0, 1400, 0],
+      "params": { "size": [200, 160, 20], "rail": 10, "material": "plastic", "dynamic": true }
+    },
+    {
+      "id": "wp",
+      "type": "workpiece",
+      "label": "PART TEMPLATE",
+      "at": [0, 1700, 0],
+      "params": { "size": [70, 70, 40], "color": "#c0392b", "material": "alu", "dynamic": true }
+    },
+    {
+      "id": "emP",
+      "type": "emitter",
+      "label": "PALLET FEEDER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "start",
+      "at": [150, 0, 60],
+      "params": { "template": "plt", "mode": "tag" },
+      "io": { "emit": "EM_P_EMIT", "count": "EM_P_CNT" }
+    },
+    {
+      "id": "stp",
+      "type": "cylinder",
+      "label": "POP-UP STOP",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [300, 0, -163],
+      "params": {
+        "bore": 16,
+        "stroke": 60,
+        "valve": "5/2-single",
+        "extendMs": 150,
+        "retractMs": 150,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "head": "plate",
+        "headSize": [12, 120, 25]
+      },
+      "io": { "solExt": "SOL_STOP", "sw.ret": "AS_STOP_DN", "sw.ext": "AS_STOP_UP" }
+    },
+    {
+      "id": "lift",
+      "type": "palletLift",
+      "label": "LIFT & LOCATE",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [200, 0, -14],
+      "params": { "size": [260, 240, 90], "stroke": 40, "upMs": 300, "dnMs": 300 },
+      "io": {
+        "clamp": "SOL_LIFT",
+        "up": "AS_LIFT_UP",
+        "dn": "AS_LIFT_DN",
+        "present": "PLT_PRESENT"
+      }
+    },
+    {
+      "id": "pe1",
+      "type": "photoEye",
+      "label": "STATION SENSOR",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [200, -180, 25],
+      "rot": [0, 0, 90],
+      "params": { "range": 360 },
+      "io": { "out": "PE_STN" }
+    },
+    {
+      "id": "emW",
+      "type": "emitter",
+      "label": "PART FEEDER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [200, 0, 260],
+      "params": { "template": "wp", "mode": "tag", "dropOnto": true },
+      "io": { "emit": "EM_W_EMIT", "count": "EM_W_CNT" }
+    },
+    {
+      "id": "rm1",
+      "type": "remover",
+      "label": "UNLOADER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "end",
+      "at": [160, 0, -100],
+      "params": { "size": [400, 400, 400] },
+      "io": { "count": "RM_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-900, -600, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

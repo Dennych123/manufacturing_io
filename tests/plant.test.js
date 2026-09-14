@@ -111,7 +111,14 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   });
   const { validate: v2 } = await import('../lib/scene.js');
   const bad = flow(); bad.components[2].params.template = 'cv1';
-  chk('an emitter template must name a workpiece', v2(flow()).length === 0 && v2(bad).some(e => /template must name a workpiece/.test(e)), v2(flow()).join('; '));
+  // A feeder emits PARTS, which is a descriptor: a pallet is one too. The validator used to match
+  // the literal type name and refused a pallet feeder.
+  const pal = flow();
+  pal.components.push({ id: 'plt', type: 'pallet', at: [0, 1400, 0], params: { dynamic: true } });
+  pal.components[2].params.template = 'plt';
+  chk('an emitter template must name a part, and a pallet is one',
+    v2(flow()).length === 0 && v2(pal).length === 0 && v2(bad).some(e => /template must name a part/.test(e)),
+    v2(flow()).concat(v2(pal)).join('; ') + ' | ' + v2(bad).join('; '));
   const go = async () => { const pl = await createPlant(flow(), {}); pl.force('CV1_RUN', true); pl.run(10000); return pl; };
   const pl = await go();
   const ev = pl.events.filter(e => e.k === 'part');
@@ -304,6 +311,54 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('the holder knows it lost the part, so the PLC can see it', w.parts.get(holdUid) != null && ![...w.parts.values()].some(pt => pt.held?.id === holder),
     holder);
   await w.close();
+}
+
+// ---------------------------------------------------------------- a pallet stop is structure, not clearance
+// An overhead pin that a pallet must drive UNDER holds it through a positive-distance contact even
+// after it has lifted clear and come to rest: measured from 7.9 and 15.1 mm, and the clearance
+// sweep is non-monotonic (5.1 held, 8.1 free, 11.1 free, 14.1 HELD, 17.1+ free), so no clearance
+// can be designed to. A stop that pops UP from under the belt leaves the path entirely.
+{
+  const line = kind => ({
+    format: 'mio-scene/1', name: 'palletstop',
+    components: [
+      { id: 'cv1', type: 'conveyor', params: { length: 2000, width: 300, speed: 250 }, io: { run: 'CV1_RUN' } },
+      { id: 'plt', type: 'pallet', parent: 'cv1', socket: 'top', at: [-600, 0, 30], params: { dynamic: true } },
+      ...(kind === 'overhead' ? [
+        { id: 'post1', type: 'plate', parent: 'cv1', socket: 'top', at: [330, 250, -800], params: { size: [40, 40, 953] } },
+        { id: 'br1', type: 'plate', parent: 'cv1', socket: 'top', at: [300, 95, 153], params: { size: [60, 330, 12] } },
+        { id: 'stp', type: 'cylinder', parent: 'br1', socket: 'bottom', at: [0, 95, 0],
+          params: { bore: 16, stroke: 30, valve: '5/2-single', extendMs: 120, retractMs: 120,
+                    extWord: 'DOWN', retWord: 'UP', head: 'plate', headSize: [12, 12, 25] }, io: { solExt: 'SOL_STOP' } },
+      ] : [
+        // foot = Lb(96) + rod end 27 + head 25 + 15 mm of sink, so the retracted head is below the belt
+        { id: 'stp', type: 'cylinder', parent: 'cv1', socket: 'top', at: [300, 0, -163],
+          params: { bore: 16, stroke: 60, valve: '5/2-single', extendMs: 150, retractMs: 150,
+                    extWord: 'UP', retWord: 'DOWN', head: 'plate', headSize: [12, 120, 25] }, io: { solExt: 'SOL_STOP' } },
+      ]),
+    ],
+  });
+  const run = async kind => {
+    const q = await createPlant(line(kind), {});
+    const at = () => (q.parts.get('plt') ? q.parts.get('plt').body.translation().x / SK : null);
+    q.force('SOL_STOP', true);
+    q.run(500);                                                // the pin is UP before the pallet arrives
+    q.force('CV1_RUN', true);
+    q.run(8000);
+    const blocked = at();
+    q.force('SOL_STOP', false);
+    q.run(500);
+    const from = at();
+    q.run(5000);
+    const to = at();
+    await q.close();
+    return { blocked, moved: to === null ? 9999 : to - from };  // null: it left the belt, which is moving
+  };
+  const over = await run('overhead'), pop = await run('popup');
+  chk('both stops actually block the pallet', over.blocked > 100 && over.blocked < 400 && pop.blocked > 100 && pop.blocked < 400,
+    'overhead ' + over.blocked?.toFixed(0) + ', pop-up ' + pop.blocked?.toFixed(0));
+  chk('trap: a RETRACTED overhead stop still holds the pallet it blocked', over.moved < 250, over.moved.toFixed(0) + ' mm in 5 s');
+  chk('rule: a stop that pops up from under the belt lets it go', pop.moved > 400, pop.moved.toFixed(0) + ' mm in 5 s');
 }
 
 // ---------------------------------------------------------------- scene a-to-b with its internal controller

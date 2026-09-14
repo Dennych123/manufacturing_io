@@ -73,6 +73,21 @@ in the code but break things silently** when violated. Most were paid for once i
   A part must leave a belt over its END into free space, and be caught by a remover ZONE, which
   has no collider and cannot jam. A chute only works where the part **falls onto** it from
   above, well clear of the edge, as in `stopper-pusher`. `tests/rapier.test.js` pins the trap.
+- **The same trap catches a RETRACTED overhead stopper, so a pallet must not pass under one.**
+  Measured on a 200 mm pallet driven at 250 mm/s past a stopper whose pin had lifted clear and
+  come to rest (contact refresh done): it was held from 7.9 and 15.1 mm away, creeping backwards
+  at 1.7 mm/s. Sweeping the mounting height gave clearance 5.1 mm HELD, 8.1 free, 11.1 free,
+  **14.1 HELD**, 17.1 / 20.1 / 24.1 / 28.1 free — non-monotonic, exactly like the belt seam, so
+  there is no clearance to design to. A stop a pallet has to drive under is the wrong structure;
+  use one that leaves the path entirely.
+
+  **So a pallet stop pops UP from under the belt.** Retracted, its head sits below the belt
+  surface and nothing stands in the path at all. Measured at 5, 15 and 30 mm of sink, and with
+  60 and 100 mm strokes: every one blocks the pallet at the same place and then releases it, with
+  the pallet flat at z = 800 all the way down the belt. The sink depth does not matter, which is
+  the point — it is structure, not tuning. The cylinder foot must sit `Lb + 52 + sink` below the
+  belt (`Lb = stroke + bore + 20`, rod end 27, head 25), and the pin must be UP before the pallet
+  arrives: a pin that rises under a pallet already over it tips the pallet off (measured).
 - **A seized machine still balances its parts and raises no warning.** Ask for PROGRESS: cycles
   that keep completing. The 30-minute soak reported OK on a `buffer-queue` that had stopped
   after 15 minutes, because every part was still accounted for. Both the soak script and the

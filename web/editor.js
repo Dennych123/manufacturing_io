@@ -243,7 +243,9 @@ export function createEditor(ctx) {
       else if (d.type === 'vec3') box.append(field(lab, ...vec3(v, x => setP(d.k, x))));
       else if (d.type === 'bool') box.append(field(lab, el('input', { type: 'checkbox', checked: !!v, onchange: e => setP(d.k, e.target.checked) })));
       else if (d.type === 'str') box.append(field(lab, text(v, x => setP(d.k, x))));
-      else if (d.type === 'ref') box.append(field(lab, select1([['', '(none)'], ...scene.components.filter(x => x.type === d.of).map(x => [x.id, x.id])], v, x => setP(d.k, x))));
+      // `of: 'part'` is a descriptor, not a type name: a feeder can emit a workpiece or a pallet.
+      else if (d.type === 'ref') box.append(field(lab, select1([['', '(none)'],
+        ...scene.components.filter(x => (d.of === 'part' ? TYPES[x.type]?.part : x.type === d.of)).map(x => [x.id, x.id])], v, x => setP(d.k, x))));
       else box.append(field(lab, text(JSON.stringify(v), x => { try { setP(d.k, JSON.parse(x)); } catch { msg(d.k + ': not valid JSON', true); } }, { title: 'JSON' })));
     }
 

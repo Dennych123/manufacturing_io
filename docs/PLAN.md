@@ -694,8 +694,25 @@ Each phase ends runnable, with a written exit criterion.
   The fault stops what feeds and moves and leaves what holds: the stopper stays down, the vacuum
   keeps its part, the press lifts off the work.
 
+  **Pallets (2026-09-14).** A `pallet` is a PART, not a holder: it rides the belt on friction and
+  what it carries rides it the same way. Its rails DO collide (they are shorter than the load, the
+  measured exception to the pocket rule) — without them a pallet stopping against a stop let its
+  part slide 70 mm along the deck. A `palletLift` holds at its `lift` link (`holdLink`) so the
+  pallet rises with it, and filters on `holdOnly: 'pallet'` so it takes the carrier and not the
+  load. The scene is `pallet-line`: feed a pallet, stop it, lift it, load a part onto it, put it
+  back down and release it. Three things were measured the hard way:
+
+  | tried | what happened |
+  |---|---|
+  | overhead stop pin | holds the pallet 7.9–15.1 mm after retracting; the clearance sweep is non-monotonic (5.1 held, 8.1 free, 11.1 free, 14.1 HELD, 17.1+ free) |
+  | lift deck flush with the belt | blocks the path outright: the pallet stopped dead with its front edge on the deck edge |
+  | lift deck sunk, with `snap` | snapping teleports the pallet down to the holder frame, so it fell out of the station beam and back in: `pulse stretched PE_STN 8 -> 20 ms`, once per cycle |
+
+  So the stop POPS UP from under the belt, the deck stays below the belt line, and the lift does
+  not snap — a pallet that arrived flat is already square. `tests/plant.test.js` pins the overhead
+  trap against the pop-up rule.
+
   Open:
-  - pallets;
   - the live PLC runs of the newer scenes.
 
   **buffer-queue meters, it does not accumulate.** The belt itself is the stop, because a pin

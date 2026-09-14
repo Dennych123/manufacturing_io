@@ -280,6 +280,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const inv = invert(F), [sx, sy, sz] = r.p.size;
     for (const pt of parts.values()) {
       if (pt.held || pt.pin) continue;
+      // A pallet lift takes the CARRIER, never the load riding on it (`holdOnly` on the type).
+      if (r.t.holdOnly && !defs.get(pt.tpl)?.t?.[r.t.holdOnly]) continue;
       const l = apply(inv, partCentre(pt));
       if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= -sz / 2 && l[2] <= sz) return pt;
     }
@@ -525,7 +527,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     // part becomes kinematic at a stored relative pose; release = dynamic again, starting at the
     // holder's velocity (rb4axis fisikaJatuhkan), so a part let go while moving flies on.
     for (const h of holders) {
-      const r = h.r, link = h.link || (h.link = defs.get(r.id).root), F = W[r.id][link];
+      // Most holders hold at their root link. A pallet lift holds at its LIFT link (`holdLink`),
+      // so the pallet it locates rises with the lift instead of staying where it was caught.
+      const r = h.r, link = h.link || (h.link = r.t.holdLink || defs.get(r.id).root), F = W[r.id][link];
       if (r.s.uid && !parts.has(r.s.uid)) r.s.uid = null;             // a remover took it
       // A gripper's fingers stop at the width of the part between them, which only physics
       // knows; the model closes onto `blockAt` and decides when it has a grip.

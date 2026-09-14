@@ -345,4 +345,45 @@ function drive(ctl, io, ms, each = () => {}) {
   chk('assembler: the fault lifts the press off the work', io.SOL_PRESS_UP === true && io.SOL_PRESS_DN === false);
 }
 
+// ---------------------------------------------------------------- pallet-line
+// The unloader counts the pallet AND the part riding on it, so the discharge step waits on both
+// feeders. The stop pin must be UP before a pallet is fed (one that rises under a pallet already
+// over it tips it off the belt) and may only go DOWN once the lift is down.
+{
+  const { create } = await import('../scenes/pallet-line.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV1_RUN: false,
+               EM_P_EMIT: false, EM_P_CNT: 3, EM_W_EMIT: false, EM_W_CNT: 3, RM_CNT: 5, PE_STN: false,
+               SOL_STOP: false, AS_STOP_UP: false, AS_STOP_DN: true,
+               SOL_LIFT: false, AS_LIFT_UP: false, AS_LIFT_DN: true, PLT_PRESENT: false, AUTO_RUN: false };
+  // RM 5 against 6 fed: one earlier pallet is still on its way out, as a live line looks.
+  const plant = o => {
+    o.AS_STOP_UP = o.SOL_STOP; o.AS_STOP_DN = !o.SOL_STOP;
+    o.AS_LIFT_UP = o.SOL_LIFT; o.AS_LIFT_DN = !o.SOL_LIFT;
+    o.PLT_PRESENT = o.SOL_LIFT;
+    if (o.EM_P_EMIT) o.EM_P_CNT++;
+    if (o.EM_W_EMIT) o.EM_W_CNT++;
+  };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; plant(o); });
+  drive(ctl, io, 100, plant);
+  chk('pallet-line: the stop pin is up before a pallet is fed', io.ST1_STEP >= 20 && io.SOL_STOP === true,
+    'step ' + io.ST1_STEP + ', SOL_STOP ' + io.SOL_STOP);
+  drive(ctl, io, 300, o => { plant(o); if (o.ST1_STEP === 30 && o.CV1_RUN) o.PE_STN = true; });
+  chk('pallet-line: it lifts once the pallet is at the station', io.ST1_STEP >= 40 && io.SOL_LIFT === true, 'step ' + io.ST1_STEP);
+  drive(ctl, io, 900, plant);                                              // load, dwell, lift down, pin down
+  chk('pallet-line: the pin only goes down after the lift is down',
+    io.ST1_STEP === 90 && io.SOL_STOP === false && io.SOL_LIFT === false, 'step ' + io.ST1_STEP);
+  const fed = io.EM_P_CNT + io.EM_W_CNT;
+  drive(ctl, io, 200, o => { plant(o); o.RM_CNT = fed - 1; });             // the straggler leaves, ours has not
+  chk('pallet-line: an older pallet leaving does not end this cycle', io.ST1_STEP === 90 && io.CYCLE_CNT === 0,
+    'RM ' + io.RM_CNT + ' fed ' + fed + ', CYCLE_CNT ' + io.CYCLE_CNT);
+  drive(ctl, io, 200, o => { plant(o); o.RM_CNT = fed; });                 // pallet and part both out
+  chk('pallet-line: the cycle completes when both the pallet and its part are out', io.CYCLE_CNT === 1,
+    'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP);
+  io.PE_STN = false;
+  drive(ctl, io, 16000, plant);                                            // no pallet ever arrives again
+  chk('pallet-line: a pallet that never arrives faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV1_RUN === false, 'step ' + io.ST1_STEP);
+}
+
 process.exit(fail ? 1 : 0);

@@ -52,7 +52,7 @@ node server/main.js --scene a-to-b                  # the same scene against the
 
 ## Scenes
 
-Six machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
+Seven machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
 
 | scene | what it shows |
 |---|---|
@@ -62,6 +62,7 @@ Six machines run with their own PLC programs, each in `scenes/<name>.{json,st,ct
 | `sort-by-height` | a low beam sees any part, a high beam only the tall ones, which get pushed off |
 | `buffer-queue` | a buffer belt stands still between demands and meters out one part at a time |
 | `assembler` | a 4-station cam indexer: load a base, drop a lid, press it, index on |
+| `pallet-line` | a pallet is fed, stopped by a pop-up stop, lifted off the belt, loaded and released |
 
 | | |
 |---|---|
@@ -70,8 +71,9 @@ Six machines run with their own PLC programs, each in `scenes/<name>.{json,st,ct
 | ![sort-by-height](docs/img/sort-by-height.png) | ![assembler](docs/img/assembler.png) |
 | **`sort-by-height`** — a tall part runs at the two beams, the pusher waiting by the chute | **`assembler`** — lids ride their bases on friction alone as the table carries them on |
 
-All six passed a 30-minute soak: cycles keep completing, parts balance, none are lost, no
-warnings, and the worst step was 69–441 µs against a 1000 µs budget.
+All seven passed a 30-minute soak: cycles keep completing, parts balance, none are lost, and
+nothing warns. Step cost was measured for the first six, alone on the box: 69–441 µs against a
+1000 µs budget.
 
 ## How it fits together
 
