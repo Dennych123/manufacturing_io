@@ -161,6 +161,19 @@ function placeParts(ps) {
   }
 }
 
+/**
+ * Where a loose part is on screen, for tests/browser.test.js. A WebGL canvas cannot be hit-tested
+ * from the DOM, and sweeping the view with clicks presses the machine's own pushbuttons (measured:
+ * the sweep hit STOP and the line stopped feeding). Read-only, and used by nothing else.
+ */
+window.mioPartScreen = uid => {
+  const g = partObjs.get(uid);
+  if (!g) return null;
+  const v = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld).project(camera);
+  const r = renderer.domElement.getBoundingClientRect();
+  return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height];
+};
+
 function place(dof) {
   const W = worldPoses(model.scene, dof);
   for (const { id, link, g } of model.links) {
@@ -380,19 +393,29 @@ function pickAt(e, list) {
   ray.setFromCamera(ndc, camera);
   return ray.intersectObjects(list, false)[0] || null;
 }
+let grabbed = null;
 renderer.domElement.addEventListener('pointerdown', e => {
   if (!model || e.button !== 0 || editor.active) return;       // edit mode selects instead
   const hit = pickAt(e, model.pick);
-  if (!hit) return;
-  const id = hit.object.userData.id, c = model.scene.components.find(x => x.id === id);
-  pressed = { id, key: TYPES[c.type].pressKey };
-  controls.enabled = false;                                     // capture phase: before OrbitControls sees it
-  post('/api/press', { ...pressed, down: true });
+  if (hit) {
+    const id = hit.object.userData.id, c = model.scene.components.find(x => x.id === id);
+    pressed = { id, key: TYPES[c.type].pressKey };
+    controls.enabled = false;                                   // capture phase: before OrbitControls sees it
+    post('/api/press', { ...pressed, down: true });
+    return;
+  }
+  // Nothing pressable: try a loose part. Holding one still jams the line on purpose, which is
+  // what the machine has to cope with. The plant does the holding; this only sends the edge.
+  const ph = pickAt(e, [...partObjs.values()].flatMap(g => g.children));
+  if (!ph) return;
+  grabbed = ph.object.userData.part;
+  controls.enabled = false;
+  post('/api/hold', { uid: grabbed, down: true });
 }, true);
 addEventListener('pointerup', () => {
-  if (!pressed) return;
-  post('/api/press', { ...pressed, down: false });
-  pressed = null;
+  if (pressed) { post('/api/press', { ...pressed, down: false }); pressed = null; }
+  else if (grabbed) { post('/api/hold', { uid: grabbed, down: false }); grabbed = null; }
+  else return;
   controls.enabled = true;
 });
 

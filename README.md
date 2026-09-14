@@ -36,6 +36,9 @@ node server/main.js --scene a-to-b                  # the same scene against the
 - **Workpieces are real physics.** They fall, ride belts on friction, queue against stoppers, get
   pushed down chutes and trip photo-eyes. Actuators stay kinematic: physics never decides the
   sequence and never writes to the PLC.
+- **Jam it on purpose.** Click and hold a part in the 3D view and it stops dead where it is: the
+  belt slips under it, the parts behind it queue up, and you watch what the PLC program does about
+  it. Forcing a tag lies to the PLC; this breaks the material flow instead.
 - **The PLC is the real thing.** Sysmac tags drive the actuators, the plant computes the sensors
   and writes them back. `tools/gen_sysmac.js` writes the ST and the XML for a scene; `tools/smc2.js`
   imports it into a `.smc2` project, task assignment included.

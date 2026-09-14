@@ -196,7 +196,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any, off: boolean}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any, pin: any, off: boolean}>} */
   const parts = new Map();
   /** collider handle -> part, for sensors that must know WHAT they see (metal or not). */
   const colPart = new Map();
@@ -216,7 +216,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const s0 = d.shapes.find((/** @type {any} */ s) => s.collide !== false);
     // rf: effective friction radius of the footprint (m), for the belt's friction torque
     const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
-    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null), off: false };
+    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null), pin: /** @type {any} */ (null), off: false };
     parts.set(uid, pt);
     for (const c of cols) colPart.set(c.handle, pt);
     rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
@@ -241,6 +241,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   function inZone(r, F, z) {
     const inv = invert(F);
     for (const pt of parts.values()) {
+      if (pt.pin) continue;                                   // a part the viewer is holding is not there to be taken
       if (pt.held && pt.held.id !== r.id) continue;
       const l = apply(inv, partCentre(pt));
       if (l.every((v, i) => Math.abs(v - z.at[i]) <= z.size[i] / 2)) return pt;
@@ -273,12 +274,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     if (r.t.hold === 'vacuum') {
       let found = null;
       world.intersectionsWithShape({ x: F.p[0] * SK, y: F.p[1] * SK, z: F.p[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r.p.reach * SK),
-        (/** @type {any} */ col) => { const pt = colPart.get(col.handle); if (pt && !pt.held) { found = pt; return false; } return true; }, undefined, PART_RAYS);
+        (/** @type {any} */ col) => { const pt = colPart.get(col.handle); if (pt && !pt.held && !pt.pin) { found = pt; return false; } return true; }, undefined, PART_RAYS);
       return found;
     }
     const inv = invert(F), [sx, sy, sz] = r.p.size;
     for (const pt of parts.values()) {
-      if (pt.held) continue;
+      if (pt.held || pt.pin) continue;
       const l = apply(inv, partCentre(pt));
       if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= -sz / 2 && l[2] <= sz) return pt;
     }
@@ -333,6 +334,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const inbox = [];
   /** @type {Array<[string, string, boolean]>} */
   const presses = [];
+  /** Viewer hand edges: [part uid, down]. Queued like presses, so a recorded run replays. @type {Array<[string, boolean]>} */
+  const hands = [];
   const ctlIo = /** @type {Record<string, any>} */ ({});
   const events = [];
   const warned = new Set();
@@ -343,7 +346,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     /** @type {Array<(msg: string, t: number) => void>} */
     warnListeners: [],
     dof: dofOf(),
-    step, exchange, start, stop, reset, press, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn,
+    step, exchange, start, stop, reset, press, holdPart, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn,
     /** Advance `ms` of sim time now, without pacing (tests, fast internal runs). @param {number} ms */
     run(ms) { for (let n = Math.round(ms / dtMs); n > 0; n--) step(); },
   };
@@ -407,6 +410,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     // 1. commands
     for (const [tag, v, tp] of inbox.splice(0)) applyOut(tag, v, tp);
     for (const [id, key, down] of presses.splice(0)) { const r = byId.get(id); r?.t.press?.(r.s, r.p, key, down); }
+    for (const [uid, down] of hands.splice(0)) grab(uid, down);
     if (controller) {
       for (const tag of inTags) ctlIo[tag] = io[tag];
       controller.scan(ctlIo, plant.t);
@@ -443,7 +447,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const r = byId.get(bl.id), F = W[bl.id][bl.link], vb = r.s.v * SK;
       const u = qrot(F.q, [1, 0, 0]), n = qrot(F.q, [0, 0, 1]), vbelt = [u[0] * vb, u[1] * vb, u[2] * vb];
       for (const pt of parts.values()) {
-        if (pt.held) continue;                                // a held part follows its holder
+        if (pt.held || pt.pin) continue;                      // a held part follows its holder; a pinned one stays put
         let touch = false;
         for (const pc of pt.cols) world.contactPair(bl.col, pc, (/** @type {any} */ m) => { if (m.numContacts() > 0) touch = true; });
         if (!touch) continue;
@@ -457,6 +461,14 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     // type just changed sat out one step (see the take/release below), so put it back first.
     for (const pt of parts.values()) {
       if (pt.off) { for (const c of pt.cols) c.setEnabled(true); pt.off = false; }
+      // The hand (grab) pins a part to the world: it stays exactly where it was taken, so the
+      // belt slips under it and the parts behind it queue up. The machine sees a jam, not a
+      // teleport.
+      if (pt.pin) {
+        pt.body.setNextKinematicTranslation({ x: pt.pin.p[0], y: pt.pin.p[1], z: pt.pin.p[2] });
+        pt.body.setNextKinematicRotation({ x: pt.pin.q[0], y: pt.pin.q[1], z: pt.pin.q[2], w: pt.pin.q[3] });
+        continue;
+      }
       if (!pt.held) continue;
       const P = compose(W[pt.held.id][pt.held.link], pt.rel);
       pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
@@ -597,6 +609,34 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   /** After (re)connecting, every sensor is written once so the PLC starts from the plant's state. */
   function driverUp() { for (const tag of inTags) dirty.add(tag); }
 
+  /**
+   * The hand: a viewer holds a part still where it is, to see what the machine does about it
+   * ("ijiwaru" testing - jam the line on purpose). It is the SAME take/follow/release mechanism
+   * as a vacuum cup or a nest, with the world as the holder, so nothing new can go wrong in the
+   * solver. The hand never steals a part a machine already holds, and it releases with zero
+   * velocity: a part let go over a running belt is carried away, not thrown.
+   * @param {string} uid @param {boolean} down
+   */
+  function grab(uid, down) {
+    const pt = parts.get(uid);
+    if (!pt || !!pt.pin === down) return;
+    if (down) {
+      if (pt.held) return;
+      const t = pt.body.translation(), q = pt.body.rotation();
+      pt.pin = { p: [t.x, t.y, t.z], q: [q.x, q.y, q.z, q.w] };     // metres: written straight back to Rapier
+      pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+    } else {
+      pt.pin = null;
+      pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
+      pt.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      pt.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+    refreshPart(pt);                                               // the body type changed: drop stale contacts
+    rec({ t: plant.t, k: 'part', uid, ev: down ? 'hold' : 'release', by: 'hand' });
+  }
+  /** Browser edge for the hand. Applied at the start of the next step. @param {string} uid @param {boolean} down */
+  function holdPart(uid, down) { hands.push([uid, !!down]); }
+
   /** Browser edge from a 3D panel part. Applied at the start of the next step. @param {string} id @param {string} key @param {boolean} down */
   function press(id, key, down) {
     if (!byId.get(id)?.t.press) throw new Error('not pressable: ' + id);
@@ -622,6 +662,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     forced.clear();
     stretched.clear();
     initIo();
+    hands.length = 0;                                          // a hand edge for a part that is about to go
     for (const uid of [...parts.keys()]) removePart(uid, 'reset');
     spawnSceneParts();
     // The internal controller keeps its own copies of plant counters (the last emitter count it

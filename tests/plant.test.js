@@ -227,6 +227,66 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await pk.close();
 }
 
+// ---------------------------------------------------------------- the hand: holding a part still (jam testing)
+// Forcing lies to the PLC; the hand stops a PART. A jam is what the sequence actually has to
+// survive, so it is worth a test of its own.
+{
+  const jam = () => ({
+    format: 'mio-scene/1', name: 'jamtest',
+    components: [
+      { id: 'cv1', type: 'conveyor', params: { length: 1500, speed: 300 }, io: { run: 'CV1_RUN' } },
+      { id: 'wp', type: 'workpiece', at: [0, 1000, 0], params: { material: 'alu' } },
+      { id: 'em1', type: 'emitter', parent: 'cv1', socket: 'start', at: [100, 0, 60], params: { template: 'wp', intervalMs: 1500, max: 3 }, io: { count: 'EM1_CNT' } },
+      { id: 'rm1', type: 'remover', parent: 'cv1', socket: 'end', at: [-75, 0, 0], io: { count: 'RM1_CNT' } },
+    ],
+  });
+  // Hold the first part at 2.5 s, let the belt run under it for 4 s, then let go.
+  const script = async () => {
+    const p = await createPlant(jam(), {});
+    p.force('CV1_RUN', true);
+    p.run(2500);
+    const uid = [...p.parts.keys()][0];
+    const x0 = p.parts.get(uid).body.translation().x / SK;
+    p.holdPart(uid, true);
+    p.run(4000);
+    const x1 = p.parts.get(uid).body.translation().x / SK;
+    const heldRemoves = p.events.filter(e => e.k === 'part' && e.ev === 'remove').length;
+    const behind = p.parts.size;
+    p.holdPart(uid, false);
+    p.run(8000);
+    return { p, uid, x0, x1, heldRemoves, behind };
+  };
+  const j = await script();
+  chk('the hand holds a part still while the belt runs under it', Math.abs(j.x1 - j.x0) < 0.5, (j.x1 - j.x0).toFixed(3) + ' mm in 4 s at 300 mm/s');
+  chk('the jam stops the line: nothing reaches the remover while the part is held', j.heldRemoves === 0 && j.p.io.CV1_RUN === true);
+  chk('the parts behind it queue up instead of passing through', j.behind >= 2, j.behind + ' parts on the belt');
+  chk('releasing it lets the belt carry every part away again', j.p.parts.size === 0 && j.p.io.RM1_CNT === 3, j.p.io.RM1_CNT + ' removed');
+  chk('the hand is recorded as a holder, so a run can be read back', j.p.events.some(e => e.k === 'part' && e.ev === 'hold' && e.by === 'hand')
+    && j.p.events.some(e => e.k === 'part' && e.ev === 'release' && e.by === 'hand'));
+  const j2 = await script();
+  chk('a run with the hand in it still replays identically', JSON.stringify(j2.p.events) === JSON.stringify(j.p.events), j.p.events.length + ' events');
+  await j.p.close(); await j2.p.close();
+
+  // The hand must not steal a part a machine holder already has: the nest would let go of a part
+  // that is no longer in it, and the sequence would carry on with nothing in the gripper.
+  const pp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'pick-place.json'), 'utf8'));
+  const { create: createPP } = await import('../scenes/pick-place.ctl.js');
+  const w = await createPlant(pp, { controller: createPP() });
+  w.run(200); w.press('pbStart', 'pb', true); w.run(150); w.press('pbStart', 'pb', false);
+  let holdUid = null;
+  for (let i = 0; i < 200 && !holdUid; i++) {
+    w.run(100);
+    for (const [uid, pt] of w.parts) if (pt.held) holdUid = uid;
+  }
+  const before = w.events.filter(e => e.k === 'part' && e.by === 'hand').length;
+  w.holdPart(holdUid, true);
+  w.run(100);
+  chk('the hand does not take a part a machine holder is already holding',
+    holdUid !== null && w.parts.get(holdUid)?.pin == null && w.events.filter(e => e.k === 'part' && e.by === 'hand').length === before,
+    holdUid || 'no held part seen');
+  await w.close();
+}
+
 // ---------------------------------------------------------------- scene a-to-b with its internal controller
 {
   const ab = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'a-to-b.json'), 'utf8'));

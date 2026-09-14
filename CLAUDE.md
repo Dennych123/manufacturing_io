@@ -25,6 +25,12 @@ in the code but break things silently** when violated. Most were paid for once i
   the trap and the rule.
 - **A held part is kinematic and follows its holder at a stored relative pose.** No fixed joints
   between dynamic bodies: they fight the solver.
+- **The viewer's hand is that same mechanism with the WORLD as the holder.** Clicking and holding
+  a loose part pins it where it is (`holdPart`, `pt.pin`), so the belt slips under it and a queue
+  builds behind it: a deliberate jam, which is the test a real machine has to survive. The hand
+  never takes a part a machine holder already has, it releases at zero velocity, and its edges are
+  queued like button presses so a run still replays identically. Forcing a tag lies to the PLC;
+  the hand breaks the material flow, which is a different failure and finds different bugs.
 - **Sensors about the machine (reed switch, in-position, origin) are analytic, from DOF values.**
   Only sensors about parts use Rapier queries.
 - **Part sensors query PARTS only** (collision groups `G_PART`/`PART_RAYS` in `server/plant.js`).
@@ -156,6 +162,11 @@ in the code but break things silently** when violated. Most were paid for once i
 - Sliders send on `change`, not `input`.
 - Redraw labels only when their text changes.
 - Since three r169, `TransformControls` is not an Object3D: `scene.add(tc.getHelper())`.
+- **A WebGL canvas cannot be hit-tested from the DOM, and sweeping it with clicks is no
+  substitute.** A blind sweep looking for a part pressed the machine's own pushbuttons: it hit
+  STOP, the line stopped feeding, and 1380 clicks over 62 s then found nothing left to grab. The
+  browser test asks the page where a part is (`window.mioPartScreen`, read-only, used by nothing
+  else) and clicks that point.
 
 ## Repo hygiene
 

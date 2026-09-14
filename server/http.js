@@ -260,6 +260,8 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
           return json(res, 200, { ok: true, scene: sceneName, internal: !usePlc });
         }
         if (url.pathname === '/api/press') { plant.press(String(b.id), String(b.key), !!b.down); return json(res, 200, { ok: true }); }
+        // The hand: hold a loose part still to jam the line on purpose (docs/PLAN.md §3).
+        if (url.pathname === '/api/hold') { plant.holdPart(String(b.uid), !!b.down); return json(res, 200, { ok: true }); }
         if (url.pathname === '/api/force') { plant.force(String(b.tag), b.value ?? null); return json(res, 200, { ok: true }); }
         return json(res, 404, { error: 'no such endpoint' });
       }

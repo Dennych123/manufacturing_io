@@ -22,7 +22,8 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mio-ed-'));
 const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'mio-chrome-'));
 for (const d of LINKS) fs.symlinkSync(path.join(REPO, d), path.join(root, d), 'junction');
 fs.mkdirSync(path.join(root, 'scenes'));
-for (const f of ['cyl-on-slide.json', 'cyl-on-slide.ctl.js']) fs.copyFileSync(path.join(REPO, 'scenes', f), path.join(root, 'scenes', f));
+// a-to-b comes along for the hand check at the end: it has loose parts on a belt to grab.
+for (const f of ['cyl-on-slide.json', 'cyl-on-slide.ctl.js', 'a-to-b.json', 'a-to-b.ctl.js']) fs.copyFileSync(path.join(REPO, 'scenes', f), path.join(root, 'scenes', f));
 fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}');
 const sceneFile = path.join(root, 'scenes/cyl-on-slide.json');
 
@@ -97,6 +98,49 @@ try {
 
   await ev(`$('edit-btn').click()`);
   chk('Exit edit shows the IO table again', await waitFor(`$('editor').hidden && !document.querySelector('.tablewrap').hidden`));
+  // -------------------------------------------------------------- the hand, through a real mouse
+  // plant.test.js calls holdPart() directly, so nothing else covers the viewer wiring
+  // (pointerdown on a part -> POST /api/hold). a-to-b gets its own server: the object serve()
+  // returns keeps the plant it was built with, so a /api/switch would leave us reading the old one.
+  const ab = await serve({ root, port: PORT + 1, internal: true, sceneName: 'a-to-b', log: () => {} });
+  try {
+    const abPost = (p, b) => fetch(`http://127.0.0.1:${PORT + 1}${p}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) });
+    await cmd('Page.navigate', { url: `http://127.0.0.1:${PORT + 1}/` });
+    chk('the viewer loads the a-to-b scene', await waitFor(`document.title.startsWith('a-to-b')`), await ev(`location.href + ' ' + document.title`));
+    await abPost('/api/cmd', { op: 'run' });
+    await abPost('/api/press', { id: 'pbStart', key: 'pb', down: true });
+    await sleep(150);
+    await abPost('/api/press', { id: 'pbStart', key: 'pb', down: false });
+    const pinned = () => [...ab.plant.parts.values()].filter(p => p.pin).length;
+    for (let i = 0; i < 200 && ab.plant.parts.size === 0; i++) await sleep(100);
+    await sleep(1200);                                          // the viewer renders 50 ms behind
+    // Click the part where it actually is. Sweeping the view with clicks instead presses the
+    // machine's own pushbuttons: a first attempt hit STOP, the line stopped feeding, and the
+    // sweep then had nothing left to grab (1380 points, 62 s, no hit).
+    const mouse = (type, x, y) => cmd('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount: 1 });
+    let hit = null, where = '';
+    for (let i = 0; i < 5 && !hit; i++) {
+      const uid = [...ab.plant.parts.keys()][0];
+      const at = uid && await ev(`window.mioPartScreen(${JSON.stringify(uid)})`);
+      if (!at) { await sleep(500); continue; }
+      const x = Math.round(at[0]), y = Math.round(at[1]);
+      where = uid + ' at ' + x + ',' + y;
+      await mouse('mousePressed', x, y);
+      await sleep(250);
+      if (pinned() > 0) hit = [x, y]; else await mouse('mouseReleased', x, y);
+    }
+    chk('pressing the mouse on a part in 3D jams it in the plant', !!hit, where || 'no part on screen');
+    if (hit) {
+      const held = [...ab.plant.parts.values()].find(p => p.pin), x0 = held.body.translation().x;
+      await sleep(1500);
+      chk('the jammed part stays put while the belt runs under it', Math.abs(held.body.translation().x - x0) < 5e-4,
+        ((held.body.translation().x - x0) * 1000).toFixed(3) + ' mm');
+      await mouse('mouseReleased', hit[0], hit[1]);
+      await sleep(800);
+      chk('releasing the mouse lets the part go', pinned() === 0, pinned() + ' still pinned');
+    }
+  } finally { await ab.close(); }
+
   chk('no page errors', errors.length === 0, errors.join('\n  '));
 } finally {
   ws?.close();

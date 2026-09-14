@@ -219,6 +219,16 @@ Gripper, vacuum cup, nest/fixture, index-table pocket and pallet all hold a part
 This is exact and deterministic. A fixed joint between a kinematic and a dynamic body fights the
 solver.
 
+**The hand (jam testing, "ijiwaru").** The viewer can click and hold any loose part: `POST
+/api/hold {uid, down}` → `plant.holdPart()`, which is take/follow/release again with the **world**
+as the holder, so the part stays exactly where it was grabbed. The belt then slips under it and
+the parts behind it queue up, which is what a real jam looks like. The hand does not take a part
+a machine holder already has, it releases with zero velocity, and its edges are queued and applied
+at the start of a step, so a recording still replays identically. This is failure injection on the
+**material flow**; forcing (§5) is failure injection on the **IO image**. They find different
+bugs: forcing asks "does the PLC handle a lying sensor", the hand asks "does the sequence handle a
+part that stopped moving".
+
 Moving machine links are `kinematicPositionBased` bodies, driven by
 `setNextKinematicTranslation/Rotation`, so pushers and stoppers really push parts. **Actuators are
 never dynamic bodies, and nothing in physics writes to the PLC.**
@@ -572,6 +582,7 @@ Each phase ends runnable, with a written exit criterion.
   - cylinder `head` plus the Stopper/Pusher/Lifter presets;
   - the `ref` param type;
   - holding (vacuum cup, 2-finger gripper, nest): one take/follow/release mechanism;
+  - the hand: hold a part still from the viewer to jam the line on purpose;
   - the index table (cam drive, cycloidal profile, `inPos` only in the dwell);
   - the scenes **a-to-b**, **stopper-pusher**, **pick-place**, **assembler**, **sort-by-height**
     and **buffer-queue**, each with `.st` and `.ctl.js`;
@@ -678,11 +689,12 @@ Each phase ends runnable, with a written exit criterion.
 | suite | checks |
 |---|---|
 | `lib` | math compose/invert; `validate()` rejects missing parent, cycles, unknown type, duplicate ids and two writers; the rod-end world pose of the cylinder on the slide equals hand-computed numbers; stroke time ±1 step; cushion and each valve type; reed band edges and hysteresis; servo matches test vectors copied from rb4axis `langkahSumbu`; the cycloid reaches the pitch exactly and `inPos` only in dwell |
-| `plant` | kinematic bodies line up with links; a conveyor part reaches the photo-eye on time; grip take/release; a cylinder pushes a part; two runs give identical logs; a 12 ms blip becomes 100 ms plus a warning; static check that physics never calls `driver.write`. Loud SKIP if Rapier is not installed |
+| `plant` | kinematic bodies line up with links; a conveyor part reaches the photo-eye on time; grip take/release; a cylinder pushes a part; the hand holds a part still (0.00 mm in 4 s over a running belt), the queue builds behind it, the run still replays, and the hand never takes a part a holder has; two runs give identical logs; a 12 ms blip becomes 100 ms plus a warning; static check that physics never calls `driver.write`. Loud SKIP if Rapier is not installed |
 | `opcua` | a fake session returning 3 browse batches is fully mapped; `plain()`; the whitelist; twin rejects every write; suffix path matching; live echo only when the simulator answers, else loud SKIP |
 | `sysmac` | PublishOnly on every bound tag; `ArrayTypeSpec`, never `<TypeName>ARRAY`; no `P_` POUs; LF in `<ST>`; `--check`; IO list has 4 columns, unique addresses, allowed types, `ST<n>` present, every SOL has an AS with the same stem; `--bind` against a fixture; XSD via the sysmac script or loud SKIP |
 | `analysis` | cycle-time rules on synthetic logs, Gantt intervals, bottleneck, OEE formulas, compare alignment, CSV quoting |
 | `web` | static checks: no CDN in the importmap; exact dependency pins; `lib/` never imports three or Rapier; `web/` builds geometry only from `lib` shapes and poses only from `worldPoses`; panel updates throttled; sliders use `onchange` |
+| `browser` | headless Chrome over CDP, only with `MIO_BROWSER=1`: the editor end to end (tree, properties, undo/redo, Add, Save to disk, canonical text, 3D click), then the hand on `a-to-b` — a real mouse press on a part jams it in the plant, it holds still over the running belt, and the release lets it go. No page errors on either page |
 
 ## 15. Risks
 
