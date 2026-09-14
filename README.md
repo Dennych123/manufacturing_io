@@ -24,7 +24,7 @@ Internal/PLC switch change scene or controller without restarting.
 ```bash
 node tests/run.js                                   # the whole suite, no framework
 node tools/gen_sysmac.js --scene a-to-b             # scenes/a-to-b.sysmac.xml, to import into Studio
-node tools/smc2.js plc/P.smc2 --scene a-to-b        # or straight into a CLOSED project: globals, program, task
+node tools/smc2.js plc/PROJECT.smc2 --scene a-to-b  # or straight into your own CLOSED project: globals, program, task
 node server/main.js --scene a-to-b                  # the same scene against the simulator (opc.tcp://127.0.0.1:4840)
 ```
 
