@@ -572,6 +572,7 @@ Each phase ends runnable, with a written exit criterion.
   - cylinder `head` plus the Stopper/Pusher/Lifter presets;
   - the `ref` param type;
   - holding (vacuum cup, 2-finger gripper, nest): one take/follow/release mechanism;
+  - the index table (cam drive, cycloidal profile, `inPos` only in the dwell);
   - the scenes **a-to-b**, **stopper-pusher** and **pick-place**, each with `.st` and `.ctl.js`;
   - the contact refresh for kinematic links that come to rest and for parts whose body type
     changes.

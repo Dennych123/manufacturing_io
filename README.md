@@ -36,6 +36,8 @@ fall, ride belts, queue against stoppers and get pushed. The kit now has:
 - a part emitter and a part remover;
 - a photo-eye and a proximity sensor;
 - Stopper/Pusher/Lifter cylinder presets;
+- an index table: while `run` is held the camshaft turns, and one revolution is one index plus
+  one dwell. Dropping `run` mid-index leaves the table between stations, as a real indexer does;
 - holding: a vacuum cup, a 2-finger gripper and a nest. A held part rides its holder and is let
   go with the holder's velocity. The gripper's fingers stop at the width of the part between
   them, and its `closed` switch sits at full close, so a missed grip stays visible to the PLC.

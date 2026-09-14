@@ -176,6 +176,31 @@ const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());
 chk('key order in the input does not change the output', stringify(shuffled) === once);
 
+// ---------------------------------------------------------------- index table (cam drive)
+{
+  const { cycloid } = await import('../lib/components.js');
+  chk('cycloid starts and ends exactly on the station (s(0) = 0, s(1) = 1)', cycloid(0) === 0 && Math.abs(cycloid(1) - 1) < 1e-12);
+  chk('cycloid is still at both ends (no jolt onto the station)', Math.abs(cycloid(0.001) / 0.001) < 0.02 && Math.abs((1 - cycloid(0.999)) / 0.001) < 0.02);
+
+  const t = TYPES.indexTable, p = withDefaults(t, { stations: 6, camMs: 1200, indexFrac: 0.5 });
+  const s = t.init(p), io = { run: true };
+  const run = (n, on = true) => { io.run = on; for (let i = 0; i < n; i++) t.step(s, p, io, DT); };
+  run(150);                                     // 300 ms: a quarter of the camshaft, mid-index
+  chk('index table: mid-index it is between stations and not in position', s.x > 0 && s.x < 60 && io.inPos === false, s.x.toFixed(2) + '°');
+  const held = s.x;
+  run(100, false);                              // run drops mid-index
+  chk('index table: dropping run mid-index leaves it where it stopped, still not in position', s.x === held && io.inPos === false, s.x.toFixed(2) + '°');
+  run(151);                                     // resume and finish the index (600 ms in total)
+  chk('index table: one index turns exactly one pitch (60°) and reports in position', Math.abs(s.x - 60) < 1e-9 && io.inPos === true && io.station === 1,
+    s.x.toFixed(6) + '°, station ' + io.station);
+  chk('index table: origin is only at station 0', io.origin === false);
+  // one camshaft revolution = 600 steps at dt 2 ms = one more index, so five more revolutions
+  // take the table from station 1 back round to origin
+  run(3000);
+  chk('index table: six indexes come back to origin at 360°', Math.abs(s.x - 360) < 1e-9 && io.station === 0 && io.origin === true,
+    s.x.toFixed(6) + '°, station ' + io.station);
+}
+
 // eulerOf inverts qeuler (same rotation, compared as rotated vectors), incl. gimbal lock
 {
   const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
