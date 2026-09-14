@@ -4,6 +4,7 @@ VAR
 	STOP_REQ : BOOL;
 	T_DWELL : TON;
 	T_SETTLE : TON;
+	T_CONF : TON;
 	T_WD : TON;
 	EM_P_LAST : UDINT;
 	EM_W_LAST : UDINT;
@@ -79,9 +80,11 @@ CASE ST1_STEP OF
 			CV1_RUN := FALSE;
 			ST1_STEP := 40;
 		END_IF;
-	40:	// lift and locate
+	40:	// lift and locate. The pallet must stay reported present for a CONFIRM time, not just for
+		// the instant the switch first makes: a part is dropped on the strength of this signal,
+		// and T_CONF restarts if it flickers.
 		SOL_LIFT := TRUE;
-		IF AS_LIFT_UP AND PLT_PRESENT THEN
+		IF T_CONF.Q THEN
 			EM_W_LAST := EM_W_CNT;
 			ST1_STEP := 50;
 		END_IF;
@@ -134,6 +137,7 @@ END_CASE;
 T_DWELL(In := (ST1_STEP = 60), PT := T#500ms);
 // 106 mm from the beam edge to the pin at 250 mm/s is 424 ms; 700 leaves margin to press up.
 T_SETTLE(In := (ST1_STEP = 35), PT := T#700ms);
+T_CONF(In := (ST1_STEP = 40) AND AS_LIFT_UP AND PLT_PRESENT, PT := T#300ms);
 
 // Watchdog: a step that stops moving is a jam, not patience. Without it the sequence waits for
 // ever and the machine only LOOKS alive.

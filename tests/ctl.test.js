@@ -397,4 +397,31 @@ function drive(ctl, io, ms, each = () => {}) {
     io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV1_RUN === false, 'step ' + io.ST1_STEP);
 }
 
+// A part is dropped on the strength of PLT_PRESENT, so that signal has to be CONFIRMED - held for
+// 300 ms - and not merely seen once. A switch that flickers must not load a pallet that is not
+// properly on the pins.
+{
+  const { create } = await import('../scenes/pallet-line.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV1_RUN: false,
+               EM_P_EMIT: false, EM_P_CNT: 0, EM_W_EMIT: false, EM_W_CNT: 0, RM_CNT: 0, PE_STN: false,
+               SOL_STOP: false, AS_STOP_UP: false, AS_STOP_DN: true,
+               SOL_LIFT: false, AS_LIFT_UP: false, AS_LIFT_DN: true, PLT_PRESENT: false, AUTO_RUN: false };
+  const base = o => {
+    o.AS_STOP_UP = o.SOL_STOP; o.AS_STOP_DN = !o.SOL_STOP;
+    o.AS_LIFT_UP = o.SOL_LIFT; o.AS_LIFT_DN = !o.SOL_LIFT;
+    if (o.EM_P_EMIT) o.EM_P_CNT++;
+    if (o.EM_W_EMIT) o.EM_W_CNT++;
+  };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; base(o); o.PLT_PRESENT = false; });
+  drive(ctl, io, 1400, o => { base(o); o.PLT_PRESENT = false; if (o.ST1_STEP === 30 && o.CV1_RUN) o.PE_STN = true; });
+  // at the stop, lifting, but the present switch chatters: 100 ms on, 40 ms off
+  drive(ctl, io, 3000, o => { base(o); o.PLT_PRESENT = o.SOL_LIFT && (o.t % 140) < 100; });
+  chk('pallet-line: a flickering pallet-present switch does not load the pallet',
+    io.ST1_STEP === 40 && io.EM_W_CNT === 0, 'step ' + io.ST1_STEP + ', parts loaded ' + io.EM_W_CNT);
+  drive(ctl, io, 400, o => { base(o); o.PLT_PRESENT = o.SOL_LIFT; });       // steady: the confirm can run
+  chk('pallet-line: a steady pallet-present signal loads it after the confirm time',
+    io.ST1_STEP >= 50 && io.EM_W_CNT === 1, 'step ' + io.ST1_STEP + ', parts loaded ' + io.EM_W_CNT);
+}
+
 process.exit(fail ? 1 : 0);
