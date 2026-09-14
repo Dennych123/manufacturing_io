@@ -585,6 +585,7 @@ Each phase ends runnable, with a written exit criterion.
   | a-to-b | 271 | 272 = 271 + 1 | 0 / 0 / 0 | 69 µs |
   | stopper-pusher | 718 | 721 = 718 + 3 | 0 / 0 / 0 | 257 µs |
   | pick-place | 277 | 278 = 278 + 0 | 0 / 0 / 0 | 108 µs |
+  | assembler | 539 | 1080 = 1075 + 5 | 0 / 0 / 0 | 251 µs |
 
   The budget is 1000 µs (50 % of dt).
 
