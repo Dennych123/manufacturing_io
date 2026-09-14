@@ -2,7 +2,10 @@ VAR
 	START_EDGE : BOOL;
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
+	T_WD : TON;
 	EM_LAST : UDINT;
+	STEP_LAST : UDINT;
+	GONE : UDINT;
 END_VAR
 // pick-place: feed a part into the pick nest, pick it with the vacuum cup on the lift cylinder,
 // traverse on the servo, lay it on the running outfeed belt, and come home while the belt takes
@@ -105,7 +108,7 @@ CASE ST1_STEP OF
 			ST1_STEP := 130;
 		END_IF;
 	130:	// the belt carries the part to the unloader: everything loaded must have left
-		IF RM_CNT = EM_CNT THEN
+		IF RM_CNT + GONE >= EM_CNT THEN
 			CYCLE_CNT := CYCLE_CNT + 1;
 			IF STOP_REQ THEN
 				ST1_STEP := 0;
@@ -114,7 +117,33 @@ CASE ST1_STEP OF
 				ST1_STEP := 10;
 			END_IF;
 		END_IF;
+	900:	// FAULT: a step stopped moving. Stop feeding and the servo, but KEEP vacuum: a real
+		// machine does not drop the part it is holding.
+		EM_EMIT := FALSE;
+		CV_RUN := FALSE;
+		SV_EXEC := FALSE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			// Acknowledging writes off whatever never reached the unloader. Only HERE: at every
+			// START it would write off parts still legitimately in the machine, and then an older
+			// part's removal ends this cycle - the pipelining bug that cost two live rounds.
+			GONE := EM_CNT - RM_CNT;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
-AUTO_RUN := ST1_STEP <> 0;
+// Watchdog: a step that stops moving is a jam, not patience. Measured before this existed: taking
+// the part out of the nest left ST1_STEP at 20 indefinitely with AUTO_RUN still on.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#15s);
+IF ST1_STEP <> STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	EM_EMIT := FALSE;
+	CV_RUN := FALSE;
+	SV_EXEC := FALSE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
 PL_START := AUTO_RUN;

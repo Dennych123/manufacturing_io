@@ -150,6 +150,21 @@ in the code but break things silently** when violated. Most were paid for once i
   is also self-healing, since a pipeline drains back to one part. The internal controller never
   showed any of it, because there the counters only ever moved during the waiting step.
   `tests/ctl.test.js` pins it.
+- **A waiting step needs a WATCHDOG, because a part can leave without reaching the unloader.**
+  The viewer's hand takes one, or it falls off the line. Then `RM = EM` can never hold again.
+  Measured right after the hand shipped: dragging a part off `a-to-b` left `ST1_STEP` at 40 with
+  the belt running and `AUTO_RUN` on for as long as anyone watched (EM 2 / RM 1), and taking
+  `pick-place`'s part out of the nest left step 20 the same way. **A machine that waits for ever
+  looks alive and is not.** A step that has not moved for 15 s goes to FAULT (step 900): feeding
+  and motion off, `AUTO_RUN` off, START acknowledges it. Nothing is dropped on the way: the
+  vacuum keeps its part, as a real machine does.
+- **An invariant must stay reachable, so write off what left the machine — but only when the
+  FAULT is acknowledged.** Acknowledging takes `GONE = EM - RM`, and the discharge step tests
+  `RM + GONE >= EM`. Without the write-off a single part removed by hand stops the machine for
+  good, even after a restart. Writing off at every START instead breaks the opposite way, and I
+  did exactly that first: it writes off parts still legitimately on the belt, so an older part's
+  removal ends this cycle again — the pipelining bug that cost two live rounds on the simulator.
+  `tests/ctl.test.js` pins both halves.
 - **Sampling hides fast steps, so count cycles, not step sightings.** The plant samples
   `ST1_STEP` at 10 ms: a step that should last seconds but is seen a handful of times in 388
   cycles is the bug report.

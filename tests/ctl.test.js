@@ -179,4 +179,63 @@ function drive(ctl, io, ms, each = () => {}) {
     'CYCLE_CNT ' + io.CYCLE_CNT + ', belt ' + io.CV_ACC_RUN);
 }
 
+// ---------------------------------------------------------------- watchdog and write-off
+// A part can leave the machine without reaching the unloader: the viewer's hand takes it, or it
+// falls off. Then RM = EM can never hold again. Measured before this existed: a-to-b sat at step
+// 40 with the belt running and AUTO_RUN on for as long as anyone watched, and pick-place sat at
+// step 20 waiting for a nest that would never report a part. A machine that waits for ever looks
+// alive and is not.
+{
+  const { create } = await import('../scenes/a-to-b.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, EM1_CNT: 0, RM1_CNT: 0,
+               PE_END: false, CV1_RUN: false, EM1_EMIT: false, AUTO_RUN: false, PL_START: false };
+  const press = () => { drive(ctl, io, 8, o => { o.PB_START = true; }); drive(ctl, io, 8, o => { o.PB_START = false; }); };
+  const feed = ms => {
+    let loaded = false;
+    drive(ctl, io, ms, o => {
+      if (o.ST1_STEP === 10 && o.EM1_EMIT && !loaded) { o.EM1_CNT++; loaded = true; }
+      if (o.ST1_STEP === 20 && o.CV1_RUN) o.PE_END = true;
+    });
+  };
+  press();
+  feed(3000);                                                              // the part never reaches the unloader
+  chk('a-to-b: the discharge step waits for the part that was taken away', io.ST1_STEP === 40 && io.CV1_RUN === true,
+    'step ' + io.ST1_STEP + ', RM ' + io.RM1_CNT + ' EM ' + io.EM1_CNT);
+  drive(ctl, io, 16000, () => {});
+  chk('a-to-b: a step that stops moving faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV1_RUN === false && io.EM1_EMIT === false,
+    'step ' + io.ST1_STEP + ', AUTO ' + io.AUTO_RUN + ', belt ' + io.CV1_RUN);
+  press();
+  chk('a-to-b: START acknowledges the fault and leaves it idle', io.ST1_STEP === 0 && io.AUTO_RUN === false, 'step ' + io.ST1_STEP);
+  io.PE_END = false;
+  press();
+  let removed = false;
+  drive(ctl, io, 6000, o => {
+    if (o.ST1_STEP === 10 && o.EM1_EMIT && o.EM1_CNT < 2) o.EM1_CNT++;
+    if (o.ST1_STEP === 20 && o.CV1_RUN) o.PE_END = true;
+    if (o.ST1_STEP === 40 && !removed) { o.RM1_CNT++; removed = true; }    // only THIS part is unloaded
+  });
+  chk('a-to-b: the lost part is written off when the fault is acknowledged, so it cycles again',
+    io.CYCLE_CNT === 1 && io.ST1_STEP === 10, 'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP + ', RM ' + io.RM1_CNT + ' EM ' + io.EM1_CNT);
+}
+
+{
+  const { create } = await import('../scenes/pick-place.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV_RUN: false, EM_EMIT: false,
+               EM_CNT: 0, RM_CNT: 0, NEST_A_P: false, CLAMP_A: false, VAC_ON: false, VAC_SW: false,
+               SOL_Z_UP: false, SOL_Z_DN: false, AS_Z_UP: true, AS_Z_DN: false, SV_TGT: 0, SV_EXEC: false,
+               SV_DONE: false, SV_INPOS: true, AUTO_RUN: false, PL_START: false };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; });
+  let loaded = false;
+  drive(ctl, io, 500, o => { if (o.ST1_STEP === 10 && o.EM_EMIT && !loaded) { o.EM_CNT++; loaded = true; } });
+  chk('pick-place: it waits for the nest to report the part', io.ST1_STEP === 20, 'step ' + io.ST1_STEP);
+  drive(ctl, io, 16000, () => {});                                         // the part was taken out of the nest
+  chk('pick-place: a part that never arrives faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.EM_EMIT === false && io.CV_RUN === false,
+    'step ' + io.ST1_STEP + ', AUTO ' + io.AUTO_RUN);
+  chk('pick-place: the fault does not drop a part the cup is holding', io.VAC_ON === false || io.VAC_SW === false);
+}
+
 process.exit(fail ? 1 : 0);

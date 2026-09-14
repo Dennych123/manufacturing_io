@@ -62,7 +62,16 @@
           <Variable name="T_DWELL">
             <Type><TypeName>TON</TypeName></Type>
           </Variable>
+          <Variable name="T_WD">
+            <Type><TypeName>TON</TypeName></Type>
+          </Variable>
           <Variable name="EM_LAST">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="STEP_LAST">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="GONE">
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
         </Vars>
@@ -122,9 +131,9 @@ CASE ST1_STEP OF
 		IF T_DWELL.Q THEN
 			ST1_STEP := 40;
 		END_IF;
-	40:	// discharge: every part loaded must have left the belt
+	40:	// discharge: every part loaded must have left the belt, counting those written off
 		CV1_RUN := TRUE;
-		IF RM1_CNT = EM1_CNT THEN
+		IF RM1_CNT + GONE &gt;= EM1_CNT THEN
 			CV1_RUN := FALSE;
 			ST1_STEP := 50;
 		END_IF;
@@ -136,10 +145,35 @@ CASE ST1_STEP OF
 			EM_LAST := EM1_CNT;
 			ST1_STEP := 10;
 		END_IF;
+	900:	// FAULT: a step stopped moving. Hold everything until START acknowledges it.
+		CV1_RUN := FALSE;
+		EM1_EMIT := FALSE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			// Acknowledging writes off whatever never reached the unloader. Only HERE: at every
+			// START it would write off parts still legitimately on the belt, and then an older
+			// part's removal ends this cycle - the pipelining bug that cost two live rounds.
+			GONE := EM1_CNT - RM1_CNT;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
 T_DWELL(In := (ST1_STEP = 30), PT := T#500ms);
-AUTO_RUN := ST1_STEP &lt;&gt; 0;
+
+// Watchdog: a running step that stops moving is a jam, not patience. Without it the sequence
+// waits for ever and the machine only LOOKS alive: belt running, AUTO on, nothing happening.
+// The longest normal step is the ~5 s belt run.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900), PT := T#15s);
+IF ST1_STEP &lt;&gt; STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	CV1_RUN := FALSE;
+	EM1_EMIT := FALSE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900);
 PL_START := AUTO_RUN;</ST>
           </BodyContent>
         </MainBody>

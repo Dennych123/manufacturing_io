@@ -3,7 +3,10 @@ VAR
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
 	T_DWELL : TON;
+	T_WD : TON;
 	EM_LAST : UDINT;
+	STEP_LAST : UDINT;
+	GONE : UDINT;
 END_VAR
 // a-to-b: load a part at the belt start, convey it to the end sensor, stop, dwell, then run
 // the belt again until the unloader takes it. Repeat until STOP. The same sequence runs
@@ -54,9 +57,9 @@ CASE ST1_STEP OF
 		IF T_DWELL.Q THEN
 			ST1_STEP := 40;
 		END_IF;
-	40:	// discharge: every part loaded must have left the belt
+	40:	// discharge: every part loaded must have left the belt, counting those written off
 		CV1_RUN := TRUE;
-		IF RM1_CNT = EM1_CNT THEN
+		IF RM1_CNT + GONE >= EM1_CNT THEN
 			CV1_RUN := FALSE;
 			ST1_STEP := 50;
 		END_IF;
@@ -68,8 +71,33 @@ CASE ST1_STEP OF
 			EM_LAST := EM1_CNT;
 			ST1_STEP := 10;
 		END_IF;
+	900:	// FAULT: a step stopped moving. Hold everything until START acknowledges it.
+		CV1_RUN := FALSE;
+		EM1_EMIT := FALSE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			// Acknowledging writes off whatever never reached the unloader. Only HERE: at every
+			// START it would write off parts still legitimately on the belt, and then an older
+			// part's removal ends this cycle - the pipelining bug that cost two live rounds.
+			GONE := EM1_CNT - RM1_CNT;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
 T_DWELL(In := (ST1_STEP = 30), PT := T#500ms);
-AUTO_RUN := ST1_STEP <> 0;
+
+// Watchdog: a running step that stops moving is a jam, not patience. Without it the sequence
+// waits for ever and the machine only LOOKS alive: belt running, AUTO on, nothing happening.
+// The longest normal step is the ~5 s belt run.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#15s);
+IF ST1_STEP <> STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	CV1_RUN := FALSE;
+	EM1_EMIT := FALSE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
 PL_START := AUTO_RUN;

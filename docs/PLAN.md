@@ -652,7 +652,29 @@ Each phase ends runnable, with a written exit criterion.
   performance problem. `compile()` per rendered frame looked like the culprit and measured ~1 µs;
   it is cached per build now, but it was never the cost.
 
+  **The hand found a real hole in the sequences (2026-09-14).** Denny reported "banyak yang
+  stall" after the hand shipped. The plant timer was innocent — a-to-b idle with a browser
+  attached ran 120 s with 0 stalls, and 150 s of grabbing, dragging and burying parts in
+  pick-place cost 128 µs/step with 0 overruns. What stalled was the MACHINE:
+
+  | scene | what the hand did | where it stuck |
+  |---|---|---|
+  | a-to-b | dragged a part through the floor | step 40 for ever, belt running, AUTO_RUN on, EM 2 / RM 1 |
+  | pick-place | took the part out of the nest | step 20 for ever, waiting for `NEST_A_P` |
+
+  Two fixes, both in the controller and its `.st`:
+  - a **watchdog**: a step that has not moved for 15 s goes to FAULT (step 900), outputs safe,
+    `AUTO_RUN` off, START acknowledges. The cup keeps its part;
+  - a **write-off**: acknowledging the fault takes `GONE = EM − RM`, and the discharge invariant
+    becomes `RM + GONE >= EM`, so a part removed by hand does not stop the machine for good.
+
+  The write-off belongs to the fault acknowledgement and nowhere else. Doing it at every START
+  was the first attempt and `tests/ctl.test.js` caught it: it writes off parts that are still
+  legitimately on the belt, so an older part's removal ends this cycle — the pipelining bug that
+  cost two live rounds on the simulator.
+
   Open:
+  - the same watchdog for stopper-pusher, sort-by-height, buffer-queue and assembler;
   - pallets;
   - the live PLC runs of the newer scenes.
 
