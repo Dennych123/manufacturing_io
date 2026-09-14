@@ -170,9 +170,19 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
    * The old driver closes before the new one connects: one session to the PLC at a time.
    * @param {any} sc
    */
-  function rebuild(sc) {
+  function rebuild(sc, name = sceneName, wantInternal = internal) {
     rebuilding = rebuilding.catch(() => {}).then(async () => {
-      const next = await build(sc);
+      const wasName = sceneName, wasInternal = internal;
+      sceneName = name;                                  // build() reads both for the .ctl.js and the driver
+      internal = wantInternal;
+      let next;
+      try {
+        next = await build(sc);
+      } catch (e) {
+        sceneName = wasName;                             // a scene that cannot be built leaves the old one running
+        internal = wasInternal;
+        throw e;
+      }
       const wasRunning = plant.mode === 'run';
       const old = plant, oldRec = recorder;
       old.stop();
@@ -207,7 +217,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
         req.on('close', () => clients.delete(res));
         return;
       }
-      if (req.method === 'GET' && url.pathname === '/api/ping') return json(res, 200, { ok: true, t: plant.t, scene: scene.name });
+      if (req.method === 'GET' && url.pathname === '/api/ping') return json(res, 200, { ok: true, t: plant.t, scene: scene.name, internal: !usePlc });
       if (req.method === 'GET' && url.pathname === '/api/scenes') {
         return json(res, 200, fs.readdirSync(path.join(root, 'scenes')).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5)).filter(n => NAME_RE.test(n)));
       }
@@ -234,6 +244,20 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
           else return json(res, 400, { error: 'op must be run, stop or reset' });
           broadcast('status', plant.status());
           return json(res, 200, { ok: true });
+        }
+        // Load another scene, or run this one against the PLC instead of its own controller.
+        if (url.pathname === '/api/switch') {
+          const name = String(b.scene ?? sceneName);
+          if (!NAME_RE.test(name)) return json(res, 400, { error: 'scene name must match ' + NAME_RE });
+          const f = path.join(root, 'scenes', name + '.json');
+          if (!fs.existsSync(f)) return json(res, 404, { error: 'no scene ' + name });
+          const sc = JSON.parse(fs.readFileSync(f, 'utf8'));
+          const errs = validate(sc);
+          if (errs.length) return json(res, 422, { error: 'scenes/' + name + '.json is invalid', errors: errs });
+          try { await rebuild(sc, name, b.internal == null ? internal : !!b.internal); } catch (e) {
+            return json(res, 400, { error: String(/** @type {any} */ (e).message || e) });
+          }
+          return json(res, 200, { ok: true, scene: sceneName, internal: !usePlc });
         }
         if (url.pathname === '/api/press') { plant.press(String(b.id), String(b.key), !!b.down); return json(res, 200, { ok: true }); }
         if (url.pathname === '/api/force') { plant.force(String(b.tag), b.value ?? null); return json(res, 200, { ok: true }); }

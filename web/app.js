@@ -320,6 +320,8 @@ function onStatus(s) {
   conn.textContent = (io.driver || '?') + ': ' + (io.msg || '');
   conn.className = io.ok ? 'ok' : 'bad';
   $('banner').hidden = io.driver !== 'internal';
+  const mode = io.driver === 'internal' ? 'internal' : 'plc';
+  if (!$('mode-pick').disabled && $('mode-pick').value !== mode) $('mode-pick').value = mode;
   // Run only starts the plant's clock. The machine waits for the sequence, which the PLC (or the
   // internal controller) starts from the START button: say so instead of looking frozen.
   const auto = serverScene?.cycle?.autoTag;
@@ -347,7 +349,26 @@ async function post(url, data) {
     if (!r.ok) onWarn({ t: performance.now() + (offset || 0), msg: url + ': ' + ((await r.json().catch(() => ({}))).error || r.status) });
   } catch (e) { onWarn({ t: 0, msg: url + ': ' + e.message }); }
 }
-for (const b of document.querySelectorAll('.cmds button')) b.onclick = () => post('/api/cmd', { op: b.dataset.op });
+for (const b of document.querySelectorAll('.cmds button')) if (b.dataset.op) b.onclick = () => post('/api/cmd', { op: b.dataset.op });
+
+// ------------------------------------------------------------------ scene and controller pickers
+// The server loads the scene and connects the driver; the page only asks. Both selects send on
+// change (never on input) and wait for the `scene`/`status` events to come back.
+const pickers = [$('scene-pick'), $('mode-pick')];
+async function switchTo() {
+  for (const s of pickers) s.disabled = true;
+  await post('/api/switch', { scene: $('scene-pick').value, internal: $('mode-pick').value === 'internal' });
+  for (const s of pickers) s.disabled = !!editor?.active;
+}
+for (const s of pickers) s.onchange = switchTo;
+fetch('/api/scenes').then(r => r.json()).then(names => {
+  $('scene-pick').replaceChildren(...names.map(n => {
+    const o = document.createElement('option');
+    o.value = o.textContent = n;
+    o.selected = n === serverScene?.name;
+    return o;
+  }));
+}).catch(() => {});
 
 // ------------------------------------------------------------------ pressing panel parts in 3D
 // The browser sends EDGES; the PLC enforces the conditions.
@@ -393,6 +414,7 @@ es.addEventListener('scene', e => {
   const { scene } = JSON.parse(e.data);
   serverScene = scene;
   $('scene-name').textContent = scene.name;
+  if ($('scene-pick').value !== scene.name) $('scene-pick').value = scene.name;
   document.title = scene.name + ' · manufacturing_io';
   if (!editor.onServerScene(scene)) build(scene);
   buildPanel(scene);

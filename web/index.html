@@ -35,7 +35,9 @@
   #conn.ok { color: var(--on); } #conn.bad { color: var(--warn); }
   #status { color: var(--muted); font: 12px ui-monospace, Consolas, monospace; white-space: pre-wrap; }
   #hb { color: var(--warn); font-weight: 600; }
-  .cmds { display: flex; gap: 6px; border-bottom: 1px solid var(--line); }
+  .cmds { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); }
+  .cmds select { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; }
+  .cmds select:disabled { opacity: .45; }
   button { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
   button:hover { border-color: var(--muted); }
   .tablewrap { flex: 1; overflow: auto; padding: 0; }
@@ -80,7 +82,11 @@
     <header><b id="scene-name">…</b><span id="conn">connecting…</span></header>
     <div id="status"></div>
     <div id="hb" hidden></div>
-    <div class="cmds"><button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button><button id="edit-btn" class="right">Edit</button></div>
+    <div class="cmds">
+      <select id="scene-pick" title="scene"></select>
+      <select id="mode-pick" title="controller"><option value="internal">Internal</option><option value="plc">PLC</option></select>
+      <button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button><button id="edit-btn" class="right">Edit</button>
+    </div>
     <section id="editor" hidden>
       <div class="ed-bar"><select id="ed-type" title="component type"></select><button id="ed-add" title="mounts on the selected part">Add</button><button id="ed-dup" title="Ctrl+D">Duplicate</button><button id="ed-del" title="Delete">Delete</button><button id="ed-undo" title="Ctrl+Z">Undo</button><button id="ed-redo" title="Ctrl+Y">Redo</button></div>
       <div class="ed-bar"><button id="ed-move" title="W">Move</button><select id="ed-snap" title="move snap"><option value="1">1 mm</option><option value="5">5 mm</option><option value="10" selected>10 mm</option></select><button id="ed-rot" title="E">Rotate</button><select id="ed-rsnap" title="rotate snap"><option value="15" selected>15°</option><option value="90">90°</option></select><button id="ed-save" class="right" title="Ctrl+S">Save</button></div>

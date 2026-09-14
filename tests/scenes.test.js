@@ -67,6 +67,21 @@ try {
     await new Promise(r => setTimeout(r, 200));
     const t1 = await ping();
     chk('the rebuilt plant runs', t1 > t0, t0 + ' -> ' + t1 + ' ms');
+
+    // What the viewer's scene and controller pickers call.
+    for (const f of ['a-to-b.json', 'a-to-b.ctl.js']) fs.copyFileSync(path.join(ROOT, 'scenes', f), path.join(root, 'scenes', f));
+    const state = async () => (await (await fetch(base + '/api/ping')).json());
+    const sw = body => fetch(base + '/api/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const swOk = await sw({ scene: 'a-to-b' });
+    chk('POST /api/switch loads another scene', swOk.status === 200 && (await state()).scene === 'a-to-b', 'HTTP ' + swOk.status);
+    chk('switch refuses a bad name (400) and a missing scene (404)', (await sw({ scene: '../x' })).status === 400 && (await sw({ scene: 'nope' })).status === 404);
+    chk('the scene kept running after the refused switches', (await state()).scene === 'a-to-b');
+    // Asking for the PLC with no PLC there must answer, not hang: the driver retries in the background.
+    const swPlc = await sw({ internal: false });
+    chk('switch to PLC mode answers without a PLC present', swPlc.status === 200 && (await state()).internal === false, 'HTTP ' + swPlc.status);
+    await sw({ scene: 'cyl-on-slide', internal: true });
+    const back = await state();
+    chk('switch back to the scene\'s own controller', back.scene === 'cyl-on-slide' && back.internal === true);
   } finally {
     await srv.close();
   }

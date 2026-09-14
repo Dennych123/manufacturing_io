@@ -57,6 +57,10 @@ was 69–257 µs against a 1000 µs budget.
 
 Run `node server/main.js --scene pick-place --internal`, then press the green START button.
 
+The viewer has a **scene picker** and an **Internal/PLC switch**: it loads another scene, or
+points the same one at the Sysmac simulator, without restarting the server. The CLI flags just
+choose what it starts with.
+
 ```bash
 npm install
 node tests/run.js

@@ -47,6 +47,12 @@ chk('editor: every #id it uses exists in index.html', [...edj.matchAll(/\$\('([\
   [...new Set([...edj.matchAll(/\$\('([\w-]+)'\)/g)].map(m => m[1]))].filter(id => !html.includes('id="' + id + '"')).join(' '));
 chk('viewer: pressing parts is off in edit mode', /editor\.active\)\s*return/.test(app));
 
+// scene and controller pickers: the page asks, the server loads and connects
+chk('viewer: the scene and controller pickers exist and post to /api/switch',
+  html.includes('id="scene-pick"') && html.includes('id="mode-pick"') && /'\/api\/switch'/.test(app));
+chk('viewer: the pickers send on change, never on input', /\.onchange\s*=\s*switchTo/.test(app));
+chk('editor: the pickers are locked while editing', /'scene-pick', 'mode-pick'/.test(edj));
+
 // staticPath: fixed prefixes only, never out of them
 const is = (u, rel) => staticPath(ROOT, u) === (rel && path.join(ROOT, ...rel.split('/')));
 chk('/ -> web/index.html', is('/', 'web/index.html'));

@@ -320,6 +320,8 @@ export function createEditor(ctx) {
     $('editor').hidden = !on;
     document.querySelector('.tablewrap').hidden = on;
     $('edit-btn').textContent = on ? 'Exit edit' : 'Edit';
+    // no swapping the scene or the controller out from under an edit
+    for (const id of ['scene-pick', 'mode-pick']) $(id).disabled = on;
   }
 
   // ---------------------------------------------------------------- toolbar and keys
