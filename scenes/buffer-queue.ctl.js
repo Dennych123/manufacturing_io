@@ -45,7 +45,6 @@ export function create() {
       if (io.ST1_STEP === 10) { if (demandFrom < 0) demandFrom = t; } else demandFrom = -1;
       demandQ = demandFrom >= 0 && t - demandFrom >= 2000;
       io.AUTO_RUN = io.ST1_STEP !== 0;
-      io.CV_OUT_RUN = io.AUTO_RUN;
       io.EM_EN = io.AUTO_RUN && !io.PE_FULL;
       io.PL_START = io.AUTO_RUN;
     },

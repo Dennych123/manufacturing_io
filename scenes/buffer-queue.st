@@ -53,9 +53,8 @@ CASE ST1_STEP OF
 		END_IF;
 END_CASE;
 
-// The outfeed runs whenever the machine does, and the feeder stops while the queue is full.
+// The metered part leaves down the discharge chute, and the feeder stops while the queue is full.
 T_DEMAND(In := (ST1_STEP = 10), PT := T#2s);
 AUTO_RUN := ST1_STEP <> 0;
-CV_OUT_RUN := AUTO_RUN;
 EM_EN := AUTO_RUN AND NOT PE_FULL;
 PL_START := AUTO_RUN;

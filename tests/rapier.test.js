@@ -159,6 +159,38 @@ function belt(model, n, stopperX) {
   chk('rule: with the contact refresh, a box stopper 5 mm clear (and a cylinder 15 mm clear) releases the part', r1 > 330 && r2 > 330, 'part x ' + r1.toFixed(1) + ' / ' + r2.toFixed(1) + ' mm');
 }
 
+// ---------------------------------------------------------------- two belt slabs butted together
+// A part driven across the seam between two fixed slabs stops on it, held by a contact with the
+// next slab's edge at a positive distance. No drop or overlap fixes it reliably: measured stuck
+// at drops of 0 and 1.5-4 mm, clear at 0.5-1 and from 5 mm, and with a 6 mm drop clear at 0, 20,
+// 40 and 60 mm of overlap but stuck at 10. So scenes discharge over the END of a belt instead.
+{
+  const seam = (dropMm, overlapMm) => {
+    const w = new R.World({ x: 0, y: 0, z: -9.81 });
+    w.timestep = DT;
+    const fixed = w.createRigidBody(R.RigidBodyDesc.fixed());
+    const slab = (cx, top) => w.createCollider(R.ColliderDesc.cuboid(0.5, 0.1, 0.006).setTranslation(cx, 0, top - 0.006)
+      .setFriction(0).setFrictionCombineRule(R.CoefficientCombineRule.Min), fixed);
+    const A = slab(0, 0), B = overlapMm == null ? null : slab(1 - overlapMm / 1000, -dropMm / 1000);
+    const b = w.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0, 0, 0.0151).setCanSleep(false).setCcdEnabled(true));
+    const pc = w.createCollider(R.ColliderDesc.cuboid(0.03, 0.02, 0.015).setDensity(2700).setFriction(0.5), b);
+    for (let i = 0; i < 5000; i++) {
+      for (const belt of B ? [A, B] : [A]) {
+        let touch = false;
+        w.contactPair(belt, pc, m => { if (m.numContacts() > 0) touch = true; });
+        if (!touch) continue;
+        const v = b.linvel(), dv = beltDv([v.x, v.y, v.z], [0.2, 0, 0], [0, 0, 1], 0.6, DT), m = b.mass();
+        b.applyImpulse({ x: m * dv[0], y: m * dv[1], z: m * dv[2] }, true);
+      }
+      w.step();
+    }
+    return b.translation().x * 1000;
+  };
+  const butted = seam(2, 20), alone = seam(0, null);
+  chk('trap: a part stops on the seam between two belt slabs (20 mm overlap, 2 mm drop)', butted < 600, 'x ' + butted.toFixed(0) + ' mm, seam at 500');
+  chk('rule: the same part runs off the END of one belt freely', alone > 490, 'x ' + alone.toFixed(0) + ' mm');
+}
+
 // ---------------------------------------------------------------- a part dropped into a pocket
 // Measured: a 70 x 50 x 20 mm part dropped into a pocket with 25 mm walls HANGS on speculative
 // contacts at the wall top edges (45° normals, 7 mm of reported distance) unless the clearance

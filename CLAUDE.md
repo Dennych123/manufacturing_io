@@ -45,10 +45,22 @@ in the code but break things silently** when violated. Most were paid for once i
   clear and dropped part onto part, three stacks of two. A feeder that MEANS to stack sets
   `dropOnto` (the assembler's lid feeder), and then only its own spot must be free — the strict
   check had stopped the lids from ever reaching their bases.
-- **A belt-to-belt transfer overlaps and steps DOWN.** Flush and merely touching, a part parks on
-  the seam: it settles a hair into the belt it is on, and its leading face meets the vertical
-  edge of the next slab. Measured on `buffer-queue`: the queue jammed with the front part dead
-  at the exit beam. The outfeed now overlaps the last 20 mm and sits 1 mm lower.
+- **Nothing solid may stand ahead of a part's path at its own level.** A fixed collider holds a
+  driven part through a contact at a POSITIVE distance, and no geometry tunes it away. Measured
+  three times while building `buffer-queue`, each time seizing the queue with the belt still
+  running and the parts creeping backwards:
+  - a second belt slab butted to the first held a part from 3.76 mm away. Sweeping the drop gave
+    stuck at 0, clear at 0.5–1, stuck at 1.5–4, clear from 5; changing the overlap flipped the
+    answers again (a 6 mm drop clears at 0/20/40/60 mm of overlap but sticks at 10);
+  - a chute plate set just past the belt end held it from 14.43 mm away.
+
+  A part must leave a belt over its END into free space, and be caught by a remover ZONE, which
+  has no collider and cannot jam. A chute only works where the part **falls onto** it from
+  above, well clear of the edge, as in `stopper-pusher`. `tests/rapier.test.js` pins the trap.
+- **A seized machine still balances its parts and raises no warning.** Ask for PROGRESS: cycles
+  that keep completing. The 30-minute soak reported OK on a `buffer-queue` that had stopped
+  after 15 minutes, because every part was still accounted for. Both the soak script and the
+  scene test now check that cycles keep coming.
 - **A nest LOCATES the part it catches** (`snap` on the type): the part is seated square on the
   pocket floor, not frozen wherever it was when its centre entered the pocket. Measured: a base
   caught mid-fall hung 11.6 mm high, which then put it inside the press's stroke.

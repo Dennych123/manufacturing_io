@@ -15,9 +15,6 @@
           <Variable name="CV_ACC_RUN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="CV_OUT_RUN">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
           <Variable name="EM_EN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
@@ -119,10 +116,9 @@ CASE ST1_STEP OF
 		END_IF;
 END_CASE;
 
-// The outfeed runs whenever the machine does, and the feeder stops while the queue is full.
+// The metered part leaves down the discharge chute, and the feeder stops while the queue is full.
 T_DEMAND(In := (ST1_STEP = 10), PT := T#2s);
 AUTO_RUN := ST1_STEP &lt;&gt; 0;
-CV_OUT_RUN := AUTO_RUN;
 EM_EN := AUTO_RUN AND NOT PE_FULL;
 PL_START := AUTO_RUN;</ST>
           </BodyContent>
@@ -136,11 +132,6 @@ PL_START := AUTO_RUN;</ST>
         <GlobalVars>
           <Variable name="CV_ACC_RUN">
             <Documentation xsi:type="SimpleText">ST1 ACCUMULATION BELT RUN</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="CV_OUT_RUN">
-            <Documentation xsi:type="SimpleText">ST1 OUTFEED BELT RUN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
@@ -165,7 +156,7 @@ PL_START := AUTO_RUN;</ST>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="RM_CNT">
-            <Documentation xsi:type="SimpleText">OUTFEED COUNT</Documentation>
+            <Documentation xsi:type="SimpleText">OUTFEED BIN COUNT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>

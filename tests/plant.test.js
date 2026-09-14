@@ -281,6 +281,12 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('buffer-queue: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
   const q2 = await run();
   chk('buffer-queue: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  // A seized machine still balances its parts and raises no warning, so ask for PROGRESS: an
+  // earlier build jammed the queue after five minutes and every other check here still passed.
+  const before = q.io.CYCLE_CNT;
+  q.run(90000);
+  chk('buffer-queue: it keeps cycling, it does not seize', q.io.CYCLE_CNT - before >= 5,
+    (q.io.CYCLE_CNT - before) + ' cycles in the next 90 s, step ' + q.io.ST1_STEP);
   await q.close(); await q2.close();
 }
 
