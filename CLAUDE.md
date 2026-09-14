@@ -89,12 +89,21 @@ in the code but break things silently** when violated. Most were paid for once i
   Their short pulses are caused by the PLC itself. Holding them reports "in position" while
   the axis already moves, and warns on every move.
 - One-shot events (counts, drops, rejects) are published as **counters**.
-- **A step that waits for a counter snapshots it on ENTRY.** Measured live on `a-to-b`: a part
-  removed while the sequence was still loading the next one made the discharge step see "the
-  count moved" at once, so the cycle never waited for its own part. 231 parts went in, 217 came
-  out, and the crowd crossing the end sensor raised 13 pulse-stretch warnings. The internal
-  controller never showed it, because there the counters only ever moved during the waiting
-  step. `tests/ctl.test.js` pins it.
+- **A waiting step waits for an INVARIANT, never for a counter to move.** A change cannot say
+  which part moved. Measured live on `a-to-b`, in two rounds:
+  - waiting for "the unloader count moved" let an older part's removal end the cycle: 231 parts
+    in, 217 out, and the crowd at the end sensor raised 13 pulse-stretch warnings;
+  - snapshotting the count on entry balanced the parts and silenced the warnings, but the cycle
+    then ran at 1.1 s instead of 6.5 s (388 cycles in 423 s) with five parts pipelined on the
+    belt, still riding other parts' removals.
+
+  The discharge step now waits for `RM1_CNT = EM1_CNT`: everything loaded has left. An invariant
+  is also self-healing, since a pipeline drains back to one part. The internal controller never
+  showed any of it, because there the counters only ever moved during the waiting step.
+  `tests/ctl.test.js` pins it.
+- **Sampling hides fast steps, so count cycles, not step sightings.** The plant samples
+  `ST1_STEP` at 10 ms: a step that should last seconds but is seen a handful of times in 388
+  cycles is the bug report.
 - **A step that waits for a sensor level must first see that level clear.** A part still in the
   beam belongs to the last cycle.
 - **A counter the controller compares against must be reset with the plant.** `reset()` zeroes

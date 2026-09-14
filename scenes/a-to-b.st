@@ -4,7 +4,6 @@ VAR
 	STOP_REQ : BOOL;
 	T_DWELL : TON;
 	EM_LAST : UDINT;
-	RM_LAST : UDINT;
 END_VAR
 // a-to-b: load a part at the belt start, convey it to the end sensor, stop, dwell, then run
 // the belt again until the unloader takes it. Repeat until STOP. The same sequence runs
@@ -13,9 +12,11 @@ END_VAR
 // Commands are LEVELS held until the plant answers: EM1_EMIT stays on until the loader's
 // counter EM1_CNT moves, so an OPC UA sample cannot miss it.
 //
-// A step that waits for a counter SNAPSHOTS it on entry. Measured on the simulator: a part
-// removed while the sequence was still loading made step 40 see "the count moved" at once, so
-// the cycle never waited for its own part and parts piled up (231 loaded, 217 unloaded).
+// Waiting steps wait for an INVARIANT, not for a counter to move: a change cannot say which
+// part moved. Measured on the simulator: waiting for "the unloader count moved" let an older
+// part's removal end the cycle, so parts piled up (231 loaded, 217 unloaded), and snapshotting
+// the count on entry only turned that into a five-part pipeline running at 1.1 s a cycle
+// instead of 6.5 s. Step 40 now waits for RM1_CNT = EM1_CNT: everything loaded has left.
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
@@ -51,12 +52,11 @@ CASE ST1_STEP OF
 		END_IF;
 	30:	// dwell at the sensor
 		IF T_DWELL.Q THEN
-			RM_LAST := RM1_CNT;
 			ST1_STEP := 40;
 		END_IF;
-	40:	// discharge to the unloader
+	40:	// discharge: every part loaded must have left the belt
 		CV1_RUN := TRUE;
-		IF RM1_CNT <> RM_LAST THEN
+		IF RM1_CNT = EM1_CNT THEN
 			CV1_RUN := FALSE;
 			ST1_STEP := 50;
 		END_IF;

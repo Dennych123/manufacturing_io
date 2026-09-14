@@ -3,7 +3,6 @@ VAR
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
 	EM_LAST : UDINT;
-	RM_LAST : UDINT;
 END_VAR
 // pick-place: feed a part into the pick nest, pick it with the vacuum cup on the lift cylinder,
 // traverse on the servo, lay it on the running outfeed belt, and come home while the belt takes
@@ -14,8 +13,8 @@ END_VAR
 // to drop before the next Execute. The nest clamp must open BEFORE the cup can take the part:
 // one part is held by one holder.
 //
-// A step that waits for a counter SNAPSHOTS it on entry, so a part removed earlier cannot
-// satisfy this cycle's wait (measured on a-to-b against the simulator: parts piled up).
+// Waiting steps wait for an INVARIANT, not for a counter to move: a change cannot say which
+// part moved (measured on a-to-b against the simulator: parts piled up, then pipelined).
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
@@ -83,11 +82,9 @@ CASE ST1_STEP OF
 		IF AS_Z_DN THEN
 			ST1_STEP := 90;
 		END_IF;
-	90:	// let the part go onto the belt; the count is snapshotted as the part is handed over,
-		// because the belt may deliver it before the arm is home again
+	90:	// let the part go onto the belt
 		VAC_ON := FALSE;
 		IF NOT VAC_SW THEN
-			RM_LAST := RM_CNT;
 			ST1_STEP := 100;
 		END_IF;
 	100:	// lift up
@@ -107,8 +104,8 @@ CASE ST1_STEP OF
 		IF NOT SV_DONE THEN
 			ST1_STEP := 130;
 		END_IF;
-	130:	// the belt carries the part to the unloader
-		IF RM_CNT <> RM_LAST THEN
+	130:	// the belt carries the part to the unloader: everything loaded must have left
+		IF RM_CNT = EM_CNT THEN
 			CYCLE_CNT := CYCLE_CNT + 1;
 			IF STOP_REQ THEN
 				ST1_STEP := 0;

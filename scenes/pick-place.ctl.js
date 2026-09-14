@@ -3,10 +3,10 @@
 // Loaded from disk only, never through the API.
 
 export function create() {
-  let pbLast = false, stopReq = false, emLast = 0, rmLast = 0;
+  let pbLast = false, stopReq = false, emLast = 0;
   return {
     /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
-    reset() { pbLast = false; stopReq = false; emLast = 0; rmLast = 0; },
+    reset() { pbLast = false; stopReq = false; emLast = 0; },
 
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
@@ -52,10 +52,8 @@ export function create() {
           if (io.AS_Z_DN) io.ST1_STEP = 90;
           break;
         case 90:
-          // snapshot the unloader's count as the part is handed to the belt: it may arrive
-          // before the arm is home again
           io.VAC_ON = false;
-          if (!io.VAC_SW) { rmLast = io.RM_CNT; io.ST1_STEP = 100; }
+          if (!io.VAC_SW) io.ST1_STEP = 100;
           break;
         case 100:
           io.SOL_Z_DN = false; io.SOL_Z_UP = true;
@@ -70,7 +68,8 @@ export function create() {
           if (!io.SV_DONE) io.ST1_STEP = 130;
           break;
         case 130:
-          if (io.RM_CNT !== rmLast) {
+          // the invariant, not "a count moved": every part loaded has left
+          if (io.RM_CNT === io.EM_CNT) {
             io.CYCLE_CNT += 1;
             if (stopReq) io.ST1_STEP = 0; else { emLast = io.EM_CNT; io.ST1_STEP = 10; }
           }

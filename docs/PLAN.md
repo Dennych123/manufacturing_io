@@ -586,13 +586,21 @@ Each phase ends runnable, with a written exit criterion.
 
   The budget is 1000 µs (50 % of dt).
 
-  **Live on the simulator (2026-09-14, a-to-b).** The sequence raced. A part removed while the
-  next one was being loaded satisfied the discharge step immediately, so the cycle never waited
-  for its own part: 231 parts went in, 217 came out, and the crowd crossing the end sensor
-  raised 13 pulse-stretch warnings. The internal controller had never shown it, because there
-  the counters only ever moved during the step that waits for them. Steps that wait for a
-  counter now snapshot it on entry, and the conveying step first waits for the eye to clear;
-  `tests/ctl.test.js` drives each controller against a faked plant to pin both.
+  **Live on the simulator (2026-09-14, a-to-b), two rounds.** The sequence raced, and the fix
+  took two goes:
+
+  1. Waiting for "the unloader count moved" let a part removed during the load satisfy the
+     discharge step at once, so the cycle never waited for its own part: 231 parts in, 217 out,
+     and the crowd crossing the end sensor raised 13 pulse-stretch warnings.
+  2. Snapshotting the count on entry balanced the parts (388 in, 383 out, 5 reset) and silenced
+     the warnings, but the recording showed the cycle running at **1.09 s instead of 6.5 s**
+     (388 cycles in 423 s) with about five parts pipelined on the belt: the sequence was still
+     riding other parts' removals, and step 20 was seen 5 times in 388 cycles.
+
+  A waiting step now waits for an **invariant** — `RM1_CNT = EM1_CNT`, everything loaded has
+  left — which is also self-healing, since a pipeline drains back to one part. The internal
+  controller never showed any of it, because there the counters only moved during the waiting
+  step. `tests/ctl.test.js` drives each controller against a faked plant to pin it.
 
   **Read step times from a headless run, not from the viewer.** With headless Chrome on
   SwiftShader next to the server, pick-place read 839 µs with overruns; the same scene soaks at
