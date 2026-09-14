@@ -108,7 +108,7 @@
       "label": "LID FEEDER",
       "station": "ST1",
       "at": [0, 266, 820],
-      "params": { "template": "wpLid", "mode": "tag" },
+      "params": { "template": "wpLid", "mode": "tag", "dropOnto": true },
       "io": { "emit": "EM_L_EMIT", "count": "EM_L_CNT" }
     },
     {

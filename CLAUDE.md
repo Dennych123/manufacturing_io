@@ -39,6 +39,16 @@ in the code but break things silently** when violated. Most were paid for once i
   underside, which rests a hair inside the belt, so an origin test in a remover box misses
   every part.
 - **Templates** (workpieces an emitter copies) are never simulated and never drawn.
+- **An emitter checks the COLUMN below it, not the spawn point.** A part falls onto whatever is
+  under the feeder. Measured on `buffer-queue`: with the check at spawn height only, the ball
+  tested 845–905 mm while the part already on the belt sat at 800–830, so the emitter called it
+  clear and dropped part onto part, three stacks of two. A feeder that MEANS to stack sets
+  `dropOnto` (the assembler's lid feeder), and then only its own spot must be free — the strict
+  check had stopped the lids from ever reaching their bases.
+- **A belt-to-belt transfer overlaps and steps DOWN.** Flush and merely touching, a part parks on
+  the seam: it settles a hair into the belt it is on, and its leading face meets the vertical
+  edge of the next slab. Measured on `buffer-queue`: the queue jammed with the front part dead
+  at the exit beam. The outfeed now overlaps the last 20 mm and sits 1 mm lower.
 - **A nest LOCATES the part it catches** (`snap` on the type): the part is seated square on the
   pocket floor, not frozen wherever it was when its centre entered the pocket. Measured: a base
   caught mid-fall hung 11.6 mm high, which then put it inside the press's stroke.

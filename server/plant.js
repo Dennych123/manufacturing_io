@@ -24,6 +24,8 @@ const G_MACHINE = (0x0001 << 16) | 0xffff, G_PART = (0x0002 << 16) | 0xffff;
 export const PART_RAYS = (0xffff << 16) | 0x0002;
 /** Below this a part has fallen off the machine: removed, and reported. mm */
 const LOST_Z = -1000;
+/** How far below an emitter the landing spot must be free: a part falls, it does not hover. mm */
+const DROP_CHECK = 250;
 
 /** mm -> m. The ONLY unit conversion between the scene and Rapier. */
 export const SK = 0.001;
@@ -284,14 +286,21 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
 
   /** True when no part overlaps where a new copy of `tpl` would appear. @param {any} d @param {import('../lib/math.js').Pose} P */
-  function spawnClear(d, P) {
+  function spawnClear(d, P, dropOnto = false) {
     for (const s of d.shapes) {
       if (s.collide === false) continue;
       const c = apply(P, s.at), r = s.kind === 'box' ? Math.max(...s.size) / 2 : s.kind === 'cyl' ? Math.max(s.r, s.h / 2) : s.r;
-      let hit = false;
-      world.intersectionsWithShape({ x: c[0] * SK, y: c[1] * SK, z: c[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r * SK),
-        () => { hit = true; return false; }, undefined, PART_RAYS);
-      if (hit) return false;
+      // The whole COLUMN under the emitter has to be free, not just the spawn height: a part
+      // falls onto whatever is below. Testing only at spawn height dropped parts onto parts
+      // already on the belt and built stacks (measured on buffer-queue). A feeder that MEANS to
+      // stack - a lid onto a base - sets dropOnto and only needs its own spot free.
+      const maxDrop = dropOnto ? 0 : DROP_CHECK;
+      for (let drop = 0; drop <= maxDrop; drop += r) {
+        let hit = false;
+        world.intersectionsWithShape({ x: c[0] * SK, y: c[1] * SK, z: (c[2] - drop) * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r * SK),
+          () => { hit = true; return false; }, undefined, PART_RAYS);
+        if (hit) return false;
+      }
     }
     return true;
   }
@@ -471,7 +480,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         const j = r.p.jitterMm;
         em.next = compose(W[r.id][defs.get(r.id).root], pose(j > 0 ? [(em.rand() * 2 - 1) * j, (em.rand() * 2 - 1) * j, 0] : undefined));
       }
-      if (!spawnClear(defs.get(r.p.template), em.next)) continue;
+      if (!spawnClear(defs.get(r.p.template), em.next, r.p.dropOnto)) continue;
       r.s.done++;
       spawnPart(r.p.template, em.next, r.id + '.' + r.s.done, r.id);
       em.next = null;

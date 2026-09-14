@@ -128,6 +128,14 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('the stripes DOF is the belt travel (300 mm/s)', Math.abs(pl.dof.cv1 - 300 * 9.95) < 40, pl.dof.cv1.toFixed(0) + ' mm');
   const pl2 = await go();
   chk('two runs give identical event logs (parts included)', JSON.stringify(pl2.events) === JSON.stringify(pl.events), pl.events.length + ' events');
+  // A feeder must not drop a part onto one already under it: the spot is a column, not a point.
+  const stack = await createPlant(flow(), {});
+  stack.run(8000);                                        // belt stopped: the first part stays under the feeder
+  const zs = [...stack.parts.values()].map(p => p.body.translation().z / SK);
+  chk('the emitter waits while a part sits under it instead of stacking', stack.parts.size === 1 && zs.every(z => z < 830),
+    stack.parts.size + ' part(s), z ' + zs.map(z => z.toFixed(0)).join(' '));
+  await stack.close();
+
   const yaw = await createPlant(flow(), {}); yaw.force('CV1_RUN', true); yaw.run(4000);
   const yq = yaw.parts.get('em1.1').body.rotation(), yawDeg = 2 * Math.atan2(yq.z, yq.w) * 180 / Math.PI;
   chk('the belt\'s friction torque keeps a riding part square (|yaw| < 0.5° after 4 s)', Math.abs(yawDeg) < 0.5, yawDeg.toFixed(3) + '°');
@@ -245,6 +253,34 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
   q.run(25000);
   chk('a-to-b: Reset then START runs again (the controller is reset too)', q.io.CYCLE_CNT >= 2, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- scene buffer-queue (metering buffer)
+{
+  const bq = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'buffer-queue.json'), 'utf8'));
+  const { create: createBQ } = await import('../scenes/buffer-queue.ctl.js');
+  const run = async () => {
+    const q = await createPlant(bq, { controller: createBQ() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('buffer-queue: one part is metered out per demand', q.io.CYCLE_CNT >= 12 && Math.abs(q.io.RM_CNT - q.io.CYCLE_CNT) <= 1,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', removed ' + q.io.RM_CNT);
+  chk('buffer-queue: the belt holds a buffer of parts', q.parts.size >= 5, q.parts.size + ' on the belt');
+  chk('buffer-queue: the queue-full beam throttles the feeder', q.io.PE_FULL === true || q.io.EM_EN === false,
+    'PE_FULL ' + q.io.PE_FULL + ', EM_EN ' + q.io.EM_EN);
+  // The feeder must never drop a part onto one already under it (the column check).
+  chk('buffer-queue: nothing is stacked', [...q.parts.values()].every(p => p.body.translation().z / SK < 830),
+    [...q.parts.values()].map(p => (p.body.translation().z / SK).toFixed(0)).join(' '));
+  chk('buffer-queue: parts balance and none are lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('buffer-queue: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('buffer-queue: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
   await q.close(); await q2.close();
 }
 

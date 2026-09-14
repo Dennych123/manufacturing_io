@@ -573,8 +573,8 @@ Each phase ends runnable, with a written exit criterion.
   - the `ref` param type;
   - holding (vacuum cup, 2-finger gripper, nest): one take/follow/release mechanism;
   - the index table (cam drive, cycloidal profile, `inPos` only in the dwell);
-  - the scenes **a-to-b**, **stopper-pusher**, **pick-place**, **assembler** and
-    **sort-by-height**, each with `.st` and `.ctl.js`;
+  - the scenes **a-to-b**, **stopper-pusher**, **pick-place**, **assembler**, **sort-by-height**
+    and **buffer-queue**, each with `.st` and `.ctl.js`;
   - the contact refresh for kinematic links that come to rest and for parts whose body type
     changes.
 
@@ -586,6 +586,7 @@ Each phase ends runnable, with a written exit criterion.
   | stopper-pusher | 718 | 721 = 718 + 3 | 0 / 0 / 0 | 257 µs |
   | pick-place | 277 | 278 = 278 + 0 | 0 / 0 / 0 | 108 µs |
   | assembler | 539 | 1080 = 1075 + 5 | 0 / 0 / 0 | 251 µs |
+  | sort-by-height | 245 | 246 = 245 + 1 | 0 / 0 / 0 | 408 µs |
 
   The budget is 1000 µs (50 % of dt).
 
@@ -611,8 +612,13 @@ Each phase ends runnable, with a written exit criterion.
 
   Open:
   - pallets;
-  - the buffer/queue scene;
   - the live PLC runs of the newer scenes.
+
+  **buffer-queue meters, it does not accumulate.** The belt itself is the stop, because a pin
+  coming down between parts that touch lands on a part (the escapement that stopper-pusher
+  replaced). So the line moves as a block and parts stay 80–440 mm apart instead of packing.
+  Accumulation against a stopper, with the belt slipping underneath, is proven separately in
+  `tests/rapier.test.js`: five parts queue 59.3–59.8 mm apart with no jitter.
 
   stopper-pusher replaced the planned two-stopper escapement. Parts queue touching, so a stopper
   coming down between them lands on a part.

@@ -1,0 +1,134 @@
+{
+  "format": "mio-scene/1",
+  "name": "buffer-queue",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Buffer",
+      "members": ["cvAcc", "peExit", "peFull", "cvOut"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PE_EXIT",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cvAcc",
+      "type": "conveyor",
+      "label": "ACCUMULATION BELT",
+      "station": "ST1",
+      "params": { "length": 1800, "width": 200, "height": 800, "speed": 200 },
+      "io": { "run": "CV_ACC_RUN" }
+    },
+    {
+      "id": "cvOut",
+      "type": "conveyor",
+      "label": "OUTFEED BELT",
+      "station": "ST1",
+      "at": [1280, 0, -1],
+      "params": { "length": 800, "width": 200, "height": 800, "speed": 400 },
+      "io": { "run": "CV_OUT_RUN" }
+    },
+    {
+      "id": "wp",
+      "type": "workpiece",
+      "label": "PART TEMPLATE",
+      "at": [0, 900, 0],
+      "params": { "size": [60, 40, 30], "color": "#2a6fdb", "material": "alu" }
+    },
+    {
+      "id": "em1",
+      "type": "emitter",
+      "label": "FEEDER",
+      "parent": "cvAcc",
+      "socket": "start",
+      "at": [100, 0, 60],
+      "params": { "template": "wp", "mode": "interval", "intervalMs": 1500 },
+      "io": { "enable": "EM_EN", "count": "EM_CNT" }
+    },
+    {
+      "id": "peFull",
+      "type": "photoEye",
+      "label": "QUEUE FULL",
+      "station": "ST1",
+      "parent": "cvAcc",
+      "socket": "top",
+      "at": [500, -140, 12],
+      "rot": [0, 0, 90],
+      "params": { "range": 300, "offDelayMs": 400 },
+      "io": { "out": "PE_FULL" }
+    },
+    {
+      "id": "peExit",
+      "type": "photoEye",
+      "label": "EXIT",
+      "station": "ST1",
+      "parent": "cvAcc",
+      "socket": "top",
+      "at": [860, -140, 12],
+      "rot": [0, 0, 90],
+      "params": { "range": 300 },
+      "io": { "out": "PE_EXIT" }
+    },
+    {
+      "id": "rm1",
+      "type": "remover",
+      "label": "OUTFEED",
+      "parent": "cvOut",
+      "socket": "end",
+      "at": [-60, 0, 0],
+      "params": { "size": [120, 260, 200] },
+      "io": { "count": "RM_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-700, -450, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}
