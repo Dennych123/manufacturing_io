@@ -135,7 +135,11 @@ try {
       await sleep(1500);
       chk('the jammed part stays put while the belt runs under it', Math.abs(held.body.translation().x - x0) < 5e-4,
         ((held.body.translation().x - x0) * 1000).toFixed(3) + ' mm');
-      await mouse('mouseReleased', hit[0], hit[1]);
+      await cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: hit[0] - 120, y: hit[1] - 60, button: 'left', buttons: 1 });
+      await sleep(500);
+      const dx = (held.body.translation().x - x0) / 0.001;
+      chk('dragging the mouse moves the part with it', Math.abs(dx) > 20, dx.toFixed(0) + ' mm');
+      await mouse('mouseReleased', hit[0] - 120, hit[1] - 60);
       await sleep(800);
       chk('releasing the mouse lets the part go', pinned() === 0, pinned() + ' still pinned');
     }

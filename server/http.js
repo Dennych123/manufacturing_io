@@ -126,10 +126,10 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
   const full = () => {
     const s = plant.snapshot();
     const parts = Object.fromEntries(Object.entries(s.parts).map(([k, v]) => [k, partPose(v)]));
-    return { t: s.t, full: true, dof: Object.fromEntries(Object.entries(s.dof).map(([k, v]) => [k, round2(v)])), io: s.io, forced: s.forced, parts, ptpl: s.ptpl };
+    return { t: s.t, full: true, dof: Object.fromEntries(Object.entries(s.dof).map(([k, v]) => [k, round2(v)])), io: s.io, forced: s.forced, parts, ptpl: s.ptpl, pins: s.pins };
   };
   /** @type {Record<string, any>} */
-  let lastDof = {}, lastIo = {}, lastForced = '', lastFull = 0, lastParts = {};
+  let lastDof = {}, lastIo = {}, lastForced = '', lastFull = 0, lastParts = {}, lastPins = '';
   const frame = setInterval(() => {
     if (!clients.size) return;
     const now = Date.now();
@@ -138,6 +138,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       const f = full();
       lastDof = { ...f.dof }; lastIo = { ...f.io }; lastForced = JSON.stringify(f.forced);
       lastParts = Object.fromEntries(Object.entries(f.parts).map(([k, v]) => [k, v.join()]));
+      lastPins = f.pins.join();
       broadcast('state', f);
       return;
     }
@@ -157,6 +158,8 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       lastParts[uid] = key;
     }
     for (const uid of Object.keys(lastParts)) if (!(uid in s.parts)) { (m.pgone ??= []).push(uid); delete lastParts[uid]; }
+    const pk = s.pins.join();                                 // which parts the hand holds: the viewer highlights them
+    if (pk !== lastPins) { m.pins = s.pins; lastPins = pk; }
     broadcast('state', m);
   }, FRAME_MS);
   const status = setInterval(() => clients.size && broadcast('status', plant.status()), STATUS_MS);
@@ -261,7 +264,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
         }
         if (url.pathname === '/api/press') { plant.press(String(b.id), String(b.key), !!b.down); return json(res, 200, { ok: true }); }
         // The hand: hold a loose part still to jam the line on purpose (docs/PLAN.md §3).
-        if (url.pathname === '/api/hold') { plant.holdPart(String(b.uid), !!b.down); return json(res, 200, { ok: true }); }
+        if (url.pathname === '/api/hold') { plant.holdPart(String(b.uid), !!b.down, b.at); return json(res, 200, { ok: true }); }
         if (url.pathname === '/api/force') { plant.force(String(b.tag), b.value ?? null); return json(res, 200, { ok: true }); }
         return json(res, 404, { error: 'no such endpoint' });
       }

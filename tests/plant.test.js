@@ -267,23 +267,42 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('a run with the hand in it still replays identically', JSON.stringify(j2.p.events) === JSON.stringify(j.p.events), j.p.events.length + ' events');
   await j.p.close(); await j2.p.close();
 
-  // The hand must not steal a part a machine holder already has: the nest would let go of a part
-  // that is no longer in it, and the sequence would carry on with nothing in the gripper.
+  // Dragging is the same hold, put somewhere else.
+  const d = await createPlant(jam(), {});
+  d.force('CV1_RUN', true);
+  d.run(2500);
+  const duid = [...d.parts.keys()][0], dp = () => d.parts.get(duid).body.translation();
+  const from = dp();
+  d.holdPart(duid, true);
+  d.run(50);
+  d.holdPart(duid, true, [from.x / SK - 300, from.y / SK, from.z / SK + 120]);
+  d.run(200);
+  const to = dp();
+  chk('dragging a held part moves it there and it stays', Math.abs((to.x - from.x) / SK + 300) < 0.5 && Math.abs((to.z - from.z) / SK - 120) < 0.5,
+    ((to.x - from.x) / SK).toFixed(1) + ', ' + ((to.z - from.z) / SK).toFixed(1) + ' mm');
+  chk('the plant reports which parts the hand holds (the viewer highlights them)', d.snapshot().pins.join() === duid, d.snapshot().pins.join());
+  d.holdPart(duid, false);
+  d.run(1500);
+  chk('a dragged part falls and carries on when it is let go', d.parts.get(duid) == null || d.parts.get(duid).body.translation().z < to.z - 0.05);
+  await d.close();
+
+  // Taking a part OUT of a machine holder is the point: the holder's own switch must go false, so
+  // the PLC can raise the alarm instead of running the cycle with an empty gripper.
   const pp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'pick-place.json'), 'utf8'));
   const { create: createPP } = await import('../scenes/pick-place.ctl.js');
   const w = await createPlant(pp, { controller: createPP() });
   w.run(200); w.press('pbStart', 'pb', true); w.run(150); w.press('pbStart', 'pb', false);
-  let holdUid = null;
+  let holdUid = null, holder = null;
   for (let i = 0; i < 200 && !holdUid; i++) {
     w.run(100);
-    for (const [uid, pt] of w.parts) if (pt.held) holdUid = uid;
+    for (const [uid, pt] of w.parts) if (pt.held) { holdUid = uid; holder = pt.held.id; }
   }
-  const before = w.events.filter(e => e.k === 'part' && e.by === 'hand').length;
   w.holdPart(holdUid, true);
   w.run(100);
-  chk('the hand does not take a part a machine holder is already holding',
-    holdUid !== null && w.parts.get(holdUid)?.pin == null && w.events.filter(e => e.k === 'part' && e.by === 'hand').length === before,
-    holdUid || 'no held part seen');
+  chk('the hand takes a part out of a machine holder (gripper, cup or nest)',
+    holdUid !== null && w.parts.get(holdUid)?.pin != null && w.parts.get(holdUid)?.held == null, holdUid + ' from ' + holder);
+  chk('the holder knows it lost the part, so the PLC can see it', w.parts.get(holdUid) != null && ![...w.parts.values()].some(pt => pt.held?.id === holder),
+    holder);
   await w.close();
 }
 

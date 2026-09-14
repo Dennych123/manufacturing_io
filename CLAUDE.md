@@ -27,10 +27,20 @@ in the code but break things silently** when violated. Most were paid for once i
   between dynamic bodies: they fight the solver.
 - **The viewer's hand is that same mechanism with the WORLD as the holder.** Clicking and holding
   a loose part pins it where it is (`holdPart`, `pt.pin`), so the belt slips under it and a queue
-  builds behind it: a deliberate jam, which is the test a real machine has to survive. The hand
-  never takes a part a machine holder already has, it releases at zero velocity, and its edges are
-  queued like button presses so a run still replays identically. Forcing a tag lies to the PLC;
-  the hand breaks the material flow, which is a different failure and finds different bugs.
+  builds behind it: a deliberate jam, which is the test a real machine has to survive. Dragging
+  moves the part instead (`at` in mm, world), in the plane facing the camera. The hand DOES take a
+  part out of a gripper, a cup or a nest, and the holder's own switch then goes false: that is the
+  point, because the machine must notice the part it thinks it has. It releases at zero velocity,
+  and its edges are queued like button presses so a run still replays identically. Forcing a tag
+  lies to the PLC; the hand breaks the material flow, which is a different failure and finds
+  different bugs.
+- **A pile of parts on a belt is STABLE, not slow.** Measured with 32 parts fed against a wall on
+  a running belt: 350 µs/step free-running, 510–590 µs/step through the real-time pacer with sim
+  time exactly level with wall time, 0 overruns, 0 warnings. The pile's speed falls from 982 to
+  5 mm/s in about 15 s and stays there: the belt wedges the parts, it does not scatter them. So
+  "the pile takes a long time to break up" is the physics, not a performance problem, and neither
+  the step cost nor the pacer is the thing to look at. `compile()` in the render loop was the
+  obvious suspect and was measured at ~1 µs, i.e. innocent (it is cached anyway).
 - **Sensors about the machine (reed switch, in-position, origin) are analytic, from DOF values.**
   Only sensors about parts use Rapier queries.
 - **Part sensors query PARTS only** (collision groups `G_PART`/`PART_RAYS` in `server/plant.js`).

@@ -111,7 +111,7 @@ function build(sc) {
       meshes.push(mesh);
     }
   }
-  model = { scene: sc, links, glows, pick, meshes };
+  model = { scene: sc, links, glows, pick, meshes, defs };
   for (const uid of [...partObjs.keys()]) dropPart(uid);          // templates may have changed
   partsGroup.visible = !editorRef?.active;
   place(curDof);
@@ -135,6 +135,14 @@ function fitCamera() {
 const partsGroup = new THREE.Group();
 scene3.add(partsGroup);
 const partObjs = new Map();                                     // uid -> Group of the template's meshes
+let pins = new Set();                                           // uids the hand is holding (highlighted)
+const LIT = new THREE.Color('#2a6fdb');
+const litMats = new Map();                                      // base material -> its highlighted copy
+function litOf(base) {
+  let m = litMats.get(base);
+  if (!m) { m = base.clone(); m.emissive = LIT.clone(); m.emissiveIntensity = 0.7; litMats.set(base, m); }
+  return m;
+}
 function dropPart(uid) {
   const g = partObjs.get(uid);
   if (!g) return;
@@ -145,16 +153,28 @@ function dropPart(uid) {
 function placeParts(ps) {
   for (const uid of partObjs.keys()) if (!(uid in ps)) dropPart(uid);
   if (!model) return;
-  const { defs } = compile(model.scene);
+  const defs = model.defs;                                      // compiled once per build, NOT per frame
   for (const [uid, a] of Object.entries(ps)) {
     let g = partObjs.get(uid);
     if (!g) {
       const d = defs.get(partTpl[uid]);
       if (!d) continue;
       g = new THREE.Group();
+      // Shared materials: a pile of parts is the case that has to stay cheap. A held part swaps
+      // to its own lit copy instead (litOf), and swaps back when it is let go.
       for (const s of d.shapes) { const m = shapeMesh(s, false); m.userData.part = uid; g.add(m); }
       partsGroup.add(g);
       partObjs.set(uid, g);
+    }
+    // A part in the hand glows, so it is obvious which one is being held or dragged.
+    const lit = pins.has(uid);
+    if (g.userData.lit !== lit) {
+      g.userData.lit = lit;
+      g.traverse(o => {
+        if (!o.material) return;
+        if (lit) { o.userData.base ??= o.material; o.material = litOf(o.userData.base); }
+        else if (o.userData.base) o.material = o.userData.base;
+      });
     }
     g.position.set(a[0], a[1], a[2]);
     g.quaternion.set(a[3], a[4], a[5], a[6]);
@@ -206,11 +226,13 @@ function onState(m) {
   if (frames.length && m.t < frames[frames.length - 1].t) frames.length = 0;   // server restarted
   if (m.full) {
     curDof = { ...m.dof }; curIo = { ...m.io }; curParts = { ...m.parts }; partTpl = { ...m.ptpl };
+    pins = new Set(m.pins || []);
   } else {
     Object.assign(curDof, m.dof); Object.assign(curIo, m.io);
     if (m.parts) Object.assign(curParts, m.parts);
     if (m.ptpl) Object.assign(partTpl, m.ptpl);
     for (const uid of m.pgone || []) { delete curParts[uid]; delete partTpl[uid]; }
+    if (m.pins) pins = new Set(m.pins);
   }
   if (m.forced) forced = m.forced;
   const est = m.t - performance.now();
@@ -393,7 +415,8 @@ function pickAt(e, list) {
   ray.setFromCamera(ndc, camera);
   return ray.intersectObjects(list, false)[0] || null;
 }
-let grabbed = null;
+let grabbed = null, lastDrag = 0;
+const dragPlane = new THREE.Plane(), dragAt = new THREE.Vector3(), camDir = new THREE.Vector3();
 renderer.domElement.addEventListener('pointerdown', e => {
   if (!model || e.button !== 0 || editor.active) return;       // edit mode selects instead
   const hit = pickAt(e, model.pick);
@@ -404,14 +427,29 @@ renderer.domElement.addEventListener('pointerdown', e => {
     post('/api/press', { ...pressed, down: true });
     return;
   }
-  // Nothing pressable: try a loose part. Holding one still jams the line on purpose, which is
-  // what the machine has to cope with. The plant does the holding; this only sends the edge.
+  // Nothing pressable: try a loose part. Holding one still jams the line on purpose, and dragging
+  // it puts it somewhere else - out of a gripper, off a belt, back into a nest. The plant does the
+  // holding; this only sends edges.
   const ph = pickAt(e, [...partObjs.values()].flatMap(g => g.children));
   if (!ph) return;
   grabbed = ph.object.userData.part;
+  // Drag in the plane facing the camera through the grab point: left/right and up/down both work
+  // from any orbit angle, with no mode to choose.
+  dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(camDir), ph.point);
   controls.enabled = false;
   post('/api/hold', { uid: grabbed, down: true });
 }, true);
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!grabbed) return;
+  const now = performance.now();
+  if (now - lastDrag < 40) return;                              // the plant applies one edge per step
+  lastDrag = now;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  if (!ray.ray.intersectPlane(dragPlane, dragAt)) return;
+  post('/api/hold', { uid: grabbed, down: true, at: [dragAt.x, dragAt.y, dragAt.z] });
+});
 addEventListener('pointerup', () => {
   if (pressed) { post('/api/press', { ...pressed, down: false }); pressed = null; }
   else if (grabbed) { post('/api/hold', { uid: grabbed, down: false }); grabbed = null; }

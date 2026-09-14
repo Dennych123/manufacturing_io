@@ -222,9 +222,14 @@ solver.
 **The hand (jam testing, "ijiwaru").** The viewer can click and hold any loose part: `POST
 /api/hold {uid, down}` → `plant.holdPart()`, which is take/follow/release again with the **world**
 as the holder, so the part stays exactly where it was grabbed. The belt then slips under it and
-the parts behind it queue up, which is what a real jam looks like. The hand does not take a part
-a machine holder already has, it releases with zero velocity, and its edges are queued and applied
-at the start of a step, so a recording still replays identically. This is failure injection on the
+the parts behind it queue up, which is what a real jam looks like. Dragging sends `at` (mm, world)
+and moves the part instead, in the plane facing the camera.
+
+The hand **does** take a part out of a gripper, a cup or a nest, and clears that holder's `s.uid`,
+so its vacuum or present switch goes false. That is the interesting test: the machine carries on
+believing it holds a part, and the PLC has to raise the alarm. It releases with zero velocity, and
+its edges are queued and applied at the start of a step, so a recording still replays identically.
+The plant reports the held uids in `snapshot().pins`, and the viewer highlights them. This is failure injection on the
 **material flow**; forcing (§5) is failure injection on the **IO image**. They find different
 bugs: forcing asks "does the PLC handle a lying sensor", the hand asks "does the sequence handle a
 part that stopped moving".
@@ -632,6 +637,20 @@ Each phase ends runnable, with a written exit criterion.
     the simulation is deterministic and only the clock moved.
 
   A soak that shares the machine measures the machine, not the scene.
+
+  **A pile of parts is cheap, and it is meant to sit still** (measured 2026-09-14, 32 parts fed
+  against a wall on a running 300 mm/s belt, nothing else on the box):
+
+  | | free-running | through the real-time pacer |
+  |---|---|---|
+  | step | 350 µs | 510–590 µs |
+  | sim behind wall | — | 0.0 s at every 5 s sample |
+  | overruns / warnings | 0 / 0 | 0 / 0 |
+
+  The pile's top speed falls from 982 to 5 mm/s in about 15 s and stays there, because the belt
+  wedges the parts against each other. "It takes a long time to break up" is that, not a
+  performance problem. `compile()` per rendered frame looked like the culprit and measured ~1 µs;
+  it is cached per build now, but it was never the cost.
 
   Open:
   - pallets;

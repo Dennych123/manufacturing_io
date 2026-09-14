@@ -334,7 +334,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const inbox = [];
   /** @type {Array<[string, string, boolean]>} */
   const presses = [];
-  /** Viewer hand edges: [part uid, down]. Queued like presses, so a recorded run replays. @type {Array<[string, boolean]>} */
+  /** Viewer hand edges: [part uid, down, at]. Queued like presses, so a recorded run replays. @type {Array<[string, boolean, number[]|null]>} */
   const hands = [];
   const ctlIo = /** @type {Record<string, any>} */ ({});
   const events = [];
@@ -410,7 +410,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     // 1. commands
     for (const [tag, v, tp] of inbox.splice(0)) applyOut(tag, v, tp);
     for (const [id, key, down] of presses.splice(0)) { const r = byId.get(id); r?.t.press?.(r.s, r.p, key, down); }
-    for (const [uid, down] of hands.splice(0)) grab(uid, down);
+    for (const [uid, down, at] of hands.splice(0)) grab(uid, down, at);
     if (controller) {
       for (const tag of inTags) ctlIo[tag] = io[tag];
       controller.scan(ctlIo, plant.t);
@@ -617,11 +617,23 @@ export async function createPlant(scene, { driver = null, controller = null, rec
    * velocity: a part let go over a running belt is carried away, not thrown.
    * @param {string} uid @param {boolean} down
    */
-  function grab(uid, down) {
+  function grab(uid, down, at) {
     const pt = parts.get(uid);
-    if (!pt || !!pt.pin === down) return;
+    if (!pt) return;
+    if (down && pt.pin) {                                          // a drag: the same hold, moved
+      if (at) pt.pin.p = [at[0] * SK, at[1] * SK, at[2] * SK];
+      return;
+    }
+    if (!!pt.pin === down) return;
     if (down) {
-      if (pt.held) return;
+      // Taking a part OUT of a gripper, a cup or a nest is the point of the exercise: the machine
+      // then runs its cycle with nothing in its hand, and the PLC has to notice. The holder loses
+      // the part here, so its own switch (vacuum, nest present) goes false at the next step.
+      if (pt.held) {
+        const h = byId.get(pt.held.id);
+        if (h) h.s.uid = null;
+        pt.held = null;
+      }
       const t = pt.body.translation(), q = pt.body.rotation();
       pt.pin = { p: [t.x, t.y, t.z], q: [q.x, q.y, q.z, q.w] };     // metres: written straight back to Rapier
       pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
@@ -634,8 +646,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     refreshPart(pt);                                               // the body type changed: drop stale contacts
     rec({ t: plant.t, k: 'part', uid, ev: down ? 'hold' : 'release', by: 'hand' });
   }
-  /** Browser edge for the hand. Applied at the start of the next step. @param {string} uid @param {boolean} down */
-  function holdPart(uid, down) { hands.push([uid, !!down]); }
+  /**
+   * Browser edge for the hand, applied at the start of the next step. `at` (mm, world) moves a
+   * part that is already held: dragging is the same hold, put somewhere else.
+   * @param {string} uid @param {boolean} down @param {number[]} [at]
+   */
+  function holdPart(uid, down, at) { hands.push([uid, !!down, at && at.length === 3 ? at.map(Number) : null]); }
 
   /** Browser edge from a 3D panel part. Applied at the start of the next step. @param {string} id @param {string} key @param {boolean} down */
   function press(id, key, down) {
@@ -710,12 +726,15 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   function snapshot() {
     /** @type {Record<string, number[]>} */
     const ps = {}, tpl = /** @type {Record<string, string>} */ ({});
+    /** Parts the viewer's hand is holding: the viewer highlights them. @type {string[]} */
+    const pins = [];
     for (const pt of parts.values()) {
       const t = pt.body.translation(), q = pt.body.rotation();
       ps[pt.uid] = [t.x / SK, t.y / SK, t.z / SK, q.x, q.y, q.z, q.w];
       tpl[pt.uid] = pt.tpl;
+      if (pt.pin) pins.push(pt.uid);
     }
-    return { t: plant.t, dof: plant.dof, io: { ...io }, forced: Object.fromEntries(forced), parts: ps, ptpl: tpl };
+    return { t: plant.t, dof: plant.dof, io: { ...io }, forced: Object.fromEntries(forced), parts: ps, ptpl: tpl, pins };
   }
   function status() {
     return {
