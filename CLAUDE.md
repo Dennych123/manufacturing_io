@@ -39,6 +39,17 @@ in the code but break things silently** when violated. Most were paid for once i
   underside, which rests a hair inside the belt, so an origin test in a remover box misses
   every part.
 - **Templates** (workpieces an emitter copies) are never simulated and never drawn.
+- **A nest LOCATES the part it catches** (`snap` on the type): the part is seated square on the
+  pocket floor, not frozen wherever it was when its centre entered the pocket. Measured: a base
+  caught mid-fall hung 11.6 mm high, which then put it inside the press's stroke.
+- **A kinematic tool never closes ONTO a part resting on another kinematic body.** The solver
+  has nowhere to put the part and ejects it. Stop at the part's surface, as the gripper does
+  with `blockAt`, or leave a few mm (the assembler's press stops 3 mm above the lid).
+- **A part only carried by friction limits how fast a table may index.** A cycloid over an arc
+  `h` in time `T` peaks at `2πh/T²`, and the part slides when that passes `μg`. Measured on the
+  assembler: a 418 mm station arc in 0.6 s gives 7.3 m/s² against μg = 4.9, and all 13 lids slid
+  off the table and fell out of the world. At 1.2 s it is 1.8 m/s² tangential plus 1.8
+  centripetal, and they ride.
 - **A part must not have to drop into a tight pocket.** Measured: a 70×60×20 part dropped
   between 25 mm walls hangs on speculative contacts at the wall top edges (45° normals) with
   anything under 12 mm of clearance per side; at 5 mm it hung 20 mm above the floor. So a

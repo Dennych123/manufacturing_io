@@ -518,7 +518,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         const pt = cand ?? candidate(r, F);
         if (pt) {
           const t = pt.body.translation(), q = pt.body.rotation();
-          pt.rel = compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
+          // A nest LOCATES the part (t.snap): it sits square on the pocket floor, whatever pose
+          // it was caught in. Without this a part is frozen wherever it happened to be when its
+          // centre entered the pocket - measured 11.6 mm in the air, which then made a press
+          // that stops at the nominal part height squeeze it and fling it off the table.
+          pt.rel = r.t.snap ? pose([0, 0, 0]) : compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
           pt.held = { id: r.id, link };
           pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
           refreshPart(pt);

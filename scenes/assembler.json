@@ -1,0 +1,199 @@
+{
+  "format": "mio-scene/1",
+  "name": "assembler",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Assembly",
+      "members": ["tbl", "press", "emBase", "emLid"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "TBL_INPOS",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "tbl",
+      "type": "indexTable",
+      "label": "INDEX TABLE",
+      "station": "ST1",
+      "params": { "stations": 4, "camMs": 2400, "indexFrac": 0.5, "diameter": 700, "height": 700 },
+      "io": {
+        "run": "TBL_RUN",
+        "inPos": "TBL_INPOS",
+        "origin": "TBL_ORIGIN",
+        "station": "TBL_STATION"
+      }
+    },
+    {
+      "id": "n0",
+      "type": "nest",
+      "label": "STATION 0",
+      "station": "ST1",
+      "parent": "tbl",
+      "socket": "s0",
+      "at": [0, 0, 0],
+      "params": { "size": [90, 70, 22], "wall": 6 },
+      "io": { "present": "N0_PRESENT" }
+    },
+    {
+      "id": "n1",
+      "type": "nest",
+      "label": "STATION 1",
+      "station": "ST1",
+      "parent": "tbl",
+      "socket": "s1",
+      "at": [0, 0, 0],
+      "params": { "size": [90, 70, 22], "wall": 6 }
+    },
+    {
+      "id": "n2",
+      "type": "nest",
+      "label": "STATION 2",
+      "station": "ST1",
+      "parent": "tbl",
+      "socket": "s2",
+      "at": [0, 0, 0],
+      "params": { "size": [90, 70, 22], "wall": 6 }
+    },
+    {
+      "id": "n3",
+      "type": "nest",
+      "label": "STATION 3",
+      "station": "ST1",
+      "parent": "tbl",
+      "socket": "s3",
+      "at": [0, 0, 0],
+      "params": { "size": [90, 70, 22], "wall": 6 }
+    },
+    {
+      "id": "wpBase",
+      "type": "workpiece",
+      "label": "BASE TEMPLATE",
+      "at": [0, -900, 0],
+      "params": { "size": [80, 60, 20], "color": "#2a6fdb", "material": "alu" }
+    },
+    {
+      "id": "wpLid",
+      "type": "workpiece",
+      "label": "LID TEMPLATE",
+      "at": [200, -900, 0],
+      "params": { "size": [60, 40, 12], "color": "#f2c21b", "material": "plastic" }
+    },
+    {
+      "id": "emBase",
+      "type": "emitter",
+      "label": "BASE FEEDER",
+      "station": "ST1",
+      "at": [266, 0, 820],
+      "params": { "template": "wpBase", "mode": "tag" },
+      "io": { "emit": "EM_B_EMIT", "count": "EM_B_CNT" }
+    },
+    {
+      "id": "emLid",
+      "type": "emitter",
+      "label": "LID FEEDER",
+      "station": "ST1",
+      "at": [0, 266, 820],
+      "params": { "template": "wpLid", "mode": "tag" },
+      "io": { "emit": "EM_L_EMIT", "count": "EM_L_CNT" }
+    },
+    {
+      "id": "col",
+      "type": "plate",
+      "label": "PRESS COLUMN",
+      "at": [-560, 0, 0],
+      "params": { "size": [90, 90, 961] }
+    },
+    {
+      "id": "beam",
+      "type": "plate",
+      "label": "PRESS BEAM",
+      "at": [-350, 0, 964],
+      "params": { "size": [400, 90, 40] }
+    },
+    {
+      "id": "press",
+      "type": "cylinder",
+      "label": "PRESS",
+      "station": "ST1",
+      "at": [-266, 0, 964],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 32,
+        "stroke": 60,
+        "valve": "5/2-double",
+        "extendMs": 400,
+        "retractMs": 350,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "head": "plate",
+        "headSize": [70, 50, 10]
+      },
+      "io": {
+        "solExt": "SOL_PRESS_DN",
+        "solRet": "SOL_PRESS_UP",
+        "sw.ret": "AS_PRESS_UP",
+        "sw.ext": "AS_PRESS_DN"
+      }
+    },
+    {
+      "id": "rm1",
+      "type": "remover",
+      "label": "UNLOAD",
+      "at": [0, -266, 700],
+      "params": { "size": [200, 200, 200] },
+      "io": { "count": "RM_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-700, -700, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

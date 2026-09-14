@@ -248,6 +248,35 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await q.close(); await q2.close();
 }
 
+// ---------------------------------------------------------------- scene assembler (index table)
+{
+  const asm = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'assembler.json'), 'utf8'));
+  const { create: createASM } = await import('../scenes/assembler.ctl.js');
+  const run = async () => {
+    const q = await createPlant(asm, { controller: createASM() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('assembler: the table indexes a station per cycle', q.io.CYCLE_CNT >= 12, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', station ' + q.io.TBL_STATION);
+  chk('assembler: nests seat every base squarely on the pocket floor (720 mm)',
+    [...q.parts.values()].filter(p => p.tpl === 'wpBase' && p.held).every(p => Math.abs(p.body.translation().z / SK - 720) < 0.1),
+    [...q.parts.values()].filter(p => p.tpl === 'wpBase').map(p => (p.body.translation().z / SK).toFixed(1)).join(' '));
+  // The lid is only held by friction: a faster index throws it off the table (measured).
+  const parts = [...q.parts.values()].map(p => { const t = p.body.translation(); return { tpl: p.tpl, x: t.x / SK, y: t.y / SK, z: t.z / SK }; });
+  const lids = parts.filter(p => p.tpl === 'wpLid'), bases = parts.filter(p => p.tpl === 'wpBase');
+  const riding = lids.filter(l => bases.some(b => Math.hypot(l.x - b.x, l.y - b.y) < 25 && Math.abs(l.z - (b.z + 20)) < 3));
+  chk('assembler: every lid rides its base round the table', lids.length >= 1 && riding.length === lids.length, riding.length + '/' + lids.length);
+  chk('assembler: parts balance and none are lost off the table', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('assembler: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('assembler: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
 // ---------------------------------------------------------------- the 2-finger gripper
 {
   // The gripper hangs from a lift cylinder: Lb = 165, so its frame is at 1157 - 192 - x, and at

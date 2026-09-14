@@ -48,6 +48,9 @@ Three material-flow scenes run with their PLC programs.
   chute into a bin.
 - `pick-place`: a servo traverse with a pneumatic lift and a vacuum cup takes each part out of
   a nest and lays it on the outfeed belt (a cycle every 6.5 s).
+- `assembler`: a 4-station cam indexer. Every station works in the same dwell — load a base,
+  drop a lid on it, press it — and the table then carries each assembly one station on, with
+  the lid riding its base on friction alone.
 
 All three passed a 30-minute soak: parts balance, none lost, no warnings, and the worst step
 was 69–257 µs against a 1000 µs budget.
