@@ -5,6 +5,8 @@ VAR
 	N : UDINT;
 	T_SETTLE : TON;
 	T_GAP : TON;
+	T_WD : TON;
+	STEP_LAST : UDINT;
 END_VAR
 // stopper-pusher: the belt runs, the loader feeds a part every 2.5 s, and a stopper pin holds
 // each part at the pusher. Odd parts are pushed off the belt into the reject chute; even parts
@@ -74,9 +76,32 @@ CASE ST1_STEP OF
 		ELSE
 			ST1_STEP := 20;
 		END_IF;
+	900:	// FAULT: a step stopped moving. Stop feeding and the pusher, but LEAVE the stopper
+		// down - it is holding the queue back.
+		CV1_RUN := FALSE;
+		EM1_EN := FALSE;
+		SOL_PUSH := FALSE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
 T_SETTLE(In := (ST1_STEP = 20) AND PE_STOP, PT := T#300ms);
 T_GAP(In := (ST1_STEP = 70), PT := T#400ms);
-AUTO_RUN := ST1_STEP <> 0;
+
+// Watchdog: a step that stops moving is a jam, not patience. A part taken off the belt by hand
+// leaves the settle step waiting for a pin it will never reach.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#15s);
+IF ST1_STEP <> STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	CV1_RUN := FALSE;
+	EM1_EN := FALSE;
+	SOL_PUSH := FALSE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
 PL_START := AUTO_RUN;

@@ -158,6 +158,12 @@ in the code but break things silently** when violated. Most were paid for once i
   looks alive and is not.** A step that has not moved for 15 s goes to FAULT (step 900): feeding
   and motion off, `AUTO_RUN` off, START acknowledges it. Nothing is dropped on the way: the
   vacuum keeps its part, as a real machine does.
+- **A write-off goes STALE when the part turns up after all**, and a stale one is silent. The hand
+  drops it back on the line, or it rolls into the unloader later; `RM` catches up, `RM + GONE` runs
+  past `EM`, and the discharge step stops waiting altogether — the pipelining bug again. In ST it
+  is worse: `GONE` is a `UDINT`, so `EM - RM` with `RM` ahead underflows to about 4 billion and the
+  invariant is true for ever. So clamp it every scan: `GONE` never exceeds `EM - RM`, and never
+  goes below zero. Found by reviewing my own diff, and `tests/ctl.test.js` pins it.
 - **An invariant must stay reachable, so write off what left the machine — but only when the
   FAULT is acknowledged.** Acknowledging takes `GONE = EM - RM`, and the discharge step tests
   `RM + GONE >= EM`. Without the write-off a single part removed by hand stops the machine for

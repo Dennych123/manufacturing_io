@@ -2,11 +2,17 @@
 // without Sysmac. Keep the two in step: a change to one is a change to both.
 // Loaded from disk only, never through the API.
 
+/** A step that has not moved for this long is stuck: the longest normal step is the 2.4 s index. */
+const WD_MS = 15000;
+/** Fault step: feeders and table off, press lifted, AUTO_RUN off, waits for START to acknowledge. */
+const FAULT = 900;
+
 export function create() {
   let pbLast = false, stopReq = false, emBLast = 0, emLLast = 0, nextSt = 0, pressFrom = -1, pressQ = false;
+  let stepLast = -1, stepFrom = 0;
   return {
     /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
-    reset() { pbLast = false; stopReq = false; emBLast = 0; emLLast = 0; nextSt = 0; pressFrom = -1; pressQ = false; },
+    reset() { pbLast = false; stopReq = false; emBLast = 0; emLLast = 0; nextSt = 0; pressFrom = -1; pressQ = false; stepLast = -1; stepFrom = 0; },
 
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
@@ -48,12 +54,30 @@ export function create() {
             if (stopReq) io.ST1_STEP = 0; else { emBLast = io.EM_B_CNT; io.ST1_STEP = 10; }
           }
           break;
+        case FAULT:
+          // Stuck: a feeder could not drop (its spot is blocked), or the part under the press was
+          // taken. Stop the table and the feeders and LIFT the press off the work.
+          io.TBL_RUN = false;
+          io.EM_B_EMIT = false;
+          io.EM_L_EMIT = false;
+          io.SOL_PRESS_DN = false;
+          io.SOL_PRESS_UP = true;
+          if (startEdge) { stopReq = false; io.ST1_STEP = 0; }
+          break;
       }
 
       // TON after the CASE, as in the ST: its Q is read by the NEXT scan.
       if (io.ST1_STEP === 40) { if (pressFrom < 0) pressFrom = t; } else pressFrom = -1;
       pressQ = pressFrom >= 0 && t - pressFrom >= 300;
-      io.AUTO_RUN = io.ST1_STEP !== 0;
+
+      // Watchdog: a step that stops moving is a jam, not patience (CLAUDE.md).
+      if (io.ST1_STEP !== stepLast) { stepLast = io.ST1_STEP; stepFrom = t; }
+      if (io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT && t - stepFrom >= WD_MS) {
+        io.ST1_STEP = FAULT; io.TBL_RUN = false; io.EM_B_EMIT = false; io.EM_L_EMIT = false;
+        io.SOL_PRESS_DN = false; io.SOL_PRESS_UP = true;
+      }
+
+      io.AUTO_RUN = io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT;
       io.PL_START = io.AUTO_RUN;
     },
   };

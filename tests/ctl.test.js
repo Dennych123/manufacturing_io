@@ -238,4 +238,111 @@ function drive(ctl, io, ms, each = () => {}) {
   chk('pick-place: the fault does not drop a part the cup is holding', io.VAC_ON === false || io.VAC_SW === false);
 }
 
+// A written-off part can still turn up: the hand drops it back on the line, or it rolls into the
+// unloader later. Then RM catches up with EM and the write-off is stale. If GONE is left as it
+// was, RM + GONE runs PAST EM and the discharge step stops waiting altogether - the pipelining
+// bug again, silently. In ST it is worse: GONE is a UDINT, so EM - RM with RM ahead underflows to
+// ~4 billion and the invariant is true for ever.
+{
+  const { create } = await import('../scenes/a-to-b.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, EM1_CNT: 0, RM1_CNT: 0,
+               PE_END: false, CV1_RUN: false, EM1_EMIT: false, AUTO_RUN: false, PL_START: false };
+  const press = () => { drive(ctl, io, 8, o => { o.PB_START = true; }); drive(ctl, io, 8, o => { o.PB_START = false; }); };
+  press();
+  drive(ctl, io, 3000, o => {
+    if (o.ST1_STEP === 10 && o.EM1_EMIT && o.EM1_CNT < 1) o.EM1_CNT++;
+    if (o.ST1_STEP === 20 && o.CV1_RUN) o.PE_END = true;
+  });
+  drive(ctl, io, 16000, () => {});                                         // the part was taken: fault
+  press();                                                                 // acknowledge: GONE = 1 - 0 = 1
+  io.RM1_CNT = 1;                                                          // and now the strays turn up after all
+  io.PE_END = false;
+  press();
+  drive(ctl, io, 6000, o => {
+    if (o.ST1_STEP === 10 && o.EM1_EMIT && o.EM1_CNT < 2) o.EM1_CNT++;
+    if (o.ST1_STEP === 20 && o.CV1_RUN) o.PE_END = true;
+  });
+  chk('a-to-b: a write-off that turns up again does not end the next cycle early',
+    io.ST1_STEP === 40 && io.CYCLE_CNT === 0, 'step ' + io.ST1_STEP + ', CYCLE_CNT ' + io.CYCLE_CNT + ', RM ' + io.RM1_CNT + ' EM ' + io.EM1_CNT);
+  drive(ctl, io, 200, o => { o.RM1_CNT = 2; });                            // its own part really leaves
+  chk('a-to-b: and it still completes once its own part has left', io.CYCLE_CNT === 1, 'CYCLE_CNT ' + io.CYCLE_CNT);
+}
+
+// ---------------------------------------------------------------- watchdog on the other four
+{
+  const { create } = await import('../scenes/stopper-pusher.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV1_RUN: false, EM1_EN: false,
+               SOL_STOP: false, SOL_PUSH: false, AS_STOP_DN: false, AS_PUSH_EXT: false, AS_PUSH_RET: true,
+               PE_STOP: false, AUTO_RUN: false, PL_START: false };
+  const plant = o => { o.AS_STOP_DN = o.SOL_STOP; o.AS_PUSH_EXT = o.SOL_PUSH; o.AS_PUSH_RET = !o.SOL_PUSH; };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; plant(o); });
+  drive(ctl, io, 500, plant);                                              // no part ever settles at the pin
+  chk('stopper-pusher: it waits at the settle step for a part that never comes', io.ST1_STEP === 20, 'step ' + io.ST1_STEP);
+  drive(ctl, io, 16000, plant);
+  chk('stopper-pusher: the missing part faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV1_RUN === false && io.EM1_EN === false, 'step ' + io.ST1_STEP);
+  chk('stopper-pusher: the fault leaves the stopper down, holding the queue', io.SOL_STOP === true);
+}
+
+{
+  const { create } = await import('../scenes/sort-by-height.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV_RUN: false,
+               EM_T_EMIT: false, EM_T_CNT: 4, EM_S_EMIT: false, EM_S_CNT: 4, RM_T_CNT: 4, RM_S_CNT: 4,
+               PE_LOW: false, PE_HIGH: false, SOL_PUSH: false, AS_PUSH_EXT: false, AS_PUSH_RET: true, AUTO_RUN: false };
+  const plant = o => { o.AS_PUSH_EXT = o.SOL_PUSH; o.AS_PUSH_RET = !o.SOL_PUSH; if (o.EM_S_EMIT) o.EM_S_CNT++; if (o.EM_T_EMIT) o.EM_T_CNT++; };
+  const press = () => { drive(ctl, io, 8, o => { o.PB_START = true; plant(o); }); drive(ctl, io, 8, o => { o.PB_START = false; plant(o); }); };
+  press();
+  drive(ctl, io, 400, plant);                                              // a short part is fed, then taken off the belt
+  chk('sort-by-height: it waits at the beam for a part that was taken', io.ST1_STEP === 20, 'step ' + io.ST1_STEP);
+  drive(ctl, io, 16000, plant);
+  chk('sort-by-height: the missing part faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV_RUN === false && io.SOL_PUSH === false, 'step ' + io.ST1_STEP);
+  const emS = io.EM_S_CNT;
+  press();                                                                 // acknowledge: the fed part is written off
+  chk('sort-by-height: START acknowledges the fault', io.ST1_STEP === 0, 'step ' + io.ST1_STEP);
+  press();
+  let unloaded = false;
+  drive(ctl, io, 4000, o => {
+    plant(o);
+    if (o.ST1_STEP === 20 && o.CV_RUN) o.PE_LOW = true;
+    if (o.ST1_STEP === 60 && !unloaded) { o.RM_S_CNT++; unloaded = true; }  // only THIS part reaches the outfeed
+  });
+  chk('sort-by-height: the written-off part does not block the next cycle',
+    io.CYCLE_CNT === 1 && io.EM_S_CNT === emS + 1, 'CYCLE_CNT ' + io.CYCLE_CNT + ', RM_S ' + io.RM_S_CNT + ' EM_S ' + io.EM_S_CNT);
+}
+
+{
+  const { create } = await import('../scenes/buffer-queue.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, CV_ACC_RUN: false,
+               EM_EN: false, PE_EXIT: true, PE_FULL: false, AUTO_RUN: false };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; });
+  drive(ctl, io, 2500, () => {});                                          // the exit beam never clears
+  chk('buffer-queue: it runs the belt waiting for the exit beam to clear', io.ST1_STEP === 15 && io.CV_ACC_RUN === true,
+    'step ' + io.ST1_STEP);
+  drive(ctl, io, 26000, () => {});
+  chk('buffer-queue: a beam that never clears faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV_ACC_RUN === false, 'step ' + io.ST1_STEP);
+  chk('buffer-queue: the fault holds the feeder off too', io.EM_EN === false);
+}
+
+{
+  const { create } = await import('../scenes/assembler.ctl.js');
+  const ctl = create();
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0, TBL_RUN: false, TBL_INPOS: true,
+               TBL_STATION: 0, EM_B_EMIT: false, EM_B_CNT: 0, EM_L_EMIT: false, EM_L_CNT: 0,
+               SOL_PRESS_DN: false, SOL_PRESS_UP: true, AS_PRESS_UP: true, AS_PRESS_DN: false, AUTO_RUN: false };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; });
+  drive(ctl, io, 500, () => {});                                           // the base feeder is blocked: its count never moves
+  chk('assembler: it holds the feed command waiting for the counter', io.ST1_STEP === 10 && io.EM_B_EMIT === true,
+    'step ' + io.ST1_STEP);
+  drive(ctl, io, 16000, () => {});
+  chk('assembler: a feeder that cannot drop faults instead of waiting for ever',
+    io.ST1_STEP === 900 && io.AUTO_RUN === false && io.TBL_RUN === false && io.EM_B_EMIT === false, 'step ' + io.ST1_STEP);
+  chk('assembler: the fault lifts the press off the work', io.SOL_PRESS_UP === true && io.SOL_PRESS_DN === false);
+}
+
 process.exit(fail ? 1 : 0);

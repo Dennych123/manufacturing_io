@@ -3,6 +3,8 @@ VAR
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
 	T_DEMAND : TON;
+	T_WD : TON;
+	STEP_LAST : UDINT;
 END_VAR
 // buffer-queue: parts queue nose to tail on the accumulation belt while it stands still, and one
 // part is metered out on each demand by running that belt until the exit beam has seen the part
@@ -51,10 +53,29 @@ CASE ST1_STEP OF
 				ST1_STEP := 10;
 			END_IF;
 		END_IF;
+	900:	// FAULT: a step stopped moving. The belt stops, and AUTO_RUN dropping also holds the
+		// feeder off.
+		CV_ACC_RUN := FALSE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
 // The metered part leaves down the discharge chute, and the feeder stops while the queue is full.
 T_DEMAND(In := (ST1_STEP = 10), PT := T#2s);
-AUTO_RUN := ST1_STEP <> 0;
+
+// Watchdog: a step that stops moving is a jam, not patience. Longer than the other scenes:
+// metering waits for a part to travel the whole buffer belt, and the buffer can start empty.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#25s);
+IF ST1_STEP <> STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	CV_ACC_RUN := FALSE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
 EM_EN := AUTO_RUN AND NOT PE_FULL;
 PL_START := AUTO_RUN;

@@ -20,6 +20,10 @@ export function create() {
       pbLast = io.PB_START;
       if (io.PB_STOP) stopReq = true;
 
+      // A write-off goes STALE when the part turns up after all: RM catches up, RM + gone runs
+      // PAST EM, and step 130 stops waiting at all. Clamp it every scan.
+      if (io.RM_CNT + gone > io.EM_CNT) gone = Math.max(0, io.EM_CNT - io.RM_CNT);
+
       switch (io.ST1_STEP) {
         case 0:
           io.CV_RUN = false; io.EM_EMIT = false; io.VAC_ON = false;

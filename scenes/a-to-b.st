@@ -27,6 +27,16 @@ IF PB_STOP THEN
 	STOP_REQ := TRUE;
 END_IF;
 
+// A write-off goes STALE when the part turns up after all - the hand puts it back, or it reaches
+// the unloader later. Then RM + GONE runs PAST EM and step 40 stops waiting at all. GONE is a
+// UDINT, so EM1_CNT - RM1_CNT with RM ahead underflows to about 4 billion: guard before you
+// subtract.
+IF RM1_CNT >= EM1_CNT THEN
+	GONE := 0;
+ELSIF RM1_CNT + GONE > EM1_CNT THEN
+	GONE := EM1_CNT - RM1_CNT;
+END_IF;
+
 CASE ST1_STEP OF
 	0:	// idle, belt stopped
 		CV1_RUN := FALSE;

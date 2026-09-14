@@ -6,6 +6,8 @@ VAR
 	EM_L_LAST : UDINT;
 	NEXT_ST : INT;
 	T_PRESS : TON;
+	T_WD : TON;
+	STEP_LAST : UDINT;
 END_VAR
 // assembler: a 4-station cam indexer. Every station works during the same dwell - load a base,
 // drop a lid on it, press it - and then the table turns one step, carrying each assembly to the
@@ -76,8 +78,35 @@ CASE ST1_STEP OF
 				ST1_STEP := 10;
 			END_IF;
 		END_IF;
+	900:	// FAULT: a step stopped moving - a feeder could not drop, or the part under the press
+		// was taken. Stop the table and the feeders and LIFT the press off the work.
+		TBL_RUN := FALSE;
+		EM_B_EMIT := FALSE;
+		EM_L_EMIT := FALSE;
+		SOL_PRESS_DN := FALSE;
+		SOL_PRESS_UP := TRUE;
+		IF START_EDGE THEN
+			STOP_REQ := FALSE;
+			ST1_STEP := 0;
+		END_IF;
 END_CASE;
 
 T_PRESS(In := (ST1_STEP = 40), PT := T#300ms);
-AUTO_RUN := ST1_STEP <> 0;
+
+// Watchdog: a step that stops moving is a jam, not patience. A feeder whose spot is blocked, or a
+// part taken off the table, leaves this sequence holding a command that is never answered.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#15s);
+IF ST1_STEP <> STEP_LAST THEN
+	STEP_LAST := ST1_STEP;
+END_IF;
+IF T_WD.Q THEN
+	ST1_STEP := 900;
+	TBL_RUN := FALSE;
+	EM_B_EMIT := FALSE;
+	EM_L_EMIT := FALSE;
+	SOL_PRESS_DN := FALSE;
+	SOL_PRESS_UP := TRUE;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
 PL_START := AUTO_RUN;

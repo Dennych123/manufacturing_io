@@ -130,6 +130,15 @@ IF PB_STOP THEN
 	STOP_REQ := TRUE;
 END_IF;
 
+// A write-off goes STALE when the part turns up after all, and then RM + GONE runs PAST EM and
+// step 130 stops waiting at all. GONE is a UDINT, so EM_CNT - RM_CNT with RM ahead underflows to
+// about 4 billion: guard before you subtract.
+IF RM_CNT &gt;= EM_CNT THEN
+	GONE := 0;
+ELSIF RM_CNT + GONE &gt; EM_CNT THEN
+	GONE := EM_CNT - RM_CNT;
+END_IF;
+
 CASE ST1_STEP OF
 	0:	// idle
 		CV_RUN := FALSE;

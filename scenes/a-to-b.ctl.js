@@ -19,6 +19,11 @@ export function create() {
       pbLast = io.PB_START;
       if (io.PB_STOP) stopReq = true;
 
+      // A write-off goes STALE when the part turns up after all - the hand puts it back, or it
+      // reaches the unloader later. RM catches up, RM + gone runs PAST EM, and the discharge step
+      // stops waiting at all: the pipelining bug again, silently. Clamp it every scan.
+      if (io.RM1_CNT + gone > io.EM1_CNT) gone = Math.max(0, io.EM1_CNT - io.RM1_CNT);
+
       switch (io.ST1_STEP) {
         case 0:
           io.CV1_RUN = false;

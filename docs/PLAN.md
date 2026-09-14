@@ -673,8 +673,28 @@ Each phase ends runnable, with a written exit criterion.
   legitimately on the belt, so an older part's removal ends this cycle — the pipelining bug that
   cost two live rounds on the simulator.
 
+  **A write-off also goes stale, and that is silent** (found by reviewing the rollout diff with
+  the `code-review` skill, and reproduced in `tests/ctl.test.js` before fixing). A part written
+  off can still turn up — the hand puts it back, or it reaches the unloader later. `RM` then
+  catches up, `RM + GONE` runs past `EM`, and the discharge step stops waiting at all:
+
+  | | EM | RM | GONE | `RM + GONE >= EM` |
+  |---|---|---|---|---|
+  | after the acknowledgement | 1 | 0 | 1 | — |
+  | the stray part turns up | 1 | 1 | 1 | — |
+  | next cycle loads its own part | 2 | 1 | 1 | **true at once**, so the cycle ended with its part still on the belt |
+
+  In ST it is worse: `GONE` is a `UDINT`, so `EM - RM` with `RM` ahead underflows to about 4
+  billion and the invariant holds for ever. The write-off is therefore clamped every scan: never
+  more than `EM - RM`, never below zero.
+
+  All six scenes carry the watchdog now (15 s per step; 25 s on buffer-queue, where metering waits
+  for a part to travel the whole buffer belt and the buffer can legitimately start empty).
+  sort-by-height writes off both counters on the acknowledgement, since it has two invariants.
+  The fault stops what feeds and moves and leaves what holds: the stopper stays down, the vacuum
+  keeps its part, the press lifts off the work.
+
   Open:
-  - the same watchdog for stopper-pusher, sort-by-height, buffer-queue and assembler;
   - pallets;
   - the live PLC runs of the newer scenes.
 
