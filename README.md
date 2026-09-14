@@ -36,8 +36,9 @@ fall, ride belts, queue against stoppers and get pushed. The kit now has:
 - a part emitter and a part remover;
 - a photo-eye and a proximity sensor;
 - Stopper/Pusher/Lifter cylinder presets;
-- holding: a vacuum cup and a nest. A held part rides its holder and is let go with the
-  holder's velocity.
+- holding: a vacuum cup, a 2-finger gripper and a nest. A held part rides its holder and is let
+  go with the holder's velocity. The gripper's fingers stop at the width of the part between
+  them, and its `closed` switch sits at full close, so a missed grip stays visible to the PLC.
 
 Three material-flow scenes run with their PLC programs.
 - `a-to-b`: loader, belt, end sensor, unloader.

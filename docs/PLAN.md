@@ -571,7 +571,7 @@ Each phase ends runnable, with a written exit criterion.
   - photo-eye/proximity;
   - cylinder `head` plus the Stopper/Pusher/Lifter presets;
   - the `ref` param type;
-  - holding (vacuum cup, nest): one take/follow/release mechanism;
+  - holding (vacuum cup, 2-finger gripper, nest): one take/follow/release mechanism;
   - the scenes **a-to-b**, **stopper-pusher** and **pick-place**, each with `.st` and `.ctl.js`;
   - the contact refresh for kinematic links that come to rest and for parts whose body type
     changes.
@@ -591,7 +591,6 @@ Each phase ends runnable, with a written exit criterion.
   108 µs. The browser's software renderer takes the CPU, and the plant's accumulator reports it.
 
   Open:
-  - the 2-finger gripper;
   - pallets;
   - the other three scenes;
   - the live PLC runs.

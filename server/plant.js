@@ -235,6 +235,33 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const t = pt.body.translation(), q = pt.body.rotation();
     return apply({ p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] }, pt.ctr);
   }
+  /** A free part (or this holder's own) whose centre is inside `z`, a box in the holder's frame. @param {any} r @param {any} F @param {any} z */
+  function inZone(r, F, z) {
+    const inv = invert(F);
+    for (const pt of parts.values()) {
+      if (pt.held && pt.held.id !== r.id) continue;
+      const l = apply(inv, partCentre(pt));
+      if (l.every((v, i) => Math.abs(v - z.at[i]) <= z.size[i] / 2)) return pt;
+    }
+    return null;
+  }
+
+  /** Half-extent of a part along a world axis: exact for a box at any angle. @param {any} pt @param {number[]} ax */
+  function halfAlong(pt, ax) {
+    const s = defs.get(pt.tpl).shapes.find((/** @type {any} */ x) => x.collide !== false);
+    if (!s) return 0;
+    if (s.kind !== 'box') return s.r;
+    const q = pt.body.rotation(), Q = [q.x, q.y, q.z, q.w];
+    let sum = 0;
+    for (let i = 0; i < 3; i++) {
+      const e = [0, 0, 0];
+      e[i] = s.size[i] / 2;
+      const w = qrot(Q, e);
+      sum += Math.abs(w[0] * ax[0] + w[1] * ax[1] + w[2] * ax[2]);
+    }
+    return sum;
+  }
+
   /**
    * The part a holder would take: for a vacuum cup, the nearest free part within `reach` of its
    * suction face; for a nest, a free part whose centre is in the pocket.
@@ -479,9 +506,16 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     for (const h of holders) {
       const r = h.r, link = h.link || (h.link = defs.get(r.id).root), F = W[r.id][link];
       if (r.s.uid && !parts.has(r.s.uid)) r.s.uid = null;             // a remover took it
-      const want = r.t.hold === 'vacuum' ? !!r.cio.on : r.cio.clamp !== false;
+      // A gripper's fingers stop at the width of the part between them, which only physics
+      // knows; the model closes onto `blockAt` and decides when it has a grip.
+      let cand = null;
+      if (r.t.hold === 'grip') {
+        cand = inZone(r, F, r.t.zone(r.p));
+        if (!r.s.uid) r.s.blockAt = cand ? halfAlong(cand, qrot(F.q, [0, 1, 0])) : 0;
+      }
+      const want = r.t.hold === 'vacuum' ? !!r.cio.on : r.t.hold === 'grip' ? !!r.s.grip : r.cio.clamp !== false;
       if (want && !r.s.uid) {
-        const pt = candidate(r, F);
+        const pt = cand ?? candidate(r, F);
         if (pt) {
           const t = pt.body.translation(), q = pt.body.rotation();
           pt.rel = compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });

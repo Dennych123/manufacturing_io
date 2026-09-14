@@ -248,6 +248,49 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await q.close(); await q2.close();
 }
 
+// ---------------------------------------------------------------- the 2-finger gripper
+{
+  // The gripper hangs from a lift cylinder: Lb = 165, so its frame is at 1157 - 192 - x, and at
+  // full stroke (120) the grip zone centre (0.6 * 50 below the frame) sits at the part's centre.
+  const grab = {
+    format: 'mio-scene/1', name: 'griptest',
+    components: [
+      { id: 'base', type: 'frame', params: { size: [1200, 600, 800] } },
+      { id: 'p1', type: 'workpiece', parent: 'base', socket: 'top', at: [0, 0, 0], params: { dynamic: true, size: [60, 40, 30] } },
+      { id: 'lift', type: 'cylinder', parent: 'base', socket: 'top', at: [0, 0, 357], rot: [180, 0, 0],
+        params: { bore: 25, stroke: 120, valve: '5/2-double' }, io: { solExt: 'SOL_DN', solRet: 'SOL_UP', 'sw.ext': 'AS_DN', 'sw.ret': 'AS_UP' } },
+      { id: 'grip1', type: 'gripper', parent: 'lift', socket: 'rodEnd', at: [0, 0, 0],
+        params: { span: 60, fingerLen: 50, fingerW: 10 }, io: { close: 'GRIP_CLOSE', open: 'GRIP_OPEN', closed: 'GRIP_CLOSED' } },
+      // a second gripper over nothing: closing on air must reach the `closed` switch
+      { id: 'grip2', type: 'gripper', parent: 'base', socket: 'top', at: [400, 0, 200], rot: [180, 0, 0],
+        params: { span: 60, fingerLen: 50, fingerW: 10 }, io: { close: 'GRIP2_CLOSE', closed: 'GRIP2_CLOSED' } },
+    ],
+  };
+  const g = await createPlant(grab, {});
+  g.run(300);
+  chk('the gripper starts open (the open switch, not the closed one)', g.io.GRIP_OPEN === true && g.io.GRIP_CLOSED === false && Math.abs(g.dof.grip1 - 30) < 1e-9);
+  g.force('SOL_DN', true);
+  g.run(700);
+  chk('the lift puts the part between the fingers', g.io.AS_DN === true);
+  g.force('GRIP_CLOSE', true);
+  g.run(500);
+  chk('the fingers stop at the part\'s half width (20 mm for a 40 mm part)', Math.abs(g.dof.grip1 - 20) < 0.2, g.dof.grip1.toFixed(3) + ' mm');
+  chk('a gripped part never trips the closed switch: a missed grip stays visible', g.io.GRIP_CLOSED === false && g.io.GRIP_OPEN === false);
+  chk('the part is held by the gripper', g.parts.get('p1').held?.id === 'grip1');
+  g.force('SOL_DN', false); g.force('SOL_UP', true);
+  g.run(700);
+  const zUp = g.parts.get('p1').body.translation().z / SK;
+  chk('the part rides up with the fingers', zUp > 900, zUp.toFixed(1) + ' mm');
+  g.force('GRIP_CLOSE', false);
+  g.run(800);
+  chk('opening drops the part back on the frame', Math.abs(g.parts.get('p1').body.translation().z / SK - 800) < 1 && !g.parts.get('p1').held,
+    (g.parts.get('p1').body.translation().z / SK).toFixed(2) + ' mm');
+  g.force('GRIP2_CLOSE', true);
+  g.run(500);
+  chk('closing on nothing reaches the closed switch (the missed-grip signal)', g.io.GRIP2_CLOSED === true && g.dof.grip2 === 0);
+  await g.close();
+}
+
 // ---------------------------------------------------------------- scene pick-place with its internal controller
 {
   const pp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'pick-place.json'), 'utf8'));
