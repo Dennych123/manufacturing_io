@@ -52,7 +52,7 @@ node server/main.js --scene a-to-b                  # the same scene against the
 
 ## Scenes
 
-Seven machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
+Eight machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
 
 | scene | what it shows |
 |---|---|
@@ -63,6 +63,7 @@ Seven machines run with their own PLC programs, each in `scenes/<name>.{json,st,
 | `buffer-queue` | a buffer belt stands still between demands and meters out one part at a time |
 | `assembler` | a 4-station cam indexer: load a base, drop a lid, press it, index on |
 | `pallet-line` | a pallet is fed, stopped by a pop-up stop, lifted off the belt, loaded and released |
+| `blurobot` | the rb4axis 4-axis arm: a rail and three joints pick from a nest and lay the part on the outfeed |
 
 | | |
 |---|---|
@@ -71,7 +72,7 @@ Seven machines run with their own PLC programs, each in `scenes/<name>.{json,st,
 | ![sort-by-height](docs/img/sort-by-height.png) | ![assembler](docs/img/assembler.png) |
 | **`sort-by-height`** — a tall part runs at the two beams, the pusher waiting by the chute | **`assembler`** — lids ride their bases on friction alone as the table carries them on |
 
-All seven passed a 30-minute soak: cycles keep completing, parts balance, none are lost, and
+All eight passed a 30-minute soak: cycles keep completing, parts balance, none are lost, and
 nothing warns. Step cost was measured for the first six, alone on the box: 69–441 µs against a
 1000 µs budget.
 

@@ -38,6 +38,44 @@ broken(s => { comp(s, 'base').parent = 'cyl1'; }, /cycle/, 'a parent cycle');
 broken(s => { comp(s, 'part1').type = 'unicorn'; }, /unknown type/, 'an unknown type');
 broken(s => { comp(s, 'part1').id = 'base'; }, /duplicate id base/, 'duplicate ids');
 broken(s => { comp(s, 'pbStop').io.pb = 'PB_START'; }, /two components writing the same tag PB_START/, 'two writers of one tag');
+
+// ---------------------------------------------------------------- the robot arm chain (rb4axis)
+// The plant keeps ONE dof per component, so an arm is a CHAIN of joints and every angle is
+// relative to its parent - which is exactly how rb4axis's chainPoints() composes them
+// (a2 = a1 + pos[2]). Change the joint's mount convention and the arm lands somewhere else in
+// silence, so the closed form is pinned here: L1 400 lifts the shoulder above the carriage, then
+// L2 300, L3 250 and L4 100 turn about X in the Y-Z plane. Home is [0, 90, -90, -90].
+{
+  const L1 = 400, L2 = 300, L3 = 250, L4 = 100;
+  const arm = {
+    format: 'mio-scene/1', name: 'armtest',
+    components: [
+      { id: 'rail', type: 'joint', params: { kind: 'prismatic', axis: 'x', len: 0, min: -1500, max: 1500, home: 0 } },
+      { id: 'j1', type: 'joint', parent: 'rail', socket: 'end', at: [0, 0, L1],
+        params: { kind: 'revolute', axis: 'x', len: L2, min: -90, max: 180, home: 90 } },
+      { id: 'j2', type: 'joint', parent: 'j1', socket: 'end',
+        params: { kind: 'revolute', axis: 'x', len: L3, min: -150, max: 0, home: -90 } },
+      { id: 'j3', type: 'joint', parent: 'j2', socket: 'end',
+        params: { kind: 'revolute', axis: 'x', len: L4, min: -120, max: 120, home: -90 } },
+    ],
+  };
+  chk('the robot arm chain validates', validate(arm).length === 0, validate(arm).join(' | '));
+  const H = worldPoses(arm, undefined);                       // no dof: every joint at its home
+  chk('arm at home: shoulder 400, elbow 700, wrist out 250',
+    near(H.j1.base.p, [0, 0, L1], 1e-6) && near(H.j2.base.p, [0, 0, L1 + L2], 1e-6) && near(H.j3.base.p, [0, L3, L1 + L2], 1e-6),
+    fmt(H.j3.base.p));
+  chk('arm at home: the flange hangs L4 below the wrist', near(apply(H.j3.arm, [0, L4, 0]), [0, L3, L1 + L2 - L4], 1e-6),
+    fmt(apply(H.j3.arm, [0, L4, 0])));
+  // rail 500, angles 90 / -45 / 0: the last two links run out together at 45 degrees
+  const P = worldPoses(arm, { rail: 500, j1: 90, j2: -45, j3: 0 }), k = Math.SQRT1_2;
+  chk('arm angles are cumulative, as chainPoints() composes them',
+    near(apply(P.j3.arm, [0, L4, 0]), [500, (L3 + L4) * k, L1 + L2 + (L3 + L4) * k], 1e-6), fmt(apply(P.j3.arm, [0, L4, 0])));
+  // the limits live in the model, because worldPoses() turns the dof straight into a rotation
+  const jt = TYPES.joint, jp = withDefaults(jt, { kind: 'revolute', min: -90, max: 180, home: 0, vmax: 90, acc: 240 });
+  const st = jt.init(jp), jio = { target: 999, exec: true };
+  for (let i = 0; i < 4000; i++) jt.step(st, jp, jio, 0.002);
+  chk('a joint clamps its target to the axis limits', Math.abs(st.x - 180) < 1e-6, st.x.toFixed(3));
+}
 broken(s => { comp(s, 'lampAuto').io.lamp = 'PB_START'; }, /PB_START is written by the plant .* AND by the PLC/, 'a tag both plant- and PLC-written');
 broken(s => { comp(s, 'cyl1').socket = 'nose'; }, /has no socket "nose"/, 'an unknown socket');
 broken(s => { comp(s, 'cyl1').params.boreDiameter = 32; }, /unknown parameter/, 'an unknown parameter (a typo is silent otherwise)');

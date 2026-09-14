@@ -424,4 +424,60 @@ function drive(ctl, io, ms, each = () => {}) {
     io.ST1_STEP >= 50 && io.EM_W_CNT === 1, 'step ' + io.ST1_STEP + ', parts loaded ' + io.EM_W_CNT);
 }
 
+// ---------------------------------------------------------------- blurobot (the rb4axis cell)
+// Three things this cell taught, each measured before it was fixed:
+//   - a 2-finger grip is confirmed by the OPEN switch dropping, never by `closed`: `closed` sits
+//     at full close, so with a part between the fingers it never comes on;
+//   - the cycle must re-snapshot the feeder count when it restarts, or step 20 sees "the count
+//     already moved" and drops the emit command without ever feeding a part;
+//   - every waiting step still needs the watchdog.
+{
+  const { create } = await import('../scenes/blurobot.ctl.js');
+  const ctl = create();
+  const AX = ['A0', 'A1', 'A2', 'A3'];
+  const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0,
+               CV_IN_RUN: false, CV_OUT_RUN: false, EM_EMIT: false, EM_CNT: 0, RM_CNT: 0,
+               PE_IN: false, NEST_CLAMP: false, GRIP_CLOSE: false, GRIP_OPEN: true, GRIP_CLOSED: false,
+               AUTO_RUN: false, PL_START: false };
+  for (const a of AX) { io[a + '_TGT'] = 0; io[a + '_EXEC'] = false; io[a + '_DONE'] = false; io[a + '_BUSY'] = false; io[a + '_INPOS'] = true; }
+  // The axes answer Execute at once, and Done falls with it. The gripper's fingers leave the open
+  // switch as soon as it is told to close, and `closed` NEVER comes on: a part is between them.
+  const plant = o => {
+    for (const a of AX) o[a + '_DONE'] = o[a + '_EXEC'];
+    o.GRIP_OPEN = !o.GRIP_CLOSE;
+    o.GRIP_CLOSED = false;
+    if (o.EM_EMIT) o.EM_CNT++;
+    if (o.CV_IN_RUN && o.EM_CNT > 0) o.PE_IN = true;           // the fed part reaches the nest
+    if (o.CV_OUT_RUN) o.RM_CNT = o.EM_CNT;                      // the outfeed clears what was fed
+  };
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; plant(o); });
+  drive(ctl, io, 3000, plant);
+  chk('blurobot: it completes a cycle with `closed` never coming on', io.CYCLE_CNT >= 1,
+    'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP);
+  const fedOnce = io.EM_CNT;
+  drive(ctl, io, 3000, plant);
+  chk('blurobot: the next cycle feeds a part of its own (the count is re-snapshotted)',
+    io.EM_CNT > fedOnce && io.CYCLE_CNT >= 2, 'fed ' + fedOnce + ' -> ' + io.EM_CNT + ', cycles ' + io.CYCLE_CNT);
+
+  // A grip that keeps slipping must NOT be confirmed: the open switch chattering restarts the hold.
+  const ctl2 = create();
+  const io2 = { ...io, t: 0, ST1_STEP: 0, CYCLE_CNT: 0, EM_CNT: 0, RM_CNT: 0, PE_IN: false, PB_START: false };
+  for (const a of AX) { io2[a + '_EXEC'] = false; io2[a + '_DONE'] = false; }
+  const flicker = o => {
+    for (const a of AX) o[a + '_DONE'] = o[a + '_EXEC'];
+    o.GRIP_OPEN = !o.GRIP_CLOSE || (o.t % 160) < 60;            // the fingers keep losing the part
+    o.GRIP_CLOSED = false;
+    if (o.EM_EMIT) o.EM_CNT++;
+    if (o.CV_IN_RUN && o.EM_CNT > 0) o.PE_IN = true;
+    if (o.CV_OUT_RUN) o.RM_CNT = o.EM_CNT;
+  };
+  drive(ctl2, io2, 10, (o, t) => { o.PB_START = t <= 4; flicker(o); });
+  drive(ctl2, io2, 4000, flicker);
+  chk('blurobot: a grip that keeps slipping is never confirmed', io2.ST1_STEP === 60 && io2.CYCLE_CNT === 0,
+    'step ' + io2.ST1_STEP + ', cycles ' + io2.CYCLE_CNT);
+  drive(ctl2, io2, 16000, flicker);
+  chk('blurobot: and the watchdog faults on it instead of waiting for ever',
+    io2.ST1_STEP === 900 && io2.AUTO_RUN === false, 'step ' + io2.ST1_STEP);
+}
+
 process.exit(fail ? 1 : 0);

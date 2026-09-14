@@ -759,6 +759,33 @@ Each phase ends runnable, with a written exit criterion.
 - Blurobot cell, press-fit, drill, seaming, then the remaining library scenes.
 - **Exit:** the rb4axis PLC program drives the Blurobot scene.
 
+**The Blurobot cell runs (2026-09-14).** The arm is rb4axis's own, taken from its
+`sim/robot.config.json` rather than invented: a rail along X (±1500 mm, 900 mm/s) and three joints
+turning about X in the Y–Z plane (−90..180, −150..0, −120..120 at 90/90/120 °/s), links L1 400,
+L2 300, L3 250, L4 100, home [0, 90, −90, −90]. Because the plant keeps ONE dof per component, the
+arm is a **chain of `joint` components**, each mounted on the previous one's `end` socket — which
+is also how `chainPoints()` composes it, since every angle is relative to its parent. `lib.test.js`
+pins the closed form against hand-computed points, at home and at a second pose.
+
+New type: `joint` (revolute or prismatic, min/max/home, `trapStep` for motion, target/exec/done
+like the servo). Every pose in `blurobot.st` was measured with the scene's own kinematics:
+
+| pose | rail | j1 | j2 | j3 | tip |
+|---|---|---|---|---|---|
+| pick | −10 | 52.53 | −70.73 | −71.80 | [−10, 420, 670] |
+| pickUp | −10 | 54.93 | −47.00 | −97.93 | +40 mm |
+| place | 850 | 54.89 | −63.04 | −81.85 | [850, 420, 720] |
+| placeUp | 850 | 55.35 | −59.20 | −86.15 | +40 mm |
+
+The lift is 40 mm because the envelope closes as the wrist rises toward the shoulder: +40 keeps
+22.1° of margin on every joint at both stations, +80 keeps 10.5°, and by +120 the pick side is out
+of reach. Three traps were paid for on the way, and all three are now rules in CLAUDE.md: belts
+that overlap in X, a nest that is not sunk (and then a sunk nest whose catch zone went down with
+it), and confirming a finger grip on `closed` instead of on `open` dropping.
+
+Open in P6: press-fit, drill and seaming cells; the rb4axis PLC program itself driving this scene
+(that needs `mirror` mode, which is still P5 work).
+
 ### P7 — digital twin and FUXA
 - Read-only twin, divergence markers, apply-measured-times, drift report.
 - **FUXA → Sysmac simulator OPC UA directly.** The HMI talks to the PLC, as in reality, so there

@@ -1,0 +1,258 @@
+{
+  "format": "mio-scene/1",
+  "name": "blurobot",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Robot cell",
+      "members": ["rail", "j1", "j2", "j3", "grip", "cvIn", "cvOut"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PE_IN",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "ped",
+      "type": "frame",
+      "label": "ROBOT PEDESTAL",
+      "at": [0, 0, 0],
+      "params": { "size": [260, 260, 300] }
+    },
+    {
+      "id": "rail",
+      "type": "joint",
+      "label": "AXIS 0 RAIL",
+      "station": "ST1",
+      "parent": "ped",
+      "socket": "top",
+      "params": {
+        "kind": "prismatic",
+        "axis": "x",
+        "len": 0,
+        "min": -1500,
+        "max": 1500,
+        "home": 0,
+        "vmax": 900,
+        "acc": 1800,
+        "width": 150
+      },
+      "io": {
+        "target": "A0_TGT",
+        "exec": "A0_EXEC",
+        "done": "A0_DONE",
+        "busy": "A0_BUSY",
+        "actPos": "A0_POS",
+        "inPos": "A0_INPOS"
+      }
+    },
+    {
+      "id": "j1",
+      "type": "joint",
+      "label": "AXIS 1 SHOULDER",
+      "station": "ST1",
+      "parent": "rail",
+      "socket": "end",
+      "at": [0, 0, 400],
+      "params": {
+        "kind": "revolute",
+        "axis": "x",
+        "len": 300,
+        "min": -90,
+        "max": 180,
+        "home": 90,
+        "vmax": 90,
+        "acc": 240,
+        "width": 110
+      },
+      "io": {
+        "target": "A1_TGT",
+        "exec": "A1_EXEC",
+        "done": "A1_DONE",
+        "busy": "A1_BUSY",
+        "actPos": "A1_POS",
+        "inPos": "A1_INPOS"
+      }
+    },
+    {
+      "id": "j2",
+      "type": "joint",
+      "label": "AXIS 2 ELBOW",
+      "station": "ST1",
+      "parent": "j1",
+      "socket": "end",
+      "params": {
+        "kind": "revolute",
+        "axis": "x",
+        "len": 250,
+        "min": -150,
+        "max": 0,
+        "home": -90,
+        "vmax": 90,
+        "acc": 240,
+        "width": 90
+      },
+      "io": {
+        "target": "A2_TGT",
+        "exec": "A2_EXEC",
+        "done": "A2_DONE",
+        "busy": "A2_BUSY",
+        "actPos": "A2_POS",
+        "inPos": "A2_INPOS"
+      }
+    },
+    {
+      "id": "j3",
+      "type": "joint",
+      "label": "AXIS 3 WRIST",
+      "station": "ST1",
+      "parent": "j2",
+      "socket": "end",
+      "params": {
+        "kind": "revolute",
+        "axis": "x",
+        "len": 100,
+        "min": -120,
+        "max": 120,
+        "home": -90,
+        "vmax": 120,
+        "acc": 320,
+        "width": 70
+      },
+      "io": {
+        "target": "A3_TGT",
+        "exec": "A3_EXEC",
+        "done": "A3_DONE",
+        "busy": "A3_BUSY",
+        "actPos": "A3_POS",
+        "inPos": "A3_INPOS"
+      }
+    },
+    {
+      "id": "grip",
+      "type": "gripper",
+      "label": "GRIPPER",
+      "station": "ST1",
+      "parent": "j3",
+      "socket": "end",
+      "rot": [-90, 0, 0],
+      "params": {
+        "span": 180,
+        "fingerLen": 90,
+        "fingerW": 14,
+        "closeMs": 560,
+        "openMs": 560,
+        "band": 2
+      },
+      "io": { "close": "GRIP_CLOSE", "open": "GRIP_OPEN", "closed": "GRIP_CLOSED" }
+    },
+    {
+      "id": "cvIn",
+      "type": "conveyor",
+      "label": "INFEED",
+      "station": "ST1",
+      "at": [-450, 420, 0],
+      "params": { "length": 1200, "width": 200, "height": 700, "speed": 250, "guides": 20 },
+      "io": { "run": "CV_IN_RUN" }
+    },
+    {
+      "id": "wp",
+      "type": "workpiece",
+      "label": "PART TEMPLATE",
+      "at": [0, 1800, 0],
+      "params": { "size": [70, 70, 60], "color": "#2a9df4", "material": "alu", "dynamic": true }
+    },
+    {
+      "id": "emIn",
+      "type": "emitter",
+      "label": "PART FEEDER",
+      "station": "ST1",
+      "parent": "cvIn",
+      "socket": "start",
+      "at": [120, 0, 60],
+      "params": { "template": "wp", "mode": "tag" },
+      "io": { "emit": "EM_EMIT", "count": "EM_CNT" }
+    },
+    {
+      "id": "nestIn",
+      "type": "nest",
+      "label": "PICK NEST",
+      "station": "ST1",
+      "parent": "cvIn",
+      "socket": "end",
+      "at": [-160, 0, -40],
+      "params": { "size": [90, 90, 90], "wall": 8 },
+      "io": { "clamp": "NEST_CLAMP", "present": "PE_IN" }
+    },
+    {
+      "id": "cvOut",
+      "type": "conveyor",
+      "label": "OUTFEED",
+      "station": "ST1",
+      "at": [850, 420, 0],
+      "params": { "length": 1200, "width": 200, "height": 700, "speed": 250, "guides": 20 },
+      "io": { "run": "CV_OUT_RUN" }
+    },
+    {
+      "id": "rmOut",
+      "type": "remover",
+      "label": "UNLOADER",
+      "station": "ST1",
+      "parent": "cvOut",
+      "socket": "end",
+      "at": [160, 0, -100],
+      "params": { "size": [400, 400, 400] },
+      "io": { "count": "RM_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-1100, -500, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

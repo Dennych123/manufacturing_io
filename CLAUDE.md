@@ -88,6 +88,24 @@ in the code but break things silently** when violated. Most were paid for once i
   the point — it is structure, not tuning. The cylinder foot must sit `Lb + 52 + sink` below the
   belt (`Lb = stroke + bore + 20`, rod end 27, head 25), and the pin must be UP before the pallet
   arrives: a pin that rises under a pallet already over it tips the pallet off (measured).
+- **Two belts must not overlap in X, and a nest on a belt must be SUNK.** Both are the
+  positive-distance trap again, met twice while building `blurobot`: an outfeed belt whose slab
+  reached back into the infeed's path held the incoming part from 16.6 mm away, dead still, 175 mm
+  short of its target; and a nest whose floor sat at belt level stopped the part on its leading
+  edge from 3.1 mm away, creeping backwards at 1.4 mm/s. Sink the nest instead — but then its
+  catch ZONE goes down with it and the part sails off the belt end (measured: lost at z −1009), so
+  deepen the pocket until the zone reaches belt level again. The walls are drawn without colliding,
+  so a deeper pocket puts nothing new in the path.
+- **A 2-finger grip is confirmed by the OPEN switch DROPPING, never by `closed`.** `closed` sits at
+  full close, so with a part between the fingers it never comes on — that is the whole point, it is
+  how a missed grip stays visible (rb4axis `SIM_GRIP_TUTUP`). Waiting for `closed` hangs for ever
+  on a successful grip; waiting for `NOT closed` passes instantly and lifts away with the part
+  still in the fingers. Wait for `open` to drop and HOLD for a confirm time, so a part slipping out
+  restarts it. `tests/ctl.test.js` pins both halves.
+- **A count snapshotted in a step the cycle never revisits is stale on the second cycle.** Measured
+  on `blurobot`: the feeder count was taken at a start-up step, so on cycle 2 the emit step saw
+  "the count already moved", dropped the command without feeding anything, and the next step waited
+  for a part that never came. Re-snapshot it at the cycle-complete step, as `a-to-b` does.
 - **A beam says a part is HERE; the STOP is what locates it.** Cutting the belt on the beam edge
   left the pallet 106 mm short of the pin on every cycle — centre at 94.1 mm instead of 190.6 —
   so the part feeder dropped its load onto the belt behind the deck, +118.9 mm out. The sequence
