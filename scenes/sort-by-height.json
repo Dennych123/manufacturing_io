@@ -1,0 +1,192 @@
+{
+  "format": "mio-scene/1",
+  "name": "sort-by-height",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Sort by height",
+      "members": ["cv1", "peLow", "peHigh", "psh"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PE_LOW",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cv1",
+      "type": "conveyor",
+      "label": "SORT BELT",
+      "station": "ST1",
+      "params": { "length": 2400, "width": 200, "height": 800, "speed": 300, "guides": 0 },
+      "io": { "run": "CV_RUN" }
+    },
+    {
+      "id": "wpTall",
+      "type": "workpiece",
+      "label": "TALL TEMPLATE",
+      "at": [0, 1200, 0],
+      "params": { "size": [60, 40, 60], "color": "#e0322c", "material": "alu" }
+    },
+    {
+      "id": "wpShort",
+      "type": "workpiece",
+      "label": "SHORT TEMPLATE",
+      "at": [200, 1200, 0],
+      "params": { "size": [60, 40, 25], "color": "#27b045", "material": "alu" }
+    },
+    {
+      "id": "emTall",
+      "type": "emitter",
+      "label": "TALL FEEDER",
+      "parent": "cv1",
+      "socket": "start",
+      "at": [100, 0, 90],
+      "params": { "template": "wpTall", "mode": "tag" },
+      "io": { "emit": "EM_T_EMIT", "count": "EM_T_CNT" }
+    },
+    {
+      "id": "emShort",
+      "type": "emitter",
+      "label": "SHORT FEEDER",
+      "parent": "cv1",
+      "socket": "start",
+      "at": [300, 0, 60],
+      "params": { "template": "wpShort", "mode": "tag" },
+      "io": { "emit": "EM_S_EMIT", "count": "EM_S_CNT" }
+    },
+    {
+      "id": "peLow",
+      "type": "photoEye",
+      "label": "PART PRESENT",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [700, -140, 12],
+      "rot": [0, 0, 90],
+      "params": { "range": 300 },
+      "io": { "out": "PE_LOW" }
+    },
+    {
+      "id": "peHigh",
+      "type": "photoEye",
+      "label": "TALL PART",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [700, -140, 45],
+      "rot": [0, 0, 90],
+      "params": { "range": 300 },
+      "io": { "out": "PE_HIGH" }
+    },
+    {
+      "id": "pst",
+      "type": "plate",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, 300, -800],
+      "params": { "size": [50, 50, 800] }
+    },
+    {
+      "id": "psh",
+      "type": "cylinder",
+      "label": "REJECT PUSHER",
+      "station": "ST1",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, 440, 30],
+      "rot": [90, 0, 0],
+      "params": {
+        "bore": 25,
+        "stroke": 250,
+        "valve": "5/2-single",
+        "extendMs": 700,
+        "retractMs": 500,
+        "extWord": "PUSH",
+        "retWord": "BACK",
+        "head": "plate",
+        "headSize": [100, 60, 8]
+      },
+      "io": { "solExt": "SOL_PUSH", "sw.ret": "AS_PUSH_RET", "sw.ext": "AS_PUSH_EXT" }
+    },
+    {
+      "id": "chute",
+      "type": "plate",
+      "label": "REJECT CHUTE",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, -273, -138],
+      "rot": [35, 0, 0],
+      "params": { "size": [300, 400, 10] }
+    },
+    {
+      "id": "rmTall",
+      "type": "remover",
+      "label": "REJECT BIN",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, -700, -800],
+      "params": { "size": [400, 600, 400] },
+      "io": { "count": "RM_T_CNT" }
+    },
+    {
+      "id": "rmShort",
+      "type": "remover",
+      "label": "OUTFEED",
+      "parent": "cv1",
+      "socket": "end",
+      "at": [-60, 0, 0],
+      "params": { "size": [120, 260, 200] },
+      "io": { "count": "RM_S_CNT" }
+    },
+    {
+      "id": "panel",
+      "type": "frame",
+      "label": "OPERATOR PANEL",
+      "at": [-1000, -450, 0],
+      "params": { "size": [300, 200, 900] }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "parent": "panel",
+      "socket": "top",
+      "at": [-80, 0, 0],
+      "params": { "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbStop",
+      "type": "pushbutton",
+      "label": "STOP",
+      "parent": "panel",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "color": "red", "lamp": false },
+      "io": { "pb": "PB_STOP" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "parent": "panel",
+      "socket": "top",
+      "at": [80, 0, 0],
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    }
+  ]
+}

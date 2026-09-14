@@ -48,6 +48,9 @@ Three material-flow scenes run with their PLC programs.
   chute into a bin.
 - `pick-place`: a servo traverse with a pneumatic lift and a vacuum cup takes each part out of
   a nest and lays it on the outfeed belt (a cycle every 6.5 s).
+- `sort-by-height`: two feeders drop a tall and a short part by turns. A low beam sees any part
+  and a high one only the tall, so the PLC pushes the tall parts down a chute and lets the short
+  ones ride on.
 - `assembler`: a 4-station cam indexer. Every station works in the same dwell — load a base,
   drop a lid on it, press it — and the table then carries each assembly one station on, with
   the lid riding its base on friction alone.

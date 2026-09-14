@@ -248,6 +248,33 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   await q.close(); await q2.close();
 }
 
+// ---------------------------------------------------------------- scene sort-by-height (two beams)
+{
+  const sbh = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'sort-by-height.json'), 'utf8'));
+  const { create: createSBH } = await import('../scenes/sort-by-height.ctl.js');
+  const run = async () => {
+    const q = await createPlant(sbh, { controller: createSBH() });
+    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('sort-by-height: the cycle repeats, feeding tall and short by turns', q.io.CYCLE_CNT >= 6 && Math.abs(q.io.EM_T_CNT - q.io.EM_S_CNT) <= 1,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', tall ' + q.io.EM_T_CNT + ' short ' + q.io.EM_S_CNT);
+  // The discriminating measurement: the high beam breaks once per TALL part and never for a short one.
+  chk('sort-by-height: only the tall parts reach the high beam', Math.abs(edges(q, 'PE_HIGH', true).length - q.io.EM_T_CNT) <= 1,
+    edges(q, 'PE_HIGH', true).length + ' beam breaks for ' + q.io.EM_T_CNT + ' tall parts');
+  chk('sort-by-height: every tall part ends in the reject bin', q.io.RM_T_CNT === q.io.EM_T_CNT, q.io.RM_T_CNT + ' of ' + q.io.EM_T_CNT);
+  chk('sort-by-height: every short part rides on to the outfeed', q.io.EM_S_CNT - q.io.RM_S_CNT <= 1, q.io.RM_S_CNT + ' of ' + q.io.EM_S_CNT);
+  chk('sort-by-height: parts balance and none are lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('sort-by-height: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('sort-by-height: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
 // ---------------------------------------------------------------- scene assembler (index table)
 {
   const asm = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'assembler.json'), 'utf8'));
