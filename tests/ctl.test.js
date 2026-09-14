@@ -369,7 +369,13 @@ function drive(ctl, io, ms, each = () => {}) {
   chk('pallet-line: the stop pin is up before a pallet is fed', io.ST1_STEP >= 20 && io.SOL_STOP === true,
     'step ' + io.ST1_STEP + ', SOL_STOP ' + io.SOL_STOP);
   drive(ctl, io, 300, o => { plant(o); if (o.ST1_STEP === 30 && o.CV1_RUN) o.PE_STN = true; });
-  chk('pallet-line: it lifts once the pallet is at the station', io.ST1_STEP >= 40 && io.SOL_LIFT === true, 'step ' + io.ST1_STEP);
+  // The beam only says a pallet is HERE. The belt keeps running through step 35 so the pallet is
+  // pressed against the pin: stopping on the beam edge left it 106 mm short and the part feeder
+  // dropped its load onto the belt behind the deck (measured).
+  chk('pallet-line: the beam does not stop the belt; the pin does', io.ST1_STEP === 35 && io.CV1_RUN === true,
+    'step ' + io.ST1_STEP + ', belt ' + io.CV1_RUN);
+  drive(ctl, io, 900, plant);                                              // the 700 ms settle against the pin
+  chk('pallet-line: it lifts once the pallet is at the stop', io.ST1_STEP >= 40 && io.SOL_LIFT === true, 'step ' + io.ST1_STEP);
   drive(ctl, io, 900, plant);                                              // load, dwell, lift down, pin down
   chk('pallet-line: the pin only goes down after the lift is down',
     io.ST1_STEP === 90 && io.SOL_STOP === false && io.SOL_LIFT === false, 'step ' + io.ST1_STEP);
@@ -380,9 +386,14 @@ function drive(ctl, io, ms, each = () => {}) {
   drive(ctl, io, 200, o => { plant(o); o.RM_CNT = fed; });                 // pallet and part both out
   chk('pallet-line: the cycle completes when both the pallet and its part are out', io.CYCLE_CNT === 1,
     'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP);
+  // Nothing reaches the unloader from here on, so the discharge step is where it gets stuck. Let
+  // it settle there FIRST: the watchdog counts time on ONE step, and the sequence still had a few
+  // steps to walk through.
   io.PE_STN = false;
-  drive(ctl, io, 16000, plant);                                            // no pallet ever arrives again
-  chk('pallet-line: a pallet that never arrives faults instead of waiting for ever',
+  drive(ctl, io, 4000, plant);
+  chk('pallet-line: with nothing unloaded it waits at the discharge step', io.ST1_STEP === 90, 'step ' + io.ST1_STEP);
+  drive(ctl, io, 16000, plant);
+  chk('pallet-line: a step that stops moving faults instead of waiting for ever',
     io.ST1_STEP === 900 && io.AUTO_RUN === false && io.CV1_RUN === false, 'step ' + io.ST1_STEP);
 }
 

@@ -3,6 +3,7 @@ VAR
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
 	T_DWELL : TON;
+	T_SETTLE : TON;
 	T_WD : TON;
 	EM_P_LAST : UDINT;
 	EM_W_LAST : UDINT;
@@ -65,9 +66,16 @@ CASE ST1_STEP OF
 			EM_P_EMIT := FALSE;
 			ST1_STEP := 30;
 		END_IF;
-	30:	// convey it to the station
+	30:	// convey it to the station. The beam only says a pallet is HERE; the PIN locates it.
+		// Stopping the belt on the beam edge left the pallet 106 mm short of the pin, so the
+		// part feeder dropped its load onto the belt behind the deck every cycle (measured).
 		CV1_RUN := TRUE;
 		IF PE_STN THEN
+			ST1_STEP := 35;
+		END_IF;
+	35:	// keep driving until it is pressed against the pin
+		CV1_RUN := TRUE;
+		IF T_SETTLE.Q THEN
 			CV1_RUN := FALSE;
 			ST1_STEP := 40;
 		END_IF;
@@ -124,6 +132,8 @@ CASE ST1_STEP OF
 END_CASE;
 
 T_DWELL(In := (ST1_STEP = 60), PT := T#500ms);
+// 106 mm from the beam edge to the pin at 250 mm/s is 424 ms; 700 leaves margin to press up.
+T_SETTLE(In := (ST1_STEP = 35), PT := T#700ms);
 
 // Watchdog: a step that stops moving is a jam, not patience. Without it the sequence waits for
 // ever and the machine only LOOKS alive.

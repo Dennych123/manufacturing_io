@@ -88,6 +88,12 @@ in the code but break things silently** when violated. Most were paid for once i
   the point — it is structure, not tuning. The cylinder foot must sit `Lb + 52 + sink` below the
   belt (`Lb = stroke + bore + 20`, rod end 27, head 25), and the pin must be UP before the pallet
   arrives: a pin that rises under a pallet already over it tips the pallet off (measured).
+- **A beam says a part is HERE; the STOP is what locates it.** Cutting the belt on the beam edge
+  left the pallet 106 mm short of the pin on every cycle — centre at 94.1 mm instead of 190.6 —
+  so the part feeder dropped its load onto the belt behind the deck, +118.9 mm out. The sequence
+  must keep driving after the beam until the part is pressed against the stop (a settle step:
+  106 mm at 250 mm/s is 424 ms, so 700 ms), and only then stop the belt. With that, the load lands
+  0.2 mm from the deck centre, cycle after cycle. Denny saw this one in the 3D view first.
 - **A seized machine still balances its parts and raises no warning.** Ask for PROGRESS: cycles
   that keep completing. The 30-minute soak reported OK on a `buffer-queue` that had stopped
   after 15 minutes, because every part was still accounted for. Both the soak script and the

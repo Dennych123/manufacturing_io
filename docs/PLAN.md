@@ -712,6 +712,13 @@ Each phase ends runnable, with a written exit criterion.
   not snap — a pallet that arrived flat is already square. `tests/plant.test.js` pins the overhead
   trap against the pop-up rule.
 
+  A fourth one showed up only in the 3D view, and only because Denny looked: the sequence cut the
+  belt on the station beam, which stopped the pallet **106 mm short of the pin** (centre 94.1
+  instead of 190.6), so the part feeder dropped its load onto the belt behind the deck, 118.9 mm
+  out. A beam says a part is here; the stop is what locates it. Step 35 keeps the belt running for
+  700 ms after the beam (106 mm at 250 mm/s is 424 ms) so the pallet is pressed against the pin,
+  and the load then lands 0.2 mm from the deck centre on every cycle.
+
   Open:
   - the live PLC runs of the newer scenes.
 

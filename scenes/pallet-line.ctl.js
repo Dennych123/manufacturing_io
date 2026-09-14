@@ -9,11 +9,13 @@ const FAULT = 900;
 
 export function create() {
   let pbLast = false, stopReq = false, emPLast = 0, emWLast = 0, dwellFrom = -1, dwellQ = false;
+  let settleFrom = -1, settleQ = false;
   let stepLast = -1, stepFrom = 0, gone = 0;
   return {
     /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
     reset() {
       pbLast = false; stopReq = false; emPLast = 0; emWLast = 0; dwellFrom = -1; dwellQ = false;
+      settleFrom = -1; settleQ = false;
       stepLast = -1; stepFrom = 0; gone = 0;
     },
 
@@ -48,8 +50,16 @@ export function create() {
           if (io.EM_P_CNT !== emPLast) { io.EM_P_EMIT = false; io.ST1_STEP = 30; }
           break;
         case 30:
+          // The beam only says a pallet is HERE; the pin is what locates it. Stopping the belt on
+          // the beam edge left the pallet 106 mm short of the pin, so the part feeder dropped its
+          // load onto the belt behind the deck every cycle (measured: pallet centre 94.1 instead
+          // of ~194, load offset +118.9 mm). Keep driving until it is pressed against the pin.
           io.CV1_RUN = true;
-          if (io.PE_STN) { io.CV1_RUN = false; io.ST1_STEP = 40; }
+          if (io.PE_STN) io.ST1_STEP = 35;
+          break;
+        case 35:
+          io.CV1_RUN = true;
+          if (settleQ) { io.CV1_RUN = false; io.ST1_STEP = 40; }
           break;
         case 40:
           // Lift and locate: the pallet is set square on the pins, whatever pose it stopped in.
@@ -96,6 +106,9 @@ export function create() {
       // TON after the CASE, as in the ST: its Q is read by the NEXT scan.
       if (io.ST1_STEP === 60) { if (dwellFrom < 0) dwellFrom = t; } else dwellFrom = -1;
       dwellQ = dwellFrom >= 0 && t - dwellFrom >= 500;
+      // 106 mm from the beam edge to the pin at 250 mm/s is 424 ms; 700 leaves margin to press up.
+      if (io.ST1_STEP === 35) { if (settleFrom < 0) settleFrom = t; } else settleFrom = -1;
+      settleQ = settleFrom >= 0 && t - settleFrom >= 700;
 
       // Watchdog: a step that stops moving is a jam, not patience (CLAUDE.md).
       if (io.ST1_STEP !== stepLast) { stepLast = io.ST1_STEP; stepFrom = t; }
