@@ -586,6 +586,14 @@ Each phase ends runnable, with a written exit criterion.
 
   The budget is 1000 µs (50 % of dt).
 
+  **Live on the simulator (2026-09-14, a-to-b).** The sequence raced. A part removed while the
+  next one was being loaded satisfied the discharge step immediately, so the cycle never waited
+  for its own part: 231 parts went in, 217 came out, and the crowd crossing the end sensor
+  raised 13 pulse-stretch warnings. The internal controller had never shown it, because there
+  the counters only ever moved during the step that waits for them. Steps that wait for a
+  counter now snapshot it on entry, and the conveying step first waits for the eye to clear;
+  `tests/ctl.test.js` drives each controller against a faked plant to pin both.
+
   **Read step times from a headless run, not from the viewer.** With headless Chrome on
   SwiftShader next to the server, pick-place read 839 µs with overruns; the same scene soaks at
   108 µs. The browser's software renderer takes the CPU, and the plant's accumulator reports it.

@@ -17,26 +17,31 @@ export function create() {
         case 0:
           io.CV1_RUN = false;
           io.EM1_EMIT = false;
-          if (startEdge) { stopReq = false; io.ST1_STEP = 10; }
+          if (startEdge) { stopReq = false; emLast = io.EM1_CNT; io.ST1_STEP = 10; }
           break;
         case 10:
           io.EM1_EMIT = true;
-          if (io.EM1_CNT !== emLast) { emLast = io.EM1_CNT; io.EM1_EMIT = false; io.ST1_STEP = 20; }
+          if (io.EM1_CNT !== emLast) { io.EM1_EMIT = false; io.ST1_STEP = 15; }
+          break;
+        case 15:
+          io.CV1_RUN = true;
+          if (!io.PE_END) io.ST1_STEP = 20;
           break;
         case 20:
           io.CV1_RUN = true;
           if (io.PE_END) { io.CV1_RUN = false; io.ST1_STEP = 30; }
           break;
         case 30:
-          if (dwellQ) io.ST1_STEP = 40;
+          // snapshot the unloader's count on ENTERING the wait, not when it moves
+          if (dwellQ) { rmLast = io.RM1_CNT; io.ST1_STEP = 40; }
           break;
         case 40:
           io.CV1_RUN = true;
-          if (io.RM1_CNT !== rmLast) { rmLast = io.RM1_CNT; io.CV1_RUN = false; io.ST1_STEP = 50; }
+          if (io.RM1_CNT !== rmLast) { io.CV1_RUN = false; io.ST1_STEP = 50; }
           break;
         case 50:
           io.CYCLE_CNT += 1;
-          io.ST1_STEP = stopReq ? 0 : 10;
+          if (stopReq) io.ST1_STEP = 0; else { emLast = io.EM1_CNT; io.ST1_STEP = 10; }
           break;
       }
 

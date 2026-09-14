@@ -82,6 +82,10 @@ MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
 //
 // Commands are LEVELS held until the plant answers: EM1_EMIT stays on until the loader's
 // counter EM1_CNT moves, so an OPC UA sample cannot miss it.
+//
+// A step that waits for a counter SNAPSHOTS it on entry. Measured on the simulator: a part
+// removed while the sequence was still loading made step 40 see &quot;the count moved&quot; at once, so
+// the cycle never waited for its own part and parts piled up (231 loaded, 217 unloaded).
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
@@ -95,13 +99,18 @@ CASE ST1_STEP OF
 		EM1_EMIT := FALSE;
 		IF START_EDGE THEN
 			STOP_REQ := FALSE;
+			EM_LAST := EM1_CNT;
 			ST1_STEP := 10;
 		END_IF;
 	10:	// load one part
 		EM1_EMIT := TRUE;
 		IF EM1_CNT &lt;&gt; EM_LAST THEN
-			EM_LAST := EM1_CNT;
 			EM1_EMIT := FALSE;
+			ST1_STEP := 15;
+		END_IF;
+	15:	// the eye must be clear before this part runs to it
+		CV1_RUN := TRUE;
+		IF NOT PE_END THEN
 			ST1_STEP := 20;
 		END_IF;
 	20:	// convey to the end sensor
@@ -112,12 +121,12 @@ CASE ST1_STEP OF
 		END_IF;
 	30:	// dwell at the sensor
 		IF T_DWELL.Q THEN
+			RM_LAST := RM1_CNT;
 			ST1_STEP := 40;
 		END_IF;
 	40:	// discharge to the unloader
 		CV1_RUN := TRUE;
 		IF RM1_CNT &lt;&gt; RM_LAST THEN
-			RM_LAST := RM1_CNT;
 			CV1_RUN := FALSE;
 			ST1_STEP := 50;
 		END_IF;
@@ -126,6 +135,7 @@ CASE ST1_STEP OF
 		IF STOP_REQ THEN
 			ST1_STEP := 0;
 		ELSE
+			EM_LAST := EM1_CNT;
 			ST1_STEP := 10;
 		END_IF;
 END_CASE;

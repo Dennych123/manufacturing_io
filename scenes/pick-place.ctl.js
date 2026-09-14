@@ -18,11 +18,11 @@ export function create() {
         case 0:
           io.CV_RUN = false; io.EM_EMIT = false; io.VAC_ON = false;
           io.SOL_Z_DN = false; io.SOL_Z_UP = true; io.SV_EXEC = false;
-          if (startEdge && io.AS_Z_UP && io.SV_INPOS && !io.SV_DONE) { stopReq = false; io.ST1_STEP = 10; }
+          if (startEdge && io.AS_Z_UP && io.SV_INPOS && !io.SV_DONE) { stopReq = false; emLast = io.EM_CNT; io.ST1_STEP = 10; }
           break;
         case 10:
           io.CV_RUN = true; io.CLAMP_A = true; io.EM_EMIT = true;
-          if (io.EM_CNT !== emLast) { emLast = io.EM_CNT; io.EM_EMIT = false; io.ST1_STEP = 20; }
+          if (io.EM_CNT !== emLast) { io.EM_EMIT = false; io.ST1_STEP = 20; }
           break;
         case 20:
           if (io.NEST_A_P) io.ST1_STEP = 30;
@@ -52,8 +52,10 @@ export function create() {
           if (io.AS_Z_DN) io.ST1_STEP = 90;
           break;
         case 90:
+          // snapshot the unloader's count as the part is handed to the belt: it may arrive
+          // before the arm is home again
           io.VAC_ON = false;
-          if (!io.VAC_SW) io.ST1_STEP = 100;
+          if (!io.VAC_SW) { rmLast = io.RM_CNT; io.ST1_STEP = 100; }
           break;
         case 100:
           io.SOL_Z_DN = false; io.SOL_Z_UP = true;
@@ -69,9 +71,8 @@ export function create() {
           break;
         case 130:
           if (io.RM_CNT !== rmLast) {
-            rmLast = io.RM_CNT;
             io.CYCLE_CNT += 1;
-            io.ST1_STEP = stopReq ? 0 : 10;
+            if (stopReq) io.ST1_STEP = 0; else { emLast = io.EM_CNT; io.ST1_STEP = 10; }
           }
           break;
       }

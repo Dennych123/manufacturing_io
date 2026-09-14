@@ -89,6 +89,14 @@ in the code but break things silently** when violated. Most were paid for once i
   Their short pulses are caused by the PLC itself. Holding them reports "in position" while
   the axis already moves, and warns on every move.
 - One-shot events (counts, drops, rejects) are published as **counters**.
+- **A step that waits for a counter snapshots it on ENTRY.** Measured live on `a-to-b`: a part
+  removed while the sequence was still loading the next one made the discharge step see "the
+  count moved" at once, so the cycle never waited for its own part. 231 parts went in, 217 came
+  out, and the crowd crossing the end sensor raised 13 pulse-stretch warnings. The internal
+  controller never showed it, because there the counters only ever moved during the waiting
+  step. `tests/ctl.test.js` pins it.
+- **A step that waits for a sensor level must first see that level clear.** A part still in the
+  beam belongs to the last cycle.
 - **A counter the controller compares against must be reset with the plant.** `reset()` zeroes
   the plant's counters, so a controller still holding the old value sees "it changed" and waits
   for a part that never comes: the sequence stalls with the plant timer still running.

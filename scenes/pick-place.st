@@ -13,6 +13,9 @@ END_VAR
 // Two handshakes matter. The servo's Execute is a LEVEL held until Done, and Done must be seen
 // to drop before the next Execute. The nest clamp must open BEFORE the cup can take the part:
 // one part is held by one holder.
+//
+// A step that waits for a counter SNAPSHOTS it on entry, so a part removed earlier cannot
+// satisfy this cycle's wait (measured on a-to-b against the simulator: parts piled up).
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
@@ -30,6 +33,7 @@ CASE ST1_STEP OF
 		SV_EXEC := FALSE;
 		IF START_EDGE AND AS_Z_UP AND SV_INPOS AND NOT SV_DONE THEN
 			STOP_REQ := FALSE;
+			EM_LAST := EM_CNT;
 			ST1_STEP := 10;
 		END_IF;
 	10:	// belt on, feed one part
@@ -37,7 +41,6 @@ CASE ST1_STEP OF
 		CLAMP_A := TRUE;
 		EM_EMIT := TRUE;
 		IF EM_CNT <> EM_LAST THEN
-			EM_LAST := EM_CNT;
 			EM_EMIT := FALSE;
 			ST1_STEP := 20;
 		END_IF;
@@ -80,9 +83,11 @@ CASE ST1_STEP OF
 		IF AS_Z_DN THEN
 			ST1_STEP := 90;
 		END_IF;
-	90:	// let the part go onto the belt
+	90:	// let the part go onto the belt; the count is snapshotted as the part is handed over,
+		// because the belt may deliver it before the arm is home again
 		VAC_ON := FALSE;
 		IF NOT VAC_SW THEN
+			RM_LAST := RM_CNT;
 			ST1_STEP := 100;
 		END_IF;
 	100:	// lift up
@@ -104,11 +109,11 @@ CASE ST1_STEP OF
 		END_IF;
 	130:	// the belt carries the part to the unloader
 		IF RM_CNT <> RM_LAST THEN
-			RM_LAST := RM_CNT;
 			CYCLE_CNT := CYCLE_CNT + 1;
 			IF STOP_REQ THEN
 				ST1_STEP := 0;
 			ELSE
+				EM_LAST := EM_CNT;
 				ST1_STEP := 10;
 			END_IF;
 		END_IF;
