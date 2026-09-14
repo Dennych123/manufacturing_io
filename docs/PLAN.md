@@ -607,6 +607,11 @@ Each phase ends runnable, with a written exit criterion.
   controller never showed any of it, because there the counters only moved during the waiting
   step. `tests/ctl.test.js` drives each controller against a faked plant to pin it.
 
+  **All six controllers are now audited that way.** Driving the other four against a faked plant
+  whose counters and beams move at awkward moments found no further races: stopper-pusher clears
+  the beam on both branches before judging the next part, assembler waits for the station its
+  index was sent to, and sort-by-height and buffer-queue wait on invariants and on a clear beam.
+
   **Read step times from a headless run with nothing else on the box.** The plant's accumulator
   measures wall time, so anything sharing the CPU shows up as plant cost:
   - with headless Chrome on SwiftShader beside the server, pick-place read 839 µs against the
