@@ -138,6 +138,19 @@ in the code but break things silently** when violated. Most were paid for once i
   12 Sept until the `blurobot` cell happened to arrange exactly that. Every scene with a gripper
   was one coincidence away from it. Fall back to `zone(p).size`, and return null when a holder has
   neither: a holder that cannot say where it catches should catch nothing, not throw.
+- **A machine cover is a `joint` (`arm: 'plate'`), and its leaf does not collide.** A cover is a
+  revolute axis with an angle the sequence waits on, so it is the same type as any other axis, not
+  a new one. The leaf sweeps the whole machine top, which is exactly where the nest and the board
+  it holds are: a solid leaf would hand physics a question the interlock already answers, and
+  closing it onto a board held by a kinematic nest is the eject case below. It is drawn, not solid.
+- **Hinge a cover at the edge AWAY from the robot.** Hinged at the near edge it opens across the
+  side the arm comes in from; hinged at the far edge it stands up behind the nest. rb4axis hinges
+  at the back for this reason, and the leaf is offset half its thickness off the hinge line so it
+  lies ON the hinge when shut instead of straddling it.
+- **`frame` has two styles.** `table` is legs plus a top plate; `solid` is one coloured cabinet
+  whose 16 mm plate overhangs 10 mm a side and is counted INSIDE `size[2]`, so `top` stays at
+  `size[2]` and whatever is mounted on it keeps its height. Six tables in one cell read as a
+  thicket of legs, when what has to be readable is which machine the arm is over.
 - **A kinematic tool never closes ONTO a part resting on another kinematic body.** The solver
   has nowhere to put the part and ejects it. Stop at the part's surface, as the gripper does
   with `blockAt`, or leave a few mm (the assembler's press stops 3 mm above the lid).

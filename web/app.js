@@ -64,11 +64,13 @@ const MAT = {
 };
 const shared = new Map();
 function material(s, own) {
-  const m = MAT[s.mat] || MAT.dark, key = s.mat + '|' + (s.color || '') + (s.ghost ? '|ghost' : '');
+  const m = MAT[s.mat] || MAT.dark, key = s.mat + '|' + (s.color || '') + (s.ghost ? '|ghost' : '') + (s.opacity ? '|o' + s.opacity : '');
   if (!own && shared.has(key)) return shared.get(key);
-  // ghost: a zone (remover box), seen through
+  // ghost: a zone (remover box), seen through. `opacity`: a part that is really there but must be
+  // seen through, e.g. a machine cover over the board it is pressing.
   const mt = new THREE.MeshStandardMaterial({ color: s.color || m.color, metalness: m.metalness, roughness: m.roughness,
-    ...(s.ghost ? { transparent: true, opacity: 0.16, depthWrite: false } : {}) });
+    ...(s.ghost ? { transparent: true, opacity: 0.16, depthWrite: false } : {}),
+    ...(s.opacity ? { transparent: true, opacity: s.opacity } : {}) });
   if (!own) shared.set(key, mt);
   return mt;
 }
@@ -85,7 +87,7 @@ function shapeMesh(s, own) {
   const mesh = new THREE.Mesh(geometry(s), material(s, own));
   mesh.position.set(s.at[0], s.at[1], s.at[2]);
   if (s.rot) mesh.quaternion.fromArray(qeuler(s.rot));      // the rot rule lives in lib/math.js only
-  mesh.castShadow = mesh.receiveShadow = !s.ghost;
+  mesh.castShadow = mesh.receiveShadow = !s.ghost && !s.opacity;   // a see-through leaf casting a solid shadow reads as solid
   return mesh;
 }
 

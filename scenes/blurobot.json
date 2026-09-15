@@ -30,7 +30,7 @@
       "type": "frame",
       "label": "ROBOT PEDESTAL",
       "at": [0, 0, 0],
-      "params": { "size": [300, 300, 200] }
+      "params": { "size": [300, 300, 200], "style": "solid", "color": "#3f4854" }
     },
     {
       "id": "rail",
@@ -48,7 +48,8 @@
         "home": 0,
         "vmax": 900,
         "acc": 1800,
-        "width": 150
+        "width": 150,
+        "color": "#0ea5e9"
       },
       "io": {
         "target": "A0_TGT",
@@ -76,7 +77,8 @@
         "home": 90,
         "vmax": 90,
         "acc": 240,
-        "width": 110
+        "width": 110,
+        "color": "#38bdf8"
       },
       "io": {
         "target": "A1_TGT",
@@ -103,7 +105,8 @@
         "home": -90,
         "vmax": 90,
         "acc": 240,
-        "width": 90
+        "width": 90,
+        "color": "#22c55e"
       },
       "io": {
         "target": "A2_TGT",
@@ -130,7 +133,8 @@
         "home": -90,
         "vmax": 120,
         "acc": 320,
-        "width": 70
+        "width": 70,
+        "color": "#f59e0b"
       },
       "io": {
         "target": "A3_TGT",
@@ -166,7 +170,7 @@
       "at": [0, 2200, 0],
       "params": {
         "size": [120, 80, 8],
-        "color": "#1f7a3f",
+        "color": "#16a34a",
         "material": "plastic",
         "dynamic": false
       }
@@ -176,7 +180,7 @@
       "type": "frame",
       "label": "WIP IN",
       "at": [-1400, 430, 0],
-      "params": { "size": [300, 320, 250] }
+      "params": { "size": [300, 320, 250], "style": "solid", "color": "#64748b" }
     },
     {
       "id": "wipIn",
@@ -204,7 +208,7 @@
       "type": "frame",
       "label": "ICC 1",
       "at": [-700, 430, 0],
-      "params": { "size": [300, 320, 285] }
+      "params": { "size": [300, 320, 285], "style": "solid", "color": "#f59e0b" }
     },
     {
       "id": "icc1",
@@ -234,8 +238,8 @@
       "station": "ST1",
       "parent": "icc1Body",
       "socket": "top",
-      "at": [0, -142, 0],
-      "rot": [0, 0, 0],
+      "at": [0, 160, 10],
+      "rot": [0, 0, 180],
       "params": {
         "kind": "revolute",
         "axis": "x",
@@ -245,7 +249,10 @@
         "home": 80,
         "vmax": 110,
         "acc": 400,
-        "width": 72
+        "width": 300,
+        "arm": "plate",
+        "thick": 18,
+        "color": "#93c5fd"
       },
       "io": {
         "target": "ICC1_CV_TGT",
@@ -261,7 +268,7 @@
       "type": "frame",
       "label": "ICC 2",
       "at": [-300, 430, 0],
-      "params": { "size": [300, 320, 285] }
+      "params": { "size": [300, 320, 285], "style": "solid", "color": "#f59e0b" }
     },
     {
       "id": "icc2",
@@ -291,8 +298,8 @@
       "station": "ST1",
       "parent": "icc2Body",
       "socket": "top",
-      "at": [0, -142, 0],
-      "rot": [0, 0, 0],
+      "at": [0, 160, 10],
+      "rot": [0, 0, 180],
       "params": {
         "kind": "revolute",
         "axis": "x",
@@ -302,7 +309,10 @@
         "home": 80,
         "vmax": 110,
         "acc": 400,
-        "width": 72
+        "width": 300,
+        "arm": "plate",
+        "thick": 18,
+        "color": "#93c5fd"
       },
       "io": {
         "target": "ICC2_CV_TGT",
@@ -318,7 +328,7 @@
       "type": "frame",
       "label": "DW 1",
       "at": [300, 430, 0],
-      "params": { "size": [300, 320, 250] }
+      "params": { "size": [300, 320, 250], "style": "solid", "color": "#14b8a6" }
     },
     {
       "id": "dw1",
@@ -348,8 +358,8 @@
       "station": "ST1",
       "parent": "dw1Body",
       "socket": "top",
-      "at": [0, -142, 0],
-      "rot": [0, 0, 0],
+      "at": [0, 160, 10],
+      "rot": [0, 0, 180],
       "params": {
         "kind": "revolute",
         "axis": "x",
@@ -359,7 +369,10 @@
         "home": 80,
         "vmax": 110,
         "acc": 400,
-        "width": 72
+        "width": 300,
+        "arm": "plate",
+        "thick": 18,
+        "color": "#93c5fd"
       },
       "io": {
         "target": "DW1_CV_TGT",
@@ -375,7 +388,7 @@
       "type": "frame",
       "label": "DW 2",
       "at": [700, 430, 0],
-      "params": { "size": [300, 320, 250] }
+      "params": { "size": [300, 320, 250], "style": "solid", "color": "#14b8a6" }
     },
     {
       "id": "dw2",
@@ -405,8 +418,8 @@
       "station": "ST1",
       "parent": "dw2Body",
       "socket": "top",
-      "at": [0, -142, 0],
-      "rot": [0, 0, 0],
+      "at": [0, 160, 10],
+      "rot": [0, 0, 180],
       "params": {
         "kind": "revolute",
         "axis": "x",
@@ -416,7 +429,10 @@
         "home": 80,
         "vmax": 110,
         "acc": 400,
-        "width": 72
+        "width": 300,
+        "arm": "plate",
+        "thick": 18,
+        "color": "#93c5fd"
       },
       "io": {
         "target": "DW2_CV_TGT",
@@ -432,7 +448,7 @@
       "type": "frame",
       "label": "WIP OUT",
       "at": [1400, 430, 0],
-      "params": { "size": [300, 320, 250] }
+      "params": { "size": [300, 320, 250], "style": "solid", "color": "#64748b" }
     },
     {
       "id": "wipOut",
@@ -482,7 +498,7 @@
       "type": "frame",
       "label": "OPERATOR PANEL",
       "at": [-1800, -500, 0],
-      "params": { "size": [300, 200, 900] }
+      "params": { "size": [300, 200, 900], "style": "solid", "color": "#3f4854" }
     },
     {
       "id": "pbStart",
