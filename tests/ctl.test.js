@@ -451,33 +451,74 @@ function drive(ctl, io, ms, each = () => {}) {
     if (o.CV_OUT_RUN) o.RM_CNT = o.EM_CNT;                      // the outfeed clears what was fed
   };
   drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; plant(o); });
-  drive(ctl, io, 3000, plant);
-  chk('blurobot: it completes a cycle with `closed` never coming on', io.CYCLE_CNT >= 1,
-    'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP);
-  const fedOnce = io.EM_CNT;
-  drive(ctl, io, 3000, plant);
-  chk('blurobot: the next cycle feeds a part of its own (the count is re-snapshotted)',
-    io.EM_CNT > fedOnce && io.CYCLE_CNT >= 2, 'fed ' + fedOnce + ' -> ' + io.EM_CNT + ', cycles ' + io.CYCLE_CNT);
+}
 
-  // A grip that keeps slipping must NOT be confirmed: the open switch chattering restarts the hold.
-  const ctl2 = create();
-  const io2 = { ...io, t: 0, ST1_STEP: 0, CYCLE_CNT: 0, EM_CNT: 0, RM_CNT: 0, PE_IN: false, PB_START: false };
-  for (const a of AX) { io2[a + '_EXEC'] = false; io2[a + '_DONE'] = false; }
-  const flicker = o => {
-    for (const a of AX) o[a + '_DONE'] = o[a + '_EXEC'];
-    o.GRIP_OPEN = !o.GRIP_CLOSE || (o.t % 160) < 60;            // the fingers keep losing the part
-    o.GRIP_CLOSED = false;
-    if (o.EM_EMIT) o.EM_CNT++;
-    if (o.CV_IN_RUN && o.EM_CNT > 0) o.PE_IN = true;
-    if (o.CV_OUT_RUN) o.RM_CNT = o.EM_CNT;
+// ---------------------------------------------------------------- blurobot (the rb4axis cell)
+// A port of PRG_SIM_ROBOT: six stations, three job priorities, covers that gate the test clocks.
+// Four things this port taught, each measured before it was fixed.
+{
+  const { create } = await import('../scenes/blurobot.ctl.js');
+  const AX = ['A0', 'A1', 'A2', 'A3'];
+  const NEST = ['WIPIN', 'ICC1', 'ICC2', 'DW1', 'DW2', 'WIPOUT'];
+  const CV = ['ICC1', 'ICC2', 'DW1', 'DW2'];
+  const fresh = () => {
+    const io = { t: 0, PB_START: false, PB_STOP: false, ST1_STEP: 0, CYCLE_CNT: 0,
+                 GRIP_CLOSE: false, GRIP_OPEN: true, GRIP_CLOSED: false,
+                 EM_IN_EMIT: false, EM_IN_CNT: 0, AUTO_RUN: false, PL_START: false };
+    for (const a of AX) { io[a + '_TGT'] = 0; io[a + '_EXEC'] = false; io[a + '_DONE'] = false; io[a + '_POS'] = 0; }
+    for (const n of NEST) { io[n + '_CLAMP'] = false; io[n + '_P'] = n === 'WIPIN'; }
+    for (const c of CV) { io[c + '_CV_TGT'] = 80; io[c + '_CV_EXEC'] = false; io[c + '_CV_POS'] = 80; io[c + '_CV_DONE'] = false; }
+    return io;
   };
-  drive(ctl2, io2, 10, (o, t) => { o.PB_START = t <= 4; flicker(o); });
-  drive(ctl2, io2, 4000, flicker);
-  chk('blurobot: a grip that keeps slipping is never confirmed', io2.ST1_STEP === 60 && io2.CYCLE_CNT === 0,
-    'step ' + io2.ST1_STEP + ', cycles ' + io2.CYCLE_CNT);
-  drive(ctl2, io2, 16000, flicker);
-  chk('blurobot: and the watchdog faults on it instead of waiting for ever',
-    io2.ST1_STEP === 900 && io2.AUTO_RUN === false, 'step ' + io2.ST1_STEP);
+  // The plant: axes answer Execute at once, the covers only move when Execute is RE-PULSED (the
+  // joint latches its target on the rising edge), and the jaws stop at the board's width so
+  // `closed` never comes on - which is exactly what a good grip looks like.
+  const plant = o => {
+    for (const a of AX) { o[a + '_DONE'] = o[a + '_EXEC']; if (o[a + '_EXEC']) o[a + '_POS'] = o[a + '_TGT']; }
+    for (const c of CV) {
+      if (!o[c + '_CV_EXEC']) o[c + '_CV_ARMED'] = true;
+      else if (o[c + '_CV_ARMED']) { o[c + '_CV_POS'] = o[c + '_CV_TGT']; o[c + '_CV_ARMED'] = false; }
+    }
+    o.GRIP_OPEN = !o.GRIP_CLOSE;
+    o.GRIP_CLOSED = false;
+    // Taking the board EMPTIES the rack: the nest releases (clamp off) and the fingers close on
+    // it. Without this the rack reads full for ever, the controller never asks for a refill, and
+    // the "restock" it is supposed to do can never be observed.
+    if (o.GRIP_CLOSE && !o.WIPIN_CLAMP) o.WIPIN_P = false;
+    if (o.EM_IN_EMIT) { o.EM_IN_CNT++; o.WIPIN_P = true; }
+  };
+  const ctl = create();
+  const io = fresh();
+  drive(ctl, io, 10, (o, t) => { o.PB_START = t <= 4; plant(o); });
+  // Long enough for the first job to matter: the arm has to fold, rail 1400 mm to WIP IN, descend,
+  // grip, lift, fold, rail back to an ICC and place. 2 s only got as far as the first traverse.
+  drive(ctl, io, 12000, plant);
+
+  // WIP IN is an endless stock: the PLC pins it full, so the plant has to be asked to refill it
+  // every time a board is taken, or the next grip closes on air.
+  chk('blurobot: taking a board from WIP IN makes it restock', io.EM_IN_CNT >= 1, 'restocks ' + io.EM_IN_CNT);
+
+  // The cover gates the test clock, so a cover that never moves means a cell that never finishes.
+  // Both ICCs get filled first - that is priority 1, and it is what "buffer" means - after which
+  // the cell correctly IDLES at step 0 while two 17 s tests run. Idling there is not a stall.
+  chk('blurobot: both ICCs are loaded and testing with their covers shut',
+    io.ICC1_CV_POS === 0 && io.ICC2_CV_POS === 0, `ICC1 ${io.ICC1_CV_POS}, ICC2 ${io.ICC2_CV_POS}, step ${io.ST1_STEP}`);
+
+  // Long enough for both ICCs (17 s) and a DW (15 s) to finish and for boards to leave.
+  drive(ctl, io, 90000, plant);
+  chk('blurobot: boards reach WIP OUT', io.CYCLE_CNT >= 1, 'cycles ' + io.CYCLE_CNT);
+  chk('blurobot: it never faults during normal running', io.ST1_STEP !== 900, 'step ' + io.ST1_STEP);
+
+  // A grip that keeps slipping must not be confirmed, and must fault rather than wait for ever.
+  const ctl2 = create();
+  const io2 = fresh();
+  const slipping = o => { plant(o); o.GRIP_OPEN = true; };     // the fingers never stay closed
+  drive(ctl2, io2, 10, (o, t) => { o.PB_START = t <= 4; slipping(o); });
+  drive(ctl2, io2, 4000, slipping);
+  chk('blurobot: a grip that never holds is not confirmed', io2.CYCLE_CNT === 0, 'cycles ' + io2.CYCLE_CNT);
+  drive(ctl2, io2, 32000, slipping);
+  chk('blurobot: and it faults instead of waiting for ever', io2.ST1_STEP === 900 && io2.AUTO_RUN === false,
+    'step ' + io2.ST1_STEP);
 }
 
 process.exit(fail ? 1 : 0);

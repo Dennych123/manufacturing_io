@@ -106,6 +106,17 @@ in the code but break things silently** when violated. Most were paid for once i
   on `blurobot`: the feeder count was taken at a start-up step, so on cycle 2 the emit step saw
   "the count already moved", dropped the command without feeding anything, and the next step waited
   for a part that never came. Re-snapshot it at the cycle-complete step, as `a-to-b` does.
+- **A held Execute is LATCHED on its rising edge, so a target that changes later is never read.**
+  The axis model takes its target when `exec` goes true and not again. Holding `exec` true from the
+  first scan therefore freezes the axis on its startup target: measured on `blurobot`, every
+  station cover latched 80° open while the program commanded 0°, so no test clock ever ran, no
+  board ever finished, and the cell looked busy while producing nothing. Drop `exec` for one scan
+  whenever the target moves. This is the same rule as "commands are levels held until answered" —
+  the level is held, but its EDGE is what arms it.
+- **A step that both empties a source and fills a destination must not share one index.** `idx` was
+  reused for source then destination, so on a job whose source was the station just loaded, the
+  pick step zeroed the state the place step had set. Measured: ICC 1 was loaded, marked processing,
+  then immediately reported empty again. Keep `src` and `dst` separate, as rb4axis does.
 - **A beam says a part is HERE; the STOP is what locates it.** Cutting the belt on the beam edge
   left the pallet 106 mm short of the pin on every cycle — centre at 94.1 mm instead of 190.6 —
   so the part feeder dropped its load onto the belt behind the deck, +118.9 mm out. The sequence
@@ -119,6 +130,14 @@ in the code but break things silently** when violated. Most were paid for once i
 - **A nest LOCATES the part it catches** (`snap` on the type): the part is seated square on the
   pocket floor, not frozen wherever it was when its centre entered the pocket. Measured: a base
   caught mid-fall hung 11.6 mm high, which then put it inside the press's stroke.
+- **A holder's catch volume is not always `params.size`.** `candidate()` in `server/plant.js` read
+  `r.p.size` for every non-vacuum holder, but a gripper has no `size` — its catch volume is
+  `zone(p)`. A gripper only reaches that line as the holders loop's FALLBACK (`cand ?? candidate`),
+  which needs a free part sitting in its zone at the moment it is asked, so the crash
+  (`undefined is not iterable`, and the plant dies mid-run) sat in shared code from 34be524 on
+  12 Sept until the `blurobot` cell happened to arrange exactly that. Every scene with a gripper
+  was one coincidence away from it. Fall back to `zone(p).size`, and return null when a holder has
+  neither: a holder that cannot say where it catches should catch nothing, not throw.
 - **A kinematic tool never closes ONTO a part resting on another kinematic body.** The solver
   has nowhere to put the part and ejects it. Stop at the part's surface, as the gripper does
   with `blockAt`, or leave a few mm (the assembler's press stops 3 mm above the lid).

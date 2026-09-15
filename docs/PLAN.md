@@ -759,13 +759,37 @@ Each phase ends runnable, with a written exit criterion.
 - Blurobot cell, press-fit, drill, seaming, then the remaining library scenes.
 - **Exit:** the rb4axis PLC program drives the Blurobot scene.
 
-**The Blurobot cell runs (2026-09-14).** The arm is rb4axis's own, taken from its
-`sim/robot.config.json` rather than invented: a rail along X (±1500 mm, 900 mm/s) and three joints
-turning about X in the Y–Z plane (−90..180, −150..0, −120..120 at 90/90/120 °/s), links L1 400,
-L2 300, L3 250, L4 100, home [0, 90, −90, −90]. Because the plant keeps ONE dof per component, the
-arm is a **chain of `joint` components**, each mounted on the previous one's `end` socket — which
-is also how `chainPoints()` composes it, since every angle is relative to its parent. `lib.test.js`
-pins the closed form against hand-computed points, at home and at a second pose.
+**The Blurobot CELL runs (2026-09-15).** The first cut was a simplification — one belt in, one belt
+out — and Denny rejected it: the real machine is a buffered cell with two ICC testers and two DW
+writers. It is now a port of the actual project, taken from `sim/robot.config.json` and
+`PRG_SIM_ROBOT.st` rather than re-derived from a description:
+
+| station | type | rail x | surface z | process |
+|---|---|---|---|---|
+| WIP IN | 0 | −1400 | 250 | — (stock not simulated: always full) |
+| ICC 1 / ICC 2 | 1 | −700 / −300 | 285 | 17.0 s, cover presses the PCB onto the probes |
+| DW 1 / DW 2 | 2 | 300 / 700 | 250 | 15.0 s |
+| WIP OUT | 3 | 1400 | 250 | — (always empty) |
+
+Job priority, and the order IS the behaviour: fill an empty ICC from WIP IN first (both — that is
+what "buffer" means, the 17 s tester must not idle); then empty a finished DW to WIP OUT, ahead of
+the third rule, because two full DWs plus two finished ICCs otherwise deadlock and the deadlock
+looks like a robot that simply stopped; then move a finished ICC to a free DW. Machines 300×320
+with hinged covers that open 80° and close only while processing, reopening if the arm enters the
+sweep — a light curtain, not a delay. PCB 120×80×8, gripped on its 120 mm side, jaws opening along
+the rail.
+
+The arm is unchanged: a rail along X (±1500 mm, 900 mm/s) and three joints turning about X in the
+Y–Z plane (−90..180, −150..0, −120..120 at 90/90/120 °/s), links L1 400, L2 300, L3 250, L4 100,
+home [0, 90, −90, −90]. Because the plant keeps ONE dof per component, it is a **chain of `joint`
+components**, each mounted on the previous one's `end` socket — which is also how `chainPoints()`
+composes it, since every angle is relative to its parent. `lib.test.js` pins the closed form
+against hand-computed points, at home and at a second pose.
+
+Carriage height 200 was measured, not chosen: all twelve poses (six surfaces plus six 140 mm
+approaches — the real cell's approach) solve there with 67.3° of worst-case joint margin, and the
+reachable band is −100 to 350. Only two station heights exist, so there are four arm poses and the
+rail carries the rest.
 
 New type: `joint` (revolute or prismatic, min/max/home, `trapStep` for motion, target/exec/done
 like the servo). Every pose in `blurobot.st` was measured with the scene's own kinematics:

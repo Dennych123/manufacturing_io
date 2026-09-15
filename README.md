@@ -63,7 +63,7 @@ Eight machines run with their own PLC programs, each in `scenes/<name>.{json,st,
 | `buffer-queue` | a buffer belt stands still between demands and meters out one part at a time |
 | `assembler` | a 4-station cam indexer: load a base, drop a lid, press it, index on |
 | `pallet-line` | a pallet is fed, stopped by a pop-up stop, lifted off the belt, loaded and released |
-| `blurobot` | the rb4axis 4-axis arm: a rail and three joints pick from a nest and lay the part on the outfeed |
+| `blurobot` | the rb4axis cell: a 4-axis arm serves two ICC testers and two DW writers between WIP IN and WIP OUT |
 
 | | |
 |---|---|

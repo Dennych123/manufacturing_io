@@ -277,7 +277,14 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         (/** @type {any} */ col) => { const pt = colPart.get(col.handle); if (pt && !pt.held && !pt.pin) { found = pt; return false; } return true; }, undefined, PART_RAYS);
       return found;
     }
-    const inv = invert(F), [sx, sy, sz] = r.p.size;
+    // A gripper reaches here only as the fallback in the holders loop (`cand ?? candidate(...)`),
+    // and it has no `size` - its catch volume is `zone(p)`. Reading r.p.size for it threw
+    // "undefined is not iterable" and killed the plant mid-run. It went unseen for as long as it
+    // did because the fallback is only taken when a FREE part sits in the gripper's zone at the
+    // moment it is asked, which no earlier scene managed to arrange.
+    const box = r.p.size ?? (r.t.zone ? r.t.zone(r.p).size : null);
+    if (!box) return null;
+    const inv = invert(F), [sx, sy, sz] = box;
     for (const pt of parts.values()) {
       if (pt.held || pt.pin) continue;
       // A pallet lift takes the CARRIER, never the load riding on it (`holdOnly` on the type).
