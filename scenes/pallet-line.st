@@ -2,6 +2,8 @@ VAR
 	START_EDGE : BOOL;
 	PB_START_LAST : BOOL;
 	STOP_REQ : BOOL;
+	SEL_LAST : BOOL := TRUE;
+	SEL_CHANGED : BOOL;
 	T_DWELL : TON;
 	T_SETTLE : TON;
 	T_CONF : TON;
@@ -11,10 +13,24 @@ VAR
 	STEP_LAST : UDINT;
 	GONE : UDINT;
 	FED : UDINT;
+	MEM_CV : BOOL;
+	MEM_STOP : BOOL;
+	MEM_LIFT : BOOL;
+	IND_CV_LAST : BOOL;
+	IND_STOP_LAST : BOOL;
+	IND_LIFT_LAST : BOOL;
+	ESTOP : BOOL;
+	READY : BOOL;
+	MASTER_ON : BOOL;
+	HOMED : BOOL;
+	MASTER_EDGE : BOOL;
+	PB_MASTER_LAST : BOOL;
+	HOME_EDGE : BOOL;
+	PB_HOME_LAST : BOOL;
 END_VAR
 // pallet-line: a pallet is fed onto the belt, stopped at the station by a POP-UP stop, lifted off
 // the belt and located square on its pins, loaded with a part, then put back down and released to
-// the unloader. Repeat until STOP. The same sequence runs without a PLC in pallet-line.ctl.js.
+// the unloader. Repeat until CYCLE STOP. The same sequence runs without a PLC in pallet-line.ctl.js.
 //
 // The stop pops UP from under the belt on purpose. An overhead pin that the pallet has to drive
 // under holds it from 7.9-15.1 mm away even after it has lifted clear and come to rest, and the
@@ -27,12 +43,32 @@ END_VAR
 //
 // The unloader counts the pallet AND the part riding on it, so the discharge step waits on both
 // feeders: RM_CNT + GONE >= EM_P_CNT + EM_W_CNT.
+//
+// The panel has a selector AUTO / INDIVIDUAL (rb4axis): START only in AUTO, the individual buttons
+// only in INDIVIDUAL, and a change while the sequence runs is a FAULT, not a pause.
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
-IF PB_STOP THEN
+IF PB_CSTOP THEN
 	STOP_REQ := TRUE;
 END_IF;
+SEL_CHANGED := SEL_AUTO <> SEL_LAST;
+SEL_LAST := SEL_AUTO;
+
+// The master circuit, as on the cell panel: E-STOP is a latching mushroom, MASTER ON energises
+// the machine, and nothing runs without it. An E-STOP also loses the home position.
+ESTOP := PB_ESTOP;
+MASTER_EDGE := PB_MASTER AND NOT PB_MASTER_LAST;
+PB_MASTER_LAST := PB_MASTER;
+HOME_EDGE := PB_HOME AND NOT PB_HOME_LAST;
+PB_HOME_LAST := PB_HOME;
+IF ESTOP THEN
+	MASTER_ON := FALSE;
+	HOMED := FALSE;
+ELSIF MASTER_EDGE THEN
+	MASTER_ON := TRUE;
+END_IF;
+READY := MASTER_ON AND NOT ESTOP;
 
 FED := EM_P_CNT + EM_W_CNT;
 // A write-off goes STALE when what was written off turns up after all. GONE is a UDINT, so
@@ -50,7 +86,7 @@ CASE ST1_STEP OF
 		EM_W_EMIT := FALSE;
 		SOL_LIFT := FALSE;
 		SOL_STOP := FALSE;
-		IF START_EDGE AND AS_LIFT_DN THEN
+		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_LIFT_DN THEN
 			STOP_REQ := FALSE;
 			ST1_STEP := 10;
 		END_IF;
@@ -121,11 +157,32 @@ CASE ST1_STEP OF
 		ELSE
 			ST1_STEP := 10;
 		END_IF;
-	900:	// FAULT: a step stopped moving. Stop feeding and the belt; the lift keeps its pallet.
+	800:	// HOME: the lift down and the pin down, so the belt is clear along its whole length
 		CV1_RUN := FALSE;
 		EM_P_EMIT := FALSE;
 		EM_W_EMIT := FALSE;
-		IF START_EDGE THEN
+		SOL_LIFT := FALSE;
+		SOL_STOP := FALSE;
+		IF AS_LIFT_DN AND AS_STOP_DN THEN
+			HOMED := TRUE;
+			ST1_STEP := 0;
+		END_IF;
+	910:	// E-STOP: the master circuit is open, so every solenoid de-energises - a 5/2 single-
+		// solenoid valve springs back. The LIFT is the exception: it is a holder, and a real
+		// machine does not drop what it carries when the power goes.
+		CV1_RUN := FALSE;
+		EM_P_EMIT := FALSE;
+		EM_W_EMIT := FALSE;
+		SOL_STOP := FALSE;
+		IF READY THEN	// MASTER ON after the mushroom is released
+			ST1_STEP := 0;
+		END_IF;
+	900:	// FAULT: a step stopped moving. Stop feeding and the belt; the pin keeps holding the
+		// queue back and the lift keeps its pallet.
+		CV1_RUN := FALSE;
+		EM_P_EMIT := FALSE;
+		EM_W_EMIT := FALSE;
+		IF START_EDGE AND SEL_AUTO THEN
 			STOP_REQ := FALSE;
 			// Acknowledging writes off what never reached the unloader. Only HERE: at every START
 			// it would write off pallets still legitimately on the belt.
@@ -139,18 +196,63 @@ T_DWELL(In := (ST1_STEP = 60), PT := T#500ms);
 T_SETTLE(In := (ST1_STEP = 35), PT := T#700ms);
 T_CONF(In := (ST1_STEP = 40) AND AS_LIFT_UP AND PLT_PRESENT, PT := T#300ms);
 
-// Watchdog: a step that stops moving is a jam, not patience. Without it the sequence waits for
-// ever and the machine only LOOKS alive.
-T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900), PT := T#15s);
+// Watchdog: a running step that stops moving is a jam, not patience. Without it the sequence waits
+// for ever and the machine only LOOKS alive. A selector change while running trips the same way.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP <> 0) AND (ST1_STEP <> 900) AND (ST1_STEP <> 910), PT := T#15s);
 IF ST1_STEP <> STEP_LAST THEN
 	STEP_LAST := ST1_STEP;
 END_IF;
-IF T_WD.Q THEN
+IF T_WD.Q OR (SEL_CHANGED AND (ST1_STEP <> 0) AND (ST1_STEP <> 900) AND (ST1_STEP <> 910)) THEN
 	ST1_STEP := 900;
 	CV1_RUN := FALSE;
 	EM_P_EMIT := FALSE;
 	EM_W_EMIT := FALSE;
 END_IF;
 
-AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 900);
+// E-STOP at any moment, and the HOME button when the machine is energised and idle.
+IF ESTOP THEN
+	IF ST1_STEP <> 910 THEN
+		ST1_STEP := 910;
+	END_IF;
+	CV1_RUN := FALSE;
+	EM_P_EMIT := FALSE;
+	EM_W_EMIT := FALSE;
+	SOL_STOP := FALSE;
+ELSIF HOME_EDGE AND READY AND (ST1_STEP = 0) THEN
+	ST1_STEP := 800;
+END_IF;
+
+AUTO_RUN := (ST1_STEP <> 0) AND (ST1_STEP <> 800) AND (ST1_STEP <> 900) AND (ST1_STEP <> 910);
+
+// Individual operation: the buttons are momentary; the PLC keeps a toggle memory per actuator and
+// clears it when INDIVIDUAL ends, so nothing stays latched into AUTO.
+IF NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP <> 800) THEN
+	IF IND_CV AND NOT IND_CV_LAST THEN
+		MEM_CV := NOT MEM_CV;
+	END_IF;
+	IF IND_STOP AND NOT IND_STOP_LAST THEN
+		MEM_STOP := NOT MEM_STOP;
+	END_IF;
+	IF IND_LIFT AND NOT IND_LIFT_LAST THEN
+		MEM_LIFT := NOT MEM_LIFT;
+	END_IF;
+	CV1_RUN := MEM_CV;
+	SOL_STOP := MEM_STOP;
+	SOL_LIFT := MEM_LIFT;
+	EM_P_EMIT := IND_FEED_P;
+	EM_W_EMIT := IND_FEED_W;
+ELSE
+	MEM_CV := FALSE;
+	MEM_STOP := FALSE;
+	MEM_LIFT := FALSE;
+END_IF;
+IND_CV_LAST := IND_CV;
+IND_STOP_LAST := IND_STOP;
+IND_LIFT_LAST := IND_LIFT;
+
+// The speed override the operator dialled in, passed on to the axes and the belts.
+OVR := OVR_SET;
+
 PL_START := AUTO_RUN;
+PL_MASTER := MASTER_ON;
+PL_HOME := HOMED;

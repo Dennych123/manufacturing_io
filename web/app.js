@@ -4,8 +4,8 @@
 // from the component types' shapes in lib/components.js.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { compile, worldPoses, bindings, partRoles } from '/lib/scene.js';
-import { TYPES } from '/lib/components.js';
+import { compile, worldPoses, bindings, partRoles, params } from '/lib/scene.js';
+import { TYPES, COLORS } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
 import { createEditor } from '/web/editor.js';
 
@@ -55,12 +55,19 @@ new ResizeObserver(() => {
 }).observe(view);
 
 // Materials by the shapes' `mat` names.
+// A machine drawn all in grey is unreadable, so each FAMILY has its own colour: blue is
+// pneumatic power, bronze moves, orange touches the part, green holds it, teal senses it, and
+// the structure stays grey so the working parts stand out against it.
 const MAT = {
   alu: { color: '#b9c0c8', metalness: 0.5, roughness: 0.45 }, profile: { color: '#8b939c', metalness: 0.5, roughness: 0.5 },
   steel: { color: '#a4acb5', metalness: 0.7, roughness: 0.35 }, dark: { color: '#3b4047', metalness: 0.2, roughness: 0.7 },
-  tube: { color: '#d5dade', metalness: 0.4, roughness: 0.3 }, rod: { color: '#eef1f3', metalness: 0.9, roughness: 0.2 },
+  tube: { color: '#7f95b5', metalness: 0.5, roughness: 0.35 }, rod: { color: '#eef1f3', metalness: 0.9, roughness: 0.2 },
   reed: { color: '#2b2b2b', metalness: 0.1, roughness: 0.6, glow: '#ff3b30' },
   paint: { color: '#888888', metalness: 0.1, roughness: 0.45 }, part: { color: '#c79a52', metalness: 0.3, roughness: 0.5 },
+  motion: { color: '#a8792c', metalness: 0.6, roughness: 0.4 },   // servo rails, index tables: what drives
+  tool: { color: '#c06a30', metalness: 0.4, roughness: 0.45 },    // pusher plates, stopper pins, press heads
+  holder: { color: '#3f8f5a', metalness: 0.4, roughness: 0.45 },  // nests, gripper fingers, vacuum cups
+  sensor: { color: '#1f6f5c', metalness: 0.3, roughness: 0.55 },  // photo-eye and proximity bodies
 };
 const shared = new Map();
 function material(s, own) {
@@ -102,6 +109,7 @@ function build(sc) {
   for (const c of order) {
     if (loose.has(c.id)) continue;
     const d = defs.get(c.id);
+    if (d.t.group === 'operator') continue;                     // drawn in the HTML operator panel, not in 3D
     for (const l of d.links) { const g = new THREE.Group(); scene3.add(g); links.push({ id: c.id, link: l.name, g }); byKey.set(c.id + '/' + l.name, g); }
     for (const s of d.shapes) {
       const tag = s.glow && c.io?.[s.glow];
@@ -223,6 +231,7 @@ function fitLight() {
 const frames = [];
 let curDof = {}, curIo = {}, forced = {}, offset = null, ioDirty = false;
 let curParts = {}, partTpl = {};
+let simScale = 1;                     // slow motion: sim time runs at this fraction of wall time
 
 function onState(m) {
   if (frames.length && m.t < frames[frames.length - 1].t) frames.length = 0;   // server restarted
@@ -237,7 +246,7 @@ function onState(m) {
     if (m.pins) pins = new Set(m.pins);
   }
   if (m.forced) forced = m.forced;
-  const est = m.t - performance.now();
+  const est = m.t - performance.now() * simScale;
   offset = offset == null || Math.abs(est - offset) > 500 ? est : offset + 0.05 * (est - offset);
   frames.push({ t: m.t, dof: { ...curDof }, parts: { ...curParts } });
   if (frames.length > 90) frames.splice(0, frames.length - 90);
@@ -285,7 +294,7 @@ function partsAt(t) {
 function loop() {
   requestAnimationFrame(loop);
   if (model && offset != null) {
-    const t = performance.now() + offset - RENDER_DELAY_MS;
+    const t = performance.now() * simScale + offset - RENDER_DELAY_MS * simScale;
     place(dofAt(t));
     if (!editorRef?.active) placeParts(partsAt(t));
   }
@@ -340,6 +349,16 @@ function updatePanel() {
     r.tr.classList.toggle('on', r.type === 'BOOL' && !!v);
     r.tr.classList.toggle('forced', f);
   }
+  for (const it of opItems) {
+    if (it.pct) {                                   // the dial shows what the PLC really reads
+      const v = it.tag && curIo[it.tag];
+      const txt = (typeof v === 'number' ? Math.round(v) : 100) + '%';
+      if (it.el.textContent !== txt) it.el.textContent = txt;
+      continue;
+    }
+    const on = !!(it.tag && curIo[it.tag]);
+    if (it.el.classList.contains(it.cls) !== on) it.el.classList.toggle(it.cls, on);
+  }
   if (!model) return;
   for (const g of model.glows) {
     const on = !!curIo[g.tag];
@@ -351,8 +370,78 @@ function updatePanel() {
 }
 setInterval(() => { if (ioDirty) { ioDirty = false; updatePanel(); } }, PANEL_MS);
 
+// ------------------------------------------------------------------ operator panel (HTML, hideable)
+// The machine's selector, pushbuttons and lamps are scene components (they own their tags), but
+// they are drawn HERE, as a Denso-style panel beside the view, not in 3D. Every button sends
+// edges only (down, up); the PLC enforces what each mode allows. Built once per scene; the lit
+// state is updated with the IO table.
+let opItems = [];
+function buildOpPanel(sc) {
+  const body = $('op-body');
+  body.replaceChildren();
+  opItems = [];
+  const edge = (id, key, down) => post('/api/press', { id, key, down });
+  for (const c of sc.components) {
+    const t = TYPES[c.type];
+    if (!t || t.group !== 'operator') continue;
+    const label = c.label || c.id;
+    if (c.type === 'selector') {
+      const el = document.createElement('div'); el.className = 'sel'; el.title = label;
+      for (const [cls, txt] of [['l', 'INDIVIDUAL'], ['r', 'AUTO']]) { const s = document.createElement('span'); s.className = cls; s.textContent = txt; el.append(s); }
+      el.onpointerdown = () => edge(c.id, 'sel', true);
+      el.onpointerup = () => edge(c.id, 'sel', false);
+      body.append(el);
+      opItems.push({ el, tag: c.io?.sel, cls: 'auto' });
+    } else if (c.type === 'pushbutton') {
+      const el = document.createElement('button'); el.className = 'op-btn'; el.textContent = label;
+      el.style.setProperty('--c', COLORS[params(c).color] || '#888');
+      let down = false;
+      el.onpointerdown = () => { down = true; el.classList.add('down'); edge(c.id, 'pb', true); };
+      const up = () => { if (!down) return; down = false; el.classList.remove('down'); edge(c.id, 'pb', false); };
+      el.onpointerup = up; el.onpointerleave = up; el.onpointercancel = up;
+      body.append(el);
+      // A latching mushroom has no lamp: what it shows is its OWN state, in or out.
+      const latch = params(c).kind === 'alternate';
+      opItems.push({ el, tag: latch ? c.io?.pb : c.io?.lamp, cls: latch ? 'latched' : 'lit' });
+    } else if (t.dialKey) {
+      // A dial carries a value, not an edge. It sends on change, never while dragging: one write
+      // per setting, the way a slider must behave here.
+      const p = params(c), el = document.createElement('label');
+      el.className = 'op-dial';
+      el.title = label;
+      const inp = document.createElement('input');
+      inp.type = 'range'; inp.min = String(p.min ?? 1); inp.max = '100'; inp.step = '5'; inp.value = '100';
+      const out = document.createElement('b');
+      out.textContent = '100%';
+      inp.onchange = () => { out.textContent = inp.value + '%'; post('/api/dial', { id: c.id, key: t.dialKey, value: Number(inp.value) }); };
+      el.append(document.createTextNode(label), inp, out);
+      body.append(el);
+      opItems.push({ el: out, tag: c.io?.[t.dialKey], pct: true });
+    } else if (c.type === 'lamp') {
+      const el = document.createElement('span'); el.className = 'op-lamp'; el.textContent = label;
+      el.style.setProperty('--c', COLORS[params(c).color] || '#888');
+      body.append(el);
+      opItems.push({ el, tag: c.io?.lamp, cls: 'lit' });
+    }
+  }
+  $('oppanel').hidden = !opItems.length;
+}
+$('op-hide').onclick = () => { const b = $('op-body'); b.hidden = !b.hidden; $('op-hide').textContent = b.hidden ? 'show' : 'hide'; };
+
+/** ms -> hh:mm:ss */
+function hms(ms) {
+  const t = Math.max(0, Math.round(ms / 1000));
+  return [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map(n => String(n).padStart(2, '0')).join(':');
+}
+const pageAt = Date.now();
+
 function onStatus(s) {
   const io = s.io || {}, pl = s.plant || {};
+  if (typeof pl.scale === 'number' && pl.scale !== simScale) {
+    simScale = pl.scale;
+    offset = null;                                          // the render clock changed rate: re-sync
+    if ($('scale-pick').value !== String(simScale)) $('scale-pick').value = String(simScale);
+  }
   const conn = $('conn');
   conn.textContent = (io.driver || '?') + ': ' + (io.msg || '');
   conn.className = io.ok ? 'ok' : 'bad';
@@ -362,11 +451,22 @@ function onStatus(s) {
   // Run only starts the plant's clock. The machine waits for the sequence, which the PLC (or the
   // internal controller) starts from the START button: say so instead of looking frozen.
   const auto = serverScene?.cycle?.autoTag;
-  const idle = pl.mode === 'run' && auto && curIo[auto] === false;
-  $('status').textContent = 'plant ' + pl.mode + '   t ' + (pl.t / 1000).toFixed(1) + ' s   step ' + pl.stepUs + ' µs   overruns ' + pl.overruns
-    + (pl.parts != null ? '   parts ' + pl.parts : '')
+  // A selector on the panel (io key 'sel'): on INDIVIDUAL the individual buttons drive the actuators
+  // and START is ignored, so the idle hint must say so instead of "press START".
+  const selTag = serverScene && bindings(serverScene).find(b => b.key === 'sel')?.tag;
+  const individual = selTag != null && curIo[selTag] === false;
+  const idle = pl.mode === 'run' && auto && curIo[auto] === false && !individual;
+  // Two clocks side by side say plainly whether the world is running fast or slow, and the cycle
+  // time is what anyone actually watches a machine for.
+  const cyc = pl.cycleMs ? (pl.cycleMs / 1000).toFixed(2) + ' s' : '--';
+  const avg = pl.avgMs ? (pl.avgMs / 1000).toFixed(2) + ' s over ' + pl.cycles : '--';
+  $('status').textContent = 'plant ' + pl.mode + '   sim ' + hms(pl.t) + '   wall ' + hms(Date.now() - pageAt) + '   ' + (pl.scale ?? 1) + 'x'
+    + '\ncycle ' + cyc + '   avg ' + avg
+    + '\nstep ' + pl.stepUs + ' µs   overruns ' + pl.overruns + (pl.parts != null ? '   parts ' + pl.parts : '')
     + (io.samplingMs != null ? '\nsampling ' + io.samplingMs + ' ms   publishing ' + io.publishingMs + ' ms' + (io.rttMs != null ? '   write ' + io.rttMs + ' ms' : '') : '')
-    + (idle ? '\nidle: press the green START button in 3D (the sequence has not started)' : '');
+    + (idle ? '\nidle: press the green START button in 3D (the sequence has not started)' : '')
+    + (pl.scale != null && pl.scale !== 1 ? '\nworld speed ' + pl.scale + 'x: sim time does not match the wall clock' : '')
+    + (individual ? '\nINDIVIDUAL: the panel buttons drive the actuators one at a time; turn the selector to AUTO to run the sequence' : '');
   const hb = $('hb');
   hb.hidden = io.heartbeat !== false;
   hb.textContent = 'MIO_HEARTBEAT is not moving: the PLC program is not running, or not assigned to a task.';
@@ -380,6 +480,10 @@ function onWarn(w) {
   while (ul.children.length > 40) ul.lastChild.remove();
 }
 
+// Clearing the list is the viewer's own business: the plant keeps every warning in its event log
+// and the recording on disk, so nothing is lost by tidying the panel.
+$('warn-clear').onclick = () => $('warns').replaceChildren();
+
 async function post(url, data) {
   try {
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -387,6 +491,8 @@ async function post(url, data) {
   } catch (e) { onWarn({ t: 0, msg: url + ': ' + e.message }); }
 }
 for (const b of document.querySelectorAll('.cmds button')) if (b.dataset.op) b.onclick = () => post('/api/cmd', { op: b.dataset.op });
+// Simulation speed: on change, never while dragging. The plant decides - with a PLC it stays 1x.
+$('scale-pick').onchange = () => post('/api/scale', { value: Number($('scale-pick').value) });
 
 // ------------------------------------------------------------------ scene and controller pickers
 // The server loads the scene and connects the driver; the page only asks. Both selects send on
@@ -481,6 +587,7 @@ es.addEventListener('scene', e => {
   document.title = scene.name + ' · manufacturing_io';
   if (!editor.onServerScene(scene)) build(scene);
   buildPanel(scene);
+  buildOpPanel(scene);
   ioDirty = true;
 });
 es.addEventListener('state', e => onState(JSON.parse(e.data)));

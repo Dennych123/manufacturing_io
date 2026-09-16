@@ -62,6 +62,53 @@ for (const u of ['/web/../server/pki/key.pem', '/web/%2e%2e/server/plant.js', '/
   chk('refused: ' + u, staticPath(ROOT, u) === null);
 }
 
+// The operator panel: HTML beside the view, hideable; operator devices are not drawn in 3D
+{
+  chk('viewer: operator devices (selector, pushbuttons, lamps) are drawn in the HTML panel, not in 3D', /group === 'operator'\) continue/.test(app) && /function buildOpPanel/.test(app));
+  chk('viewer: operator panel buttons send edges (down AND up), never a state', /edge\(c\.id, 'pb', true\)/.test(app) && /edge\(c\.id, 'pb', false\)/.test(app) && /onpointerleave = up/.test(app));
+  chk('viewer: the operator panel is built once per scene and can be hidden', /buildOpPanel\(scene\)/.test(app) && /op-hide/.test(app)
+    && ['oppanel', 'op-hide', 'op-body'].every(id => html.includes('id="' + id + '"')));
+}
+
+// The speed override is a slider, and a slider sends on change, never while it is dragged
+chk('viewer: the speed override is drawn as a slider that sends on change', /t\.dialKey/.test(app) && /inp\.onchange = \(\) =>/.test(app)
+  && /api\/dial/.test(app) && !/inp\.oninput/.test(app));
+
+// Slow motion: the render clock has to tick at the plant's rate, or the interpolation offset
+// drifts away from it and the picture jumps.
+chk('viewer: the world speed picker sends on change and the render clock follows the plant',
+  html.includes('id="scale-pick"') && /\$\('scale-pick'\)\.onchange/.test(app) && /api\/scale/.test(app)
+  && /performance\.now\(\) \* simScale \+ offset/.test(app) && /m\.t - performance\.now\(\) \* simScale/.test(app));
+
+// Colour: a machine drawn all in grey is unreadable, so each family has its own material. A
+// material a component type uses but the viewer does not know would silently fall back to grey.
+{
+  const { TYPES, withDefaults } = await import('../lib/components.js');
+  const used = new Set();
+  for (const ty of Object.values(TYPES)) {
+    const p = withDefaults(ty, {});
+    for (const sh of (ty.shapes ? ty.shapes(p) : [])) used.add(sh.mat);
+  }
+  const blk = app.slice(app.indexOf('const MAT = {'), app.indexOf('};', app.indexOf('const MAT = {')));
+  const known = new Set([...blk.matchAll(/(\w+): \{ color/g)].map(m => m[1]));
+  const missing = [...used].filter(m => !known.has(m));
+  chk('viewer: every material a component uses is in the palette', missing.length === 0, missing.join(' '));
+  chk('viewer: the palette separates the families, it is not all grey',
+    ['motion', 'tool', 'holder', 'sensor'].every(m => known.has(m)), [...known].join(' '));
+}
+
+// The warnings list can be tidied without losing anything: the plant's event log and the
+// recording on disk still have every warning.
+chk('viewer: the warnings list has a clear button, and it only empties the list',
+  html.includes('id="warn-clear"') && app.includes("$('warn-clear').onclick = () => $('warns').replaceChildren();"));
+
+// The operator panel must not move under the pointer: the status block above it keeps a fixed
+// height however many hints it is showing, or the buttons shift and get pressed by mistake.
+chk('viewer: the status block has a fixed height, so the panel below it stays put', /#status \{[^}]*min-height/.test(html));
+chk('viewer: the status shows both clocks and the cycle time', /function hms\(/.test(app) && /sim ' \+ hms\(pl\.t\)/.test(app)
+  && /wall ' \+ hms\(Date\.now\(\) - pageAt\)/.test(app) && /pl\.cycleMs/.test(app) && /pl\.avgMs/.test(app));
+chk('viewer: a latching mushroom shows its own state, not a lamp', /kind === 'alternate'/.test(app) && /'latched'/.test(app));
+
 // POST: local only unless --lan-control, and the browser Origin must match the Host
 const req = (ra, origin, host = '127.0.0.1:7660') => ({ socket: { remoteAddress: ra }, headers: { host, ...(origin ? { origin } : {}) } });
 chk('POST from this PC without Origin (curl)', postAllowed(req('127.0.0.1')));
@@ -69,5 +116,7 @@ chk('POST from this PC, same-origin page', postAllowed(req('::1', 'http://127.0.
 chk('POST refused: page from another site', !postAllowed(req('127.0.0.1', 'http://evil.example')));
 chk('POST refused: from the LAN by default', !postAllowed(req('192.168.1.20', 'http://192.168.1.5:7660', '192.168.1.5:7660')));
 chk('POST from the LAN with --lan-control', postAllowed(req('192.168.1.20', 'http://192.168.1.5:7660', '192.168.1.5:7660'), { lanControl: true }));
+chk('POST refused: DNS rebinding (local browser, Origin == Host == another name)', !postAllowed(req('127.0.0.1', 'http://evil.example:7660', 'evil.example:7660')));
+chk('POST from this PC as localhost', postAllowed(req('::1', 'http://localhost:7660', 'localhost:7660')));
 
 process.exit(fail ? 1 : 0);

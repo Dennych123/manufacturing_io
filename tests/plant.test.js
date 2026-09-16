@@ -24,10 +24,24 @@ const scene = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'cyl-on-slide
 const clone = o => JSON.parse(JSON.stringify(o));
 const edges = (p, tag, v) => p.events.filter(e => (e.k === 'in' || e.k === 'out') && e.tag === tag && (v === undefined || e.v === v)).map(e => e.t);
 
+/**
+ * The panel start-up, in the order an operator does it: MASTER ON energises the machine, HOME
+ * drives every actuator to its home position, and only then does START run the cycle. A machine
+ * that has not been homed refuses to start, which is the point of the Home button.
+ * @param {any} p @param {number} [homeMs] time allowed for the home step
+ */
+function powerUp(p, homeMs = 3000) {
+  const tap = (/** @type {string} */ id) => { p.press(id, 'pb', true); p.run(120); p.press(id, 'pb', false); p.run(120); };
+  tap('pbMaster');
+  tap('pbHome');
+  p.run(homeMs);
+  tap('pbStart');
+}
+
 async function cycle(sc = scene, ms = 9000) {
   const p = await createPlant(sc, { controller: create() });
   p.run(200);
-  p.press('pbStart', 'pb', true); p.run(150); p.press('pbStart', 'pb', false);
+  powerUp(p);
   p.run(ms);
   return p;
 }
@@ -54,13 +68,13 @@ const d2 = edges(q, 'AS_ST1_PRSS_CYL_DN', true)[0] - edges(q, 'SOL_ST1_PRSS_CYL_
 const expect2 = cp.valveMs + 57 / v.ext;
 chk('moving the reed switch to 60 moves the edge the PLC sees', Math.abs(d2 - expect2) <= q.dtMs, d2 + ' ms vs ' + expect2.toFixed(1));
 
-p.press('pbStop', 'pb', true); p.run(150); p.press('pbStop', 'pb', false);
+p.press('pbCstop', 'pb', true); p.run(150); p.press('pbCstop', 'pb', false);
 p.run(6000);
 chk('STOP ends the cycle at home', p.io.ST1_STEP === 0 && p.io.AUTO_RUN === false && p.dof.slide1 === 0 && p.dof.cyl1 === 0);
 
 // Rapier bodies follow worldPoses (mid-motion, so it is not the initial pose by luck)
 const k = await createPlant(scene, { controller: create() });
-k.run(100); k.press('pbStart', 'pb', true); k.run(700);
+k.run(100); powerUp(k); k.run(400);
 const W = worldPoses(scene, k.dof);
 const rod = k.bodies.find(b => b.id === 'cyl1' && b.link === 'rod');
 const car = k.bodies.find(b => b.id === 'slide1' && b.link === 'carriage');
@@ -283,7 +297,13 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   d.holdPart(duid, true);
   d.run(50);
   d.holdPart(duid, true, [from.x / SK - 300, from.y / SK, from.z / SK + 120]);
-  d.run(200);
+  d.run(100);
+  const mid = dp();
+  // It walks there at a hand's speed rather than teleporting: a kinematic body dropped into a
+  // queue of resting parts scatters them across the hall.
+  chk('the hand walks a part toward the pointer instead of teleporting it',
+    Math.abs((mid.x - from.x) / SK) > 5 && Math.abs((mid.x - from.x) / SK) < 295, ((mid.x - from.x) / SK).toFixed(1) + ' mm after 100 ms');
+  d.run(600);
   const to = dp();
   chk('dragging a held part moves it there and it stays', Math.abs((to.x - from.x) / SK + 300) < 0.5 && Math.abs((to.z - from.z) / SK - 120) < 0.5,
     ((to.x - from.x) / SK).toFixed(1) + ', ' + ((to.z - from.z) / SK).toFixed(1) + ' mm');
@@ -298,7 +318,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const pp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'pick-place.json'), 'utf8'));
   const { create: createPP } = await import('../scenes/pick-place.ctl.js');
   const w = await createPlant(pp, { controller: createPP() });
-  w.run(200); w.press('pbStart', 'pb', true); w.run(150); w.press('pbStart', 'pb', false);
+  w.run(200); powerUp(w);
   let holdUid = null, holder = null;
   for (let i = 0; i < 200 && !holdUid; i++) {
     w.run(100);
@@ -367,7 +387,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const { create: createAB } = await import('../scenes/a-to-b.ctl.js');
   const run = async () => {
     const q = await createPlant(ab, { controller: createAB() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(40000);
     return q;
   };
@@ -384,43 +404,50 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   // Reset zeroes the plant's counters; a controller holding the old ones waits for a part that
   // already "arrived" and the sequence stalls with the clock still running (measured).
   q.reset();
-  q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+  powerUp(q);
   q.run(25000);
   chk('a-to-b: Reset then START runs again (the controller is reset too)', q.io.CYCLE_CNT >= 2, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
   await q.close(); await q2.close();
 }
 
-// ---------------------------------------------------------------- scene buffer-queue (metering buffer)
+// ---------------------------------------------------------------- scene buffer-queue (stop and go)
+// Two stopper pins 300 mm apart: HOLD meters one part into the pocket, GATE releases it on demand.
+// Each pin has its own up/down reed switches and its own photo-eye.
 {
   const bq = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'buffer-queue.json'), 'utf8'));
   const { create: createBQ } = await import('../scenes/buffer-queue.ctl.js');
   const run = async () => {
     const q = await createPlant(bq, { controller: createBQ() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(60000);
     return q;
   };
   const q = await run();
   const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
-  chk('buffer-queue: one part is metered out per demand', q.io.CYCLE_CNT >= 12 && Math.abs(q.io.RM_CNT - q.io.CYCLE_CNT) <= 1,
+  chk('buffer-queue: one part is metered through the escapement per cycle', q.io.CYCLE_CNT >= 4 && Math.abs(q.io.RM_CNT - q.io.CYCLE_CNT) <= 1,
     'CYCLE_CNT ' + q.io.CYCLE_CNT + ', removed ' + q.io.RM_CNT);
-  chk('buffer-queue: the belt holds a buffer of parts', q.parts.size >= 5, q.parts.size + ' on the belt');
-  chk('buffer-queue: the queue-full beam throttles the feeder', q.io.PE_FULL === true || q.io.EM_EN === false,
-    'PE_FULL ' + q.io.PE_FULL + ', EM_EN ' + q.io.EM_EN);
-  // The feeder must never drop a part onto one already under it (the column check).
-  chk('buffer-queue: nothing is stacked', [...q.parts.values()].every(p => p.body.translation().z / SK < 830),
-    [...q.parts.values()].map(p => (p.body.translation().z / SK).toFixed(0)).join(' '));
+  // The discriminating measurement: both eyes see every part, each exactly once per cycle.
+  const hold = edges(q, 'PE_HOLD', true).length, gate = edges(q, 'PE_GATE', true).length;
+  chk('buffer-queue: each part is seen once at the hold pin and once at the gate', Math.abs(hold - q.io.EM_CNT) <= 1 && Math.abs(gate - q.io.CYCLE_CNT) <= 1,
+    hold + ' hold, ' + gate + ' gate, ' + q.io.EM_CNT + ' fed, ' + q.io.CYCLE_CNT + ' cycles');
+  // A pin cannot come down between parts that touch, so the line must never hold two at once.
+  chk('buffer-queue: only one part is in the line at a time, so a pin always lands on free belt', q.parts.size <= 1,
+    q.parts.size + ' on the belt');
+  chk('buffer-queue: both pins really stroke (the reed switches see up and down)',
+    edges(q, 'AS_HOLD_DN', true).length >= 4 && edges(q, 'AS_HOLD_UP', true).length >= 4
+    && edges(q, 'AS_GATE_DN', true).length >= 4 && edges(q, 'AS_GATE_UP', true).length >= 4,
+    'hold ' + edges(q, 'AS_HOLD_DN', true).length + '/' + edges(q, 'AS_HOLD_UP', true).length
+    + ', gate ' + edges(q, 'AS_GATE_DN', true).length + '/' + edges(q, 'AS_GATE_UP', true).length);
   chk('buffer-queue: parts balance and none are lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
     pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
   chk('buffer-queue: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
   const q2 = await run();
   chk('buffer-queue: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
-  // A seized machine still balances its parts and raises no warning, so ask for PROGRESS: an
-  // earlier build jammed the queue after five minutes and every other check here still passed.
+  // A seized machine still balances its parts and raises no warning, so ask for PROGRESS.
   const before = q.io.CYCLE_CNT;
   q.run(90000);
   chk('buffer-queue: it keeps cycling, it does not seize', q.io.CYCLE_CNT - before >= 5,
-    (q.io.CYCLE_CNT - before) + ' cycles in the next 90 s, step ' + q.io.ST1_STEP);
+    (q.io.CYCLE_CNT - before) + ' more cycles in 90 s');
   await q.close(); await q2.close();
 }
 
@@ -430,7 +457,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const { create: createSBH } = await import('../scenes/sort-by-height.ctl.js');
   const run = async () => {
     const q = await createPlant(sbh, { controller: createSBH() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(60000);
     return q;
   };
@@ -457,7 +484,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const { create: createASM } = await import('../scenes/assembler.ctl.js');
   const run = async () => {
     const q = await createPlant(asm, { controller: createASM() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(60000);
     return q;
   };
@@ -529,7 +556,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const { create: createPP } = await import('../scenes/pick-place.ctl.js');
   const run = async () => {
     const q = await createPlant(pp, { controller: createPP() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(60000);
     return q;
   };
@@ -552,7 +579,7 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const { create: createSP } = await import('../scenes/stopper-pusher.ctl.js');
   const run = async () => {
     const q = await createPlant(sp, { controller: createSP() });
-    q.run(200); q.press('pbStart', 'pb', true); q.run(150); q.press('pbStart', 'pb', false);
+    q.run(200); powerUp(q);
     q.run(60000);
     return q;
   };
@@ -567,6 +594,354 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const q2 = await run();
   chk('stopper-pusher: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
   await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- scene sort-by-material (inductive sensor, latched upstream)
+{
+  const sbm = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'sort-by-material.json'), 'utf8'));
+  const { create: createSBM } = await import('../scenes/sort-by-material.ctl.js');
+  const run = async () => {
+    const q = await createPlant(sbm, { controller: createSBM() });
+    q.run(200); powerUp(q);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('sort-by-material: the cycle repeats, feeding steel and plastic by turns', q.io.CYCLE_CNT >= 6 && Math.abs(q.io.EM_M_CNT - q.io.EM_P_CNT) <= 1,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', steel ' + q.io.EM_M_CNT + ' plastic ' + q.io.EM_P_CNT);
+  // The discriminating measurement: the inductive sensor pulses for steel only. Every steel part in
+  // the bin passed it, and there are never more pulses than steel parts (plastic is invisible to it).
+  const px = edges(q, 'PX_METAL', true).length;
+  chk('sort-by-material: the inductive sensor sees every steel part and never a plastic one', px >= q.io.RM_M_CNT && px <= q.io.EM_M_CNT,
+    px + ' pulses, ' + q.io.EM_M_CNT + ' steel fed, ' + q.io.RM_M_CNT + ' in the bin');
+  chk('sort-by-material: steel ends in the bin, plastic on the outfeed', q.io.EM_M_CNT - q.io.RM_M_CNT <= 1 && q.io.EM_P_CNT - q.io.RM_P_CNT <= 1,
+    'steel ' + q.io.RM_M_CNT + '/' + q.io.EM_M_CNT + ', plastic ' + q.io.RM_P_CNT + '/' + q.io.EM_P_CNT);
+  chk('sort-by-material: parts balance and none are lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('sort-by-material: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('sort-by-material: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- scene gripper-transfer (pneumatic XZ with a 2-finger gripper)
+{
+  const gt = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'gripper-transfer.json'), 'utf8'));
+  const { create: createGT } = await import('../scenes/gripper-transfer.ctl.js');
+  const run = async () => {
+    const q = await createPlant(gt, { controller: createGT() });
+    q.run(200); powerUp(q);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('gripper-transfer: the cycle repeats', q.io.CYCLE_CNT >= 4, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  // A gripper has no "gripped" switch: CLOSED means it closed on nothing. It never did.
+  chk('gripper-transfer: the fingers stop on the part every time (the closed switch never rises)', edges(q, 'GRIP_CLOSED', true).length === 0 && q.io.ST1_STEP !== 900,
+    edges(q, 'GRIP_CLOSED', true).length + ' closed edges, step ' + q.io.ST1_STEP);
+  chk('gripper-transfer: every pick is one hold and one release by the gripper', pev('hold') >= q.io.CYCLE_CNT && pev('hold') - pev('release') <= 1,
+    pev('hold') + ' holds, ' + pev('release') + ' releases');
+  chk('gripper-transfer: every part set down on the outfeed belt reaches the unloader', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('gripper-transfer: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('gripper-transfer: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- scene press-station (nest, clamp, press, ejector)
+{
+  const ps = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'press-station.json'), 'utf8'));
+  const { create: createPS } = await import('../scenes/press-station.ctl.js');
+  // The rule (CLAUDE.md): a kinematic tool never closes ONTO a held part. The press stroke ends
+  // 3 mm above the part's top, from the scene numbers alone.
+  const pr = ps.components.find(c => c.id === 'press'), wp = ps.components.find(c => c.id === 'wp');
+  const face = worldPoses(ps, { press: pr.params.stroke }).press.rod.p[2] - 27 - pr.params.headSize[2];
+  const top = 800 + wp.params.size[2];
+  chk('press-station: the press stops 3 mm above the part, never on it', Math.abs(face - top - 3) < 1e-6, 'face ' + face + ', part top ' + top);
+  const run = async () => {
+    const q = await createPlant(ps, { controller: createPS() });
+    q.run(200); powerUp(q);
+    q.run(60000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('press-station: the cycle repeats (feed, clamp, press, eject)', q.io.CYCLE_CNT >= 15, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('press-station: the clamped nest seats every part square on the pocket floor (800 mm)',
+    [...q.parts.values()].filter(p => p.held).every(p => Math.abs(p.body.translation().z / SK - 800) < 0.1),
+    [...q.parts.values()].map(p => (p.body.translation().z / SK).toFixed(2) + (p.held ? ' held' : '')).join(' '));
+  chk('press-station: every ejected part slides down the chute into the bin', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0 && q.io.EM_CNT - q.io.RM_CNT <= 1,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('press-station: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  const q2 = await run();
+  chk('press-station: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- the operator panel
+// The cell panel (rb4axis): a selector AUTO / INDIVIDUAL, MASTER ON, a latching E-STOP mushroom,
+// START, CYCLE STOP, HOME POS, and one button per actuator. The start-up order is the machine's:
+// energise, home, start. The browser only sends button edges; the PLC program enforces all of it.
+{
+  const ab = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'a-to-b.json'), 'utf8'));
+  const { create: createAB } = await import('../scenes/a-to-b.ctl.js');
+  const q = await createPlant(ab, { controller: createAB() });
+  const tap = (id, key = 'pb') => { q.press(id, key, true); q.run(60); q.press(id, key, false); q.run(60); };
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  q.run(200);
+
+  // -------------------------------------------------- start-up order
+  tap('pbStart'); q.run(300);
+  chk('panel: a machine that is not energised does not start', q.io.ST1_STEP === 0 && q.io.PL_MASTER === false, 'step ' + q.io.ST1_STEP);
+  tap('pbMaster');
+  chk('panel: MASTER ON energises the machine and lights its lamp', q.io.PL_MASTER === true);
+  tap('pbStart'); q.run(300);
+  chk('panel: energised but not homed, START is still refused', q.io.ST1_STEP === 0 && q.io.PL_HOME === false, 'step ' + q.io.ST1_STEP);
+  tap('pbHome'); q.run(600);
+  chk('panel: HOME POS homes the machine and lights the home lamp', q.io.PL_HOME === true && q.io.ST1_STEP === 0, 'step ' + q.io.ST1_STEP);
+  tap('pbStart'); q.run(400);
+  chk('panel: START then runs the sequence', q.io.AUTO_RUN === true && q.io.ST1_STEP >= 10 && q.io.ST1_STEP < 900, 'step ' + q.io.ST1_STEP);
+
+  // -------------------------------------------------- cycle stop finishes the cycle
+  tap('pbCstop');
+  for (let i = 0; i < 300 && q.io.AUTO_RUN; i++) q.run(100);
+  chk('panel: CYCLE STOP lets the cycle finish, then leaves the machine idle and still homed',
+    q.io.ST1_STEP === 0 && q.io.AUTO_RUN === false && q.io.CYCLE_CNT >= 1 && q.io.PL_HOME === true,
+    'step ' + q.io.ST1_STEP + ', CYCLE_CNT ' + q.io.CYCLE_CNT);
+
+  // -------------------------------------------------- E-STOP
+  tap('pbStart'); q.run(600);
+  const running = q.io.AUTO_RUN;
+  tap('pbEstop');                                          // a latching mushroom: one press latches it
+  q.run(100);
+  chk('panel: E-STOP stops the machine at once, drops the master and de-energises the outputs',
+    running && q.io.ST1_STEP === 910 && q.io.AUTO_RUN === false && q.io.PL_MASTER === false && q.io.CV1_RUN === false && q.io.EM1_EMIT === false,
+    'step ' + q.io.ST1_STEP + ', belt ' + q.io.CV1_RUN);
+  chk('panel: an E-STOP also loses the home position', q.io.PL_HOME === false);
+  tap('pbMaster'); q.run(100);
+  chk('panel: while the mushroom is latched, MASTER ON does nothing', q.io.ST1_STEP === 910 && q.io.PL_MASTER === false);
+  tap('pbEstop'); q.run(100);                              // twist to release
+  chk('panel: releasing the mushroom alone does not energise the machine', q.io.ST1_STEP === 910 && q.io.PL_MASTER === false);
+  tap('pbMaster'); q.run(100);
+  chk('panel: MASTER ON after the release brings the machine back to idle', q.io.ST1_STEP === 0 && q.io.PL_MASTER === true);
+  tap('pbStart'); q.run(300);
+  chk('panel: it refuses to start until it has been homed again', q.io.ST1_STEP === 0, 'step ' + q.io.ST1_STEP);
+  tap('pbHome'); q.run(600);
+  tap('pbStart'); q.run(400);
+  chk('panel: homed again, it runs again', q.io.PL_HOME === true && q.io.AUTO_RUN === true, 'step ' + q.io.ST1_STEP);
+
+  // -------------------------------------------------- selector and the individual buttons
+  tap('sel', 'sel'); q.run(100);
+  chk('panel: turning the selector while running is a FAULT with the outputs off',
+    q.io.SEL_AUTO === false && q.io.ST1_STEP === 900 && q.io.AUTO_RUN === false && q.io.CV1_RUN === false,
+    'step ' + q.io.ST1_STEP + ', belt ' + q.io.CV1_RUN);
+  const before = pev('spawn');
+  tap('pbIndCv'); q.run(200);
+  chk('panel: on INDIVIDUAL the belt button drives the belt on its own', q.io.CV1_RUN === true && q.dof.cv1 > 0);
+  tap('pbIndCv'); q.run(200);
+  const off = q.io.CV1_RUN;
+  tap('pbIndCv'); q.run(200);
+  chk('panel: pressing it again toggles the belt off, and again on', off === false && q.io.CV1_RUN === true);
+  tap('pbIndFeed'); q.run(300);
+  chk('panel: the individual feed button loads exactly one part', pev('spawn') === before + 1, (pev('spawn') - before) + ' loaded');
+  tap('pbEstop'); q.run(100);
+  chk('panel: E-STOP kills the individual outputs too', q.io.CV1_RUN === false && q.io.ST1_STEP === 910);
+  tap('pbEstop'); tap('pbMaster'); q.run(100);
+  tap('pbIndCv'); q.run(200);
+  chk('panel: after the reset the individual buttons work again', q.io.CV1_RUN === true);
+  tap('sel', 'sel'); q.run(100);
+  chk('panel: back on AUTO the toggle memory is cleared: the belt stops although its button was left on',
+    q.io.SEL_AUTO === true && q.io.CV1_RUN === false, 'belt ' + q.io.CV1_RUN);
+  tap('pbStart'); q.run(200);
+  chk('panel: the earlier E-STOP is still remembered, so START is refused until HOME POS is pressed again',
+    q.io.ST1_STEP === 0 && q.io.AUTO_RUN === false && q.io.PL_HOME === false, 'step ' + q.io.ST1_STEP + ', homed ' + q.io.PL_HOME);
+  tap('pbHome'); q.run(600);
+  tap('pbStart'); q.run(400);
+  chk('panel: homed once more, it runs again', q.io.PL_HOME === true && q.io.AUTO_RUN === true && q.io.ST1_STEP >= 10, 'step ' + q.io.ST1_STEP);
+  await q.close();
+}
+
+// ---------------------------------------------------------------- scene palletizing (100 plugs, 5-up gantry, jig carrier)
+// The biggest scene: a 10 x 10 pallet of spark plugs loaded by its own pallet loader, a five-up
+// vacuum gantry on two servo axes, a rotary carrier with five-slot jigs, and an unload head
+// feeding the next process. An empty tray calls for a fresh pallet (pinned in tests/ctl.test.js,
+// where twenty cycles can be driven in a moment).
+{
+  const pl = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'palletizing.json'), 'utf8'));
+  const { create: createPL } = await import('../scenes/palletizing.ctl.js');
+  const run = async () => {
+    const q = await createPlant(pl, { controller: createPL() });
+    q.run(200); powerUp(q);
+    q.run(70000);
+    return q;
+  };
+  const q = await run();
+  const pev = ev => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('palletizing: the machine loads its own pallet before it picks anything, 100 plugs in 100 holes',
+    pev('spawn') === 100 && q.io.EM_PAL_CNT === 100, pev('spawn') + ' plugs');
+  chk('palletizing: the cycle repeats: pick five, set five in the jig, index, unload five', q.io.CYCLE_CNT >= 4 && q.io.ST1_STEP < 900,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  // The discriminating measurement: the next process receives whole groups of five, never a gap.
+  chk('palletizing: the next process receives whole groups of five', q.io.RM_CNT > 0 && q.io.RM_CNT % 5 === 0, q.io.RM_CNT + ' plugs delivered');
+  chk('palletizing: every plug delivered came out of the pallet, and none was dropped',
+    pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  // Unclamping the whole tray to let five cups take five: the other 95 must stay standing.
+  const inPallet = [...q.parts.values()].filter(p => p.held?.id?.startsWith('pal'));
+  chk('palletizing: the plugs left in the pallet stand square in their pockets', inPallet.length >= 20
+    && inPallet.every(p => Math.abs(p.body.translation().z / SK - 732) < 0.1),
+    inPallet.length + ' in the pallet');
+  chk('palletizing: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  // The scene is the heaviest in the repo, so it is also the one that pins the step budget.
+  chk('palletizing: a step costs well under its 4 ms budget', q.stepUs === 0 || q.stepUs < 2500, q.stepUs + ' us');
+  const q2 = await run();
+  chk('palletizing: two runs give identical event logs', JSON.stringify(q2.events) === JSON.stringify(q.events), q.events.length + ' events');
+  await q.close(); await q2.close();
+}
+
+// ---------------------------------------------------------------- E-STOP in the middle of a pick
+// The trays must KEEP their parts through an E-STOP. Measured live: the mushroom was hit while the
+// pallet was unclamped for a pick, a hundred plugs were left loose in their pockets, and the plant
+// went from 355 to over 2800 us a step - the machine came back stalling at 2x world speed.
+{
+  const pl = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'palletizing.json'), 'utf8'));
+  const { create: createPL } = await import('../scenes/palletizing.ctl.js');
+  const q = await createPlant(pl, { controller: createPL() });
+  const tap = (/** @type {string} */ id) => { q.press(id, 'pb', true); q.run(120); q.press(id, 'pb', false); q.run(120); };
+  q.run(200); powerUp(q, 6000);
+  for (let i = 0; i < 300 && q.io.PAL_CLAMP !== false; i++) q.run(100);      // wait for a pick
+  chk('E-STOP: the pallet really does unclamp to let the cups take five', q.io.PAL_CLAMP === false, 'step ' + q.io.ST1_STEP);
+  tap('pbEstop');
+  q.run(500);
+  const loose = [...q.parts.values()].filter(p => !p.held && !p.pin).length;
+  chk('an E-STOP does not let go of a hundred plugs: the trays keep what they hold',
+    q.io.PAL_CLAMP === true && q.io.JIG_CLAMP === true && loose <= 5, loose + ' loose, step ' + q.io.ST1_STEP);
+  chk('E-STOP: every station stops, not just the one that was moving', q.io.ST1_STEP === 910 && q.io.ST2_STEP === 0 && q.io.ST3_STEP === 0,
+    q.io.ST1_STEP + '/' + q.io.ST2_STEP + '/' + q.io.ST3_STEP);
+  tap('pbEstop'); tap('pbMaster');
+  tap('pbHome');
+  for (let i = 0; i < 80 && !q.io.PL_HOME; i++) q.run(200);
+  tap('pbStart');
+  q.run(20000);
+  chk('E-STOP: master, home and start bring the cell back, all three stations running',
+    q.io.AUTO_RUN === true && q.io.ST1_STEP < 900 && q.io.ST2_STEP >= 10 && q.io.ST3_STEP >= 100,
+    q.io.ST1_STEP + '/' + q.io.ST2_STEP + '/' + q.io.ST3_STEP);
+  await q.close();
+}
+
+// ---------------------------------------------------------------- the three stations run together
+// One long sequence made the gantry wait for the carrier and then for the unloader before it could
+// pick again. Three stations that run at once cut the cycle from about 9.5 s to under 6.
+{
+  const pl = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'palletizing.json'), 'utf8'));
+  const { create: createPL } = await import('../scenes/palletizing.ctl.js');
+  const q = await createPlant(pl, { controller: createPL() });
+  q.run(200); powerUp(q, 6000);
+  q.run(90000);
+  const st = q.status().plant;
+  chk('palletizing: the plant times the cycle the scene told it to count', st.cycleTag === 'CYCLE_CNT' && st.cycleMs > 0, JSON.stringify(st.cycleMs));
+  chk('palletizing: the three stations together hold a cycle under 7 s', st.avgMs > 0 && st.avgMs < 7000,
+    (st.avgMs / 1000).toFixed(2) + ' s over ' + st.cycles + ', CYCLE_CNT ' + q.io.CYCLE_CNT);
+  // The proof they really overlap: the gantry is somewhere else while the unloader works.
+  const overlap = q.events.filter(e => e.k === 'step' && e.st === 'ST3').length;
+  chk('palletizing: the unloader runs its own steps while the gantry runs its own', overlap > 40 && q.io.CYCLE_CNT >= 12,
+    overlap + ' unloader steps, ' + q.io.CYCLE_CNT + ' cycles');
+  await q.close();
+}
+
+// ---------------------------------------------------------------- the speed override
+// The percentage dial on the panel scales what a MOTOR does - servo axes, belts, the index cam -
+// and never the pneumatics: a cylinder's speed is set by its flow regulator and no dial changes
+// it. The dial is an operator INPUT (plant -> PLC); the PLC passes it on to the axes.
+{
+  const ab = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'a-to-b.json'), 'utf8'));
+  const belt = async pct => {
+    const q = await createPlant(ab, {});
+    q.dial('dialOvr', 'ovr', pct);
+    q.run(50);
+    chk('speed override: the dial tells the PLC what it is set to (' + pct + '%)', q.io.OVR_SET === pct, 'OVR_SET ' + q.io.OVR_SET);
+    q.force('OVR', pct); q.force('CV1_RUN', true); q.run(2000);
+    const mm = q.dof.cv1;
+    await q.close();
+    return mm;
+  };
+  const full = await belt(100), half = await belt(50);
+  chk('speed override: 50% runs the belt at half speed', Math.abs(half / full - 0.5) < 0.02, full.toFixed(0) + ' -> ' + half.toFixed(0) + ' mm in 2 s');
+
+  const move = async pct => {
+    const q = await createPlant(scene, {});
+    q.dial('dialOvr', 'ovr', pct);
+    q.run(50);
+    q.force('OVR', pct); q.force('SV1_TGT', 400); q.force('SV1_EXEC', true);
+    let ms = 0;
+    while (!q.io.SV1_DONE && ms < 20000) { q.run(2); ms += 2; }
+    await q.close();
+    return ms;
+  };
+  const m100 = await move(100), m50 = await move(50);
+  // Not exactly twice: the override scales speed, not acceleration, as on a real control.
+  chk('speed override: 50% makes a servo move take longer, but not twice as long (acceleration is not scaled)',
+    m50 > m100 * 1.5 && m50 < m100 * 2, m100 + ' -> ' + m50 + ' ms');
+
+  const d = await createPlant(ab, {});
+  d.dial('dialOvr', 'ovr', 500);
+  d.run(50);
+  chk('speed override: the dial clamps to its own range', d.io.OVR_SET === 100, 'OVR_SET ' + d.io.OVR_SET);
+  d.dial('dialOvr', 'ovr', 0);
+  d.run(50);
+  chk('speed override: and never below the minimum on the dial', d.io.OVR_SET === 10, 'OVR_SET ' + d.io.OVR_SET);
+  chk('speed override: every setting is recorded, so a run replays with it', d.events.filter(e => e.k === 'dial').length === 2);
+  chk('speed override: a scene without the dial runs at full speed', (await (async () => {
+    const q = await createPlant(ab, {});
+    q.force('CV1_RUN', true); q.run(1000);
+    const mm = q.dof.cv1;
+    await q.close();
+    return mm;
+  })()) > 250, 'unbound ovr means 100%');
+  await d.close();
+}
+
+// ---------------------------------------------------------------- jogging an axis
+// Every servo can be jogged from the panel: hold + or - and the axis creeps at the override
+// speed. Jog is refused while a move is running, because two sources of motion for one axis is
+// how a machine gets broken, and both buttons at once is a stop, as on a real pendant.
+{
+  const j = await createPlant(scene, {});
+  j.run(200);
+  chk('jog: the axis starts at zero', j.dof.slide1 === 0);
+  j.force('SV1_JOG_P', true); j.run(400);
+  const fwd = j.dof.slide1;
+  chk('jog: holding + creeps the axis forward', fwd > 50 && fwd < 200, fwd.toFixed(1) + ' mm in 400 ms');
+  j.force('SV1_JOG_P', null); j.run(200);
+  chk('jog: letting go stops it where it is', Math.abs(j.dof.slide1 - fwd) < 1e-9, j.dof.slide1.toFixed(1) + ' mm');
+  j.force('SV1_JOG_N', true); j.run(200);
+  chk('jog: holding - brings it back', j.dof.slide1 < fwd, j.dof.slide1.toFixed(1) + ' mm');
+  j.force('SV1_JOG_P', true); j.run(200);
+  const both = j.dof.slide1;
+  j.run(200);
+  chk('jog: both buttons at once is a stop', Math.abs(j.dof.slide1 - both) < 1e-9, j.dof.slide1.toFixed(1) + ' mm');
+  j.force('SV1_JOG_P', null); j.force('SV1_JOG_N', null);
+  // A move owns the axis: jog may not fight it.
+  j.force('SV1_TGT', 400); j.force('SV1_EXEC', true); j.run(200);
+  const moving = j.dof.slide1;
+  j.force('SV1_JOG_N', true); j.run(200);
+  chk('jog: it is refused while a move is running', j.dof.slide1 > moving, moving.toFixed(1) + ' -> ' + j.dof.slide1.toFixed(1) + ' mm');
+  // The speed override scales the jog too, as on a real pendant.
+  j.force('SV1_EXEC', null); j.force('SV1_JOG_N', null); j.force('SV1_JOG_P', null); j.run(100);
+  const creep = async pct => {
+    const q = await createPlant(scene, {});
+    q.run(100);
+    q.force('OVR', pct); q.force('SV1_JOG_P', true); q.run(400);
+    const mm = q.dof.slide1;
+    await q.close();
+    return mm;
+  };
+  const c100 = await creep(100), c50 = await creep(50);
+  chk('jog: the speed override scales the jog as well', Math.abs(c50 / c100 - 0.5) < 0.02, c100.toFixed(1) + ' -> ' + c50.toFixed(1) + ' mm');
+  await j.close();
 }
 
 // ---------------------------------------------------------------- pusher and stopper presets
@@ -604,11 +979,11 @@ const b = await createPlant(scene, {});
 const warns = [];
 b.warnListeners.push(m => warns.push(m));
 b.run(500);
-b.force('PB_STOP', true); b.run(BLIP); b.force('PB_STOP', null); b.run(300);
-const on = edges(b, 'PB_STOP', true), off = edges(b, 'PB_STOP', false);
+b.force('PB_CSTOP', true); b.run(BLIP); b.force('PB_CSTOP', null); b.run(300);
+const on = edges(b, 'PB_CSTOP', true), off = edges(b, 'PB_CSTOP', false);
 chk(BLIP + ' ms blip is held for minPulseMs ' + MIN, BLIP > 0 && on.length === 1 && off.length === 1 && off[0] - on[0] === MIN, on + ' -> ' + off);
-chk('the stretch is recorded as a warn', warns.some(m => m.includes('pulse stretched PB_STOP ' + BLIP + ' -> ' + MIN + ' ms')), warns.join(' | '));
-chk('the warn is in the event log too', b.events.some(e => e.k === 'warn' && /PB_STOP/.test(e.msg)));
+chk('the stretch is recorded as a warn', warns.some(m => m.includes('pulse stretched PB_CSTOP ' + BLIP + ' -> ' + MIN + ' ms')), warns.join(' | '));
+chk('the warn is in the event log too', b.events.some(e => e.k === 'warn' && /PB_CSTOP/.test(e.msg)));
 
 // Determinism: same inputs -> identical event logs
 const p2 = await cycle();
@@ -645,13 +1020,60 @@ chk('PLC output applied at the next step, stamped with its source time', x.io.SO
 x.fromPlc('AS_ST1_PRSS_CYL_UP', true); x.run(2);
 chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e.k === 'out' && e.tag === 'AS_ST1_PRSS_CYL_UP')));
 
-// Real-time pacing: a stalled second is capped at 50 steps and counted
+// Real-time pacing: a stalled second is capped at 50 steps and counted. Starting is not a stall:
+// the gap before the first tick is setup and a major GC, not the plant falling behind.
 let clk = 0;
 const r = await createPlant(scene, { clock: () => clk });
-r.start(); clk = 1000;
+r.start();
+await new Promise(res => setTimeout(res, 30));
+chk('the gap before the first tick is not counted as an overrun', r.t === 0 && r.overruns === 0, 't ' + r.t + ' ms, overruns ' + r.overruns);
+clk = 1000;
 await new Promise(res => setTimeout(res, 30));
 r.stop();
 chk('a 1 s stall runs 50 steps and counts the rest as overruns', r.t === 100 && r.overruns === 450, 't ' + r.t + ' ms, overruns ' + r.overruns);
+
+// World speed: sim time runs at a multiple of wall time - slow motion to watch, or ahead to get
+// through a cycle. It is
+// a SIMULATOR control, not a machine one, and it is forced back to 1x whenever a PLC is connected,
+// because Sysmac timers run on wall time and a slowed plant would lie to the program.
+{
+  let sclk = 0;
+  const sp = await createPlant(scene, { clock: () => sclk });
+  chk('slow motion: a plant starts at 1x', sp.scale === 1);
+  sp.setScale(0.25);
+  sp.start();
+  await new Promise(res => setTimeout(res, 30));
+  sclk = 400;
+  await new Promise(res => setTimeout(res, 30));
+  sp.stop();
+  chk('slow motion: at 1/4x, 400 ms of wall time is 100 ms of plant', sp.t === 100 && sp.overruns === 0, sp.t + ' ms, overruns ' + sp.overruns);
+  chk('slow motion: the setting is recorded, so a run replays with it', sp.events.some(e => e.k === 'scale' && e.v === 0.25));
+  chk('world speed: it runs ahead of the clock too, up to 4x', sp.setScale(4) === 4 && sp.setScale(8) === 4);
+  // The cap on one tick is a cap on SIM time, so it has to grow with the world speed. Left fixed
+  // it warned "plant stalled" several times a second at 2x-4x on a plant that was keeping up.
+  {
+    let fclk = 0;
+    const fast = await createPlant(scene, { clock: () => fclk });
+    fast.setScale(4);
+    fast.start();
+    await new Promise(res => setTimeout(res, 30));
+    fclk = 1000;
+    await new Promise(res => setTimeout(res, 30));
+    fast.stop();
+    chk('world speed: at 4x one tick may run four times as many steps before it counts an overrun',
+      fast.t === 400 && fast.overruns === 1800, fast.t + ' ms, overruns ' + fast.overruns);
+    await fast.close();
+  }
+  await sp.close();
+
+  const warned = [];
+  const fake = { name: 'fake', ready: false, write: async () => {}, status: () => ({ driver: 'fake', ok: false }), close: async () => {} };
+  const pl = await createPlant(scene, { driver: fake });
+  pl.warnListeners.push((/** @type {string} */ m) => warned.push(m));
+  chk('slow motion: with a PLC connected the plant refuses to slow down, and says why',
+    pl.setScale(0.25) === 1 && pl.scale === 1 && warned.some(m => /time scale stays 1x/.test(m)), warned.join(' | '));
+  await pl.close();
+}
 
 // Static: physics never writes to the PLC. driver.write appears once, inside exchange().
 const src = fs.readFileSync(path.join(ROOT, 'server', 'plant.js'), 'utf8');

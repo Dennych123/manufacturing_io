@@ -40,7 +40,10 @@
         "exec": "SV1_EXEC",
         "done": "SV1_DONE",
         "actPos": "SV1_ACT_POS",
-        "inPos": "SV1_INPOS"
+        "inPos": "SV1_INPOS",
+        "ovr": "OVR",
+        "jogP": "SV1_JOG_P",
+        "jogN": "SV1_JOG_N"
       }
     },
     {
@@ -88,35 +91,76 @@
       "at": [150, -186, 0],
       "params": { "kind": "box", "size": [80, 60, 40] }
     },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
     {
       "id": "pbStart",
       "type": "pushbutton",
       "label": "START",
-      "parent": "base",
-      "socket": "top",
-      "at": [-420, -250, 0],
       "params": { "kind": "momentary", "color": "green", "lamp": true },
       "io": { "pb": "PB_START", "lamp": "PL_START" }
     },
     {
-      "id": "pbStop",
+      "id": "pbCstop",
       "type": "pushbutton",
-      "label": "STOP",
-      "parent": "base",
-      "socket": "top",
-      "at": [-360, -250, 0],
-      "params": { "kind": "momentary", "color": "red", "lamp": false },
-      "io": { "pb": "PB_STOP" }
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
     },
     {
       "id": "lampAuto",
       "type": "lamp",
       "label": "AUTO",
-      "parent": "base",
-      "socket": "top",
-      "at": [-300, -250, 0],
       "params": { "color": "amber" },
       "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbIndCyl",
+      "type": "pushbutton",
+      "label": "IND PRESS CYL",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_CYL", "lamp": "SOL_ST1_PRSS_CYL_DN" }
+    },
+    {
+      "id": "pbJogSV1P",
+      "type": "pushbutton",
+      "label": "JOG SLIDE +",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_SV1_P", "lamp": "SV1_JOG_P" }
+    },
+    {
+      "id": "pbJogSV1N",
+      "type": "pushbutton",
+      "label": "JOG SLIDE -",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_SV1_N", "lamp": "SV1_JOG_N" }
     }
   ]
 }

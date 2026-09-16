@@ -1,0 +1,1653 @@
+{
+  "format": "mio-scene/1",
+  "name": "palletizing",
+  "sim": { "dtMs": 4 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Depalletiser",
+      "members": ["axLong", "axCross", "lift", "cup1", "cup2", "cup3", "cup4", "cup5"],
+      "stepTag": "ST1_STEP"
+    },
+    { "id": "ST2", "name": "Jig carrier", "members": ["tbl"], "stepTag": "ST2_STEP" },
+    {
+      "id": "ST3",
+      "name": "Unloader",
+      "members": ["upShift", "upLift", "ucup1", "ucup2", "ucup3", "ucup4", "ucup5"],
+      "stepTag": "ST3_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "TBL_INPOS",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "palFrame",
+      "type": "frame",
+      "label": "PALLET TABLE",
+      "at": [0, 0, 0],
+      "params": { "size": [700, 700, 732] }
+    },
+    {
+      "id": "plugTpl",
+      "type": "workpiece",
+      "label": "SPARK PLUG TEMPLATE",
+      "at": [0, -1600, 0],
+      "params": { "kind": "cyl", "size": [16, 16, 90], "color": "#b9c0c8", "material": "steel" }
+    },
+    {
+      "id": "pal0_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, -270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, -210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, -150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, -90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, -30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal5_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, 30, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal6_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, 90, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal7_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, 150, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal8_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, 210, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-270, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-210, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-150, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-90, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-30, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_5",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [30, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_6",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [90, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_7",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [150, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_8",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [210, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal9_9",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [270, 270, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "emPal",
+      "type": "emitter",
+      "label": "PALLET LOADER",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": {
+        "template": "plugTpl",
+        "mode": "interval",
+        "intervalMs": 40,
+        "gridCols": 10,
+        "gridRows": 10,
+        "gridPitch": 60
+      },
+      "io": { "enable": "EM_PAL_EN", "count": "EM_PAL_CNT" }
+    },
+    {
+      "id": "colA",
+      "type": "plate",
+      "label": "GANTRY COLUMN",
+      "at": [-350, -700, 0],
+      "params": { "size": [90, 90, 1500] }
+    },
+    {
+      "id": "colB",
+      "type": "plate",
+      "label": "GANTRY COLUMN",
+      "at": [1350, -700, 0],
+      "params": { "size": [90, 90, 1500] }
+    },
+    {
+      "id": "axLong",
+      "type": "servoLinear",
+      "label": "GANTRY X",
+      "station": "ST1",
+      "at": [500, -700, 1500],
+      "params": {
+        "mode": "plant",
+        "stroke": 1600,
+        "vmax": 700,
+        "acc": 2500,
+        "body": [1700, 90, 70]
+      },
+      "io": {
+        "target": "GX_TGT",
+        "exec": "GX_EXEC",
+        "done": "GX_DONE",
+        "actPos": "GX_ACT",
+        "inPos": "GX_INPOS",
+        "ovr": "OVR",
+        "jogP": "GX_JOG_P",
+        "jogN": "GX_JOG_N"
+      }
+    },
+    {
+      "id": "axCross",
+      "type": "servoLinear",
+      "label": "GANTRY Y",
+      "station": "ST1",
+      "parent": "axLong",
+      "socket": "carriage",
+      "at": [0, 700, 60],
+      "rot": [0, 0, 90],
+      "params": {
+        "mode": "plant",
+        "stroke": 1200,
+        "vmax": 500,
+        "acc": 2500,
+        "body": [1400, 90, 70]
+      },
+      "io": {
+        "target": "GY_TGT",
+        "exec": "GY_EXEC",
+        "done": "GY_DONE",
+        "actPos": "GY_ACT",
+        "inPos": "GY_INPOS",
+        "ovr": "OVR",
+        "jogP": "GY_JOG_P",
+        "jogN": "GY_JOG_N"
+      }
+    },
+    {
+      "id": "gusset",
+      "type": "plate",
+      "label": "CROSS BEAM MOUNT",
+      "parent": "axLong",
+      "socket": "carriage",
+      "at": [0, 0, 0],
+      "params": { "size": [160, 200, 60] }
+    },
+    {
+      "id": "headBkt",
+      "type": "plate",
+      "label": "HEAD BRACKET",
+      "parent": "axCross",
+      "socket": "carriage",
+      "at": [0, 0, -381],
+      "params": { "size": [100, 130, 381] }
+    },
+    {
+      "id": "lift",
+      "type": "cylinder",
+      "label": "HEAD LIFT",
+      "station": "ST1",
+      "parent": "axCross",
+      "socket": "carriage",
+      "at": [0, 0, -381],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 32,
+        "stroke": 200,
+        "valve": "5/2-double",
+        "extendMs": 500,
+        "retractMs": 450,
+        "extWord": "DOWN",
+        "retWord": "UP"
+      },
+      "io": { "solExt": "SOL_Z_DN", "solRet": "SOL_Z_UP", "sw.ret": "AS_Z_UP", "sw.ext": "AS_Z_DN" }
+    },
+    {
+      "id": "bar",
+      "type": "plate",
+      "label": "CUP BAR",
+      "parent": "lift",
+      "socket": "rodEnd",
+      "at": [0, 0, 0],
+      "rot": [0, 0, 90],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "cup1",
+      "type": "vacuumCup",
+      "label": "CUP 1",
+      "station": "ST1",
+      "parent": "bar",
+      "socket": "bottom",
+      "at": [-120, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_SW1" }
+    },
+    {
+      "id": "cup2",
+      "type": "vacuumCup",
+      "label": "CUP 2",
+      "station": "ST1",
+      "parent": "bar",
+      "socket": "bottom",
+      "at": [-60, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_SW2" }
+    },
+    {
+      "id": "cup3",
+      "type": "vacuumCup",
+      "label": "CUP 3",
+      "station": "ST1",
+      "parent": "bar",
+      "socket": "bottom",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_SW3" }
+    },
+    {
+      "id": "cup4",
+      "type": "vacuumCup",
+      "label": "CUP 4",
+      "station": "ST1",
+      "parent": "bar",
+      "socket": "bottom",
+      "at": [60, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_SW4" }
+    },
+    {
+      "id": "cup5",
+      "type": "vacuumCup",
+      "label": "CUP 5",
+      "station": "ST1",
+      "parent": "bar",
+      "socket": "bottom",
+      "at": [120, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_SW5" }
+    },
+    {
+      "id": "tbl",
+      "type": "indexTable",
+      "label": "JIG CARRIER",
+      "station": "ST2",
+      "at": [1500, 0, 0],
+      "params": { "stations": 4, "camMs": 2400, "indexFrac": 0.5, "diameter": 1400, "height": 700 },
+      "io": {
+        "run": "TBL_RUN",
+        "ovr": "OVR",
+        "inPos": "TBL_INPOS",
+        "origin": "TBL_ORIGIN",
+        "station": "TBL_STATION"
+      }
+    },
+    {
+      "id": "jig0",
+      "type": "plate",
+      "label": "JIG 0",
+      "parent": "tbl",
+      "socket": "s0",
+      "at": [0, 0, 0],
+      "rot": [0, 0, 0],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "jn0_0",
+      "type": "nest",
+      "parent": "jig0",
+      "socket": "top",
+      "at": [-120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn0_1",
+      "type": "nest",
+      "parent": "jig0",
+      "socket": "top",
+      "at": [-60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn0_2",
+      "type": "nest",
+      "parent": "jig0",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn0_3",
+      "type": "nest",
+      "parent": "jig0",
+      "socket": "top",
+      "at": [60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn0_4",
+      "type": "nest",
+      "parent": "jig0",
+      "socket": "top",
+      "at": [120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig1",
+      "type": "plate",
+      "label": "JIG 1",
+      "parent": "tbl",
+      "socket": "s1",
+      "at": [0, 0, 0],
+      "rot": [0, 0, 90],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "jn1_0",
+      "type": "nest",
+      "parent": "jig1",
+      "socket": "top",
+      "at": [-120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn1_1",
+      "type": "nest",
+      "parent": "jig1",
+      "socket": "top",
+      "at": [-60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn1_2",
+      "type": "nest",
+      "parent": "jig1",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn1_3",
+      "type": "nest",
+      "parent": "jig1",
+      "socket": "top",
+      "at": [60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn1_4",
+      "type": "nest",
+      "parent": "jig1",
+      "socket": "top",
+      "at": [120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig2",
+      "type": "plate",
+      "label": "JIG 2",
+      "parent": "tbl",
+      "socket": "s2",
+      "at": [0, 0, 0],
+      "rot": [0, 0, 180],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "jn2_0",
+      "type": "nest",
+      "parent": "jig2",
+      "socket": "top",
+      "at": [-120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn2_1",
+      "type": "nest",
+      "parent": "jig2",
+      "socket": "top",
+      "at": [-60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn2_2",
+      "type": "nest",
+      "parent": "jig2",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn2_3",
+      "type": "nest",
+      "parent": "jig2",
+      "socket": "top",
+      "at": [60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn2_4",
+      "type": "nest",
+      "parent": "jig2",
+      "socket": "top",
+      "at": [120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig3",
+      "type": "plate",
+      "label": "JIG 3",
+      "parent": "tbl",
+      "socket": "s3",
+      "at": [0, 0, 0],
+      "rot": [0, 0, 270],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "jn3_0",
+      "type": "nest",
+      "parent": "jig3",
+      "socket": "top",
+      "at": [-120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn3_1",
+      "type": "nest",
+      "parent": "jig3",
+      "socket": "top",
+      "at": [-60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn3_2",
+      "type": "nest",
+      "parent": "jig3",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn3_3",
+      "type": "nest",
+      "parent": "jig3",
+      "socket": "top",
+      "at": [60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jn3_4",
+      "type": "nest",
+      "parent": "jig3",
+      "socket": "top",
+      "at": [120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "colC",
+      "type": "plate",
+      "label": "UNLOAD COLUMN",
+      "at": [2650, 0, 0],
+      "params": { "size": [90, 90, 1291] }
+    },
+    {
+      "id": "colD",
+      "type": "plate",
+      "label": "UNLOAD COLUMN",
+      "at": [2811, 0, 0],
+      "params": { "size": [90, 90, 1312] }
+    },
+    {
+      "id": "upShift",
+      "type": "cylinder",
+      "label": "UNLOAD SHIFT",
+      "station": "ST3",
+      "parent": "colD",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 32,
+        "stroke": 350,
+        "valve": "5/2-double",
+        "extendMs": 700,
+        "retractMs": 650,
+        "extWord": "JIG",
+        "retWord": "BIN"
+      },
+      "io": {
+        "solExt": "SOL_U_JIG",
+        "solRet": "SOL_U_BIN",
+        "sw.ret": "AS_U_BIN",
+        "sw.ext": "AS_U_JIG"
+      }
+    },
+    {
+      "id": "upCar",
+      "type": "plate",
+      "label": "UNLOAD CARRIAGE",
+      "parent": "upShift",
+      "socket": "rodEnd",
+      "at": [0, 0, 0],
+      "rot": [0, 90, 0],
+      "params": { "size": [120, 120, 12] }
+    },
+    {
+      "id": "upLift",
+      "type": "cylinder",
+      "label": "UNLOAD LIFT",
+      "station": "ST3",
+      "parent": "upCar",
+      "socket": "bottom",
+      "at": [0, 0, 0],
+      "params": {
+        "bore": 25,
+        "stroke": 200,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 400,
+        "extWord": "DOWN",
+        "retWord": "UP"
+      },
+      "io": { "solExt": "SOL_U_DN", "solRet": "SOL_U_UP", "sw.ret": "AS_U_UP", "sw.ext": "AS_U_DN" }
+    },
+    {
+      "id": "upBar",
+      "type": "plate",
+      "label": "UNLOAD CUP BAR",
+      "parent": "upLift",
+      "socket": "rodEnd",
+      "at": [0, 0, 0],
+      "params": { "size": [340, 60, 12] }
+    },
+    {
+      "id": "ucup1",
+      "type": "vacuumCup",
+      "label": "UNLOAD CUP 1",
+      "station": "ST3",
+      "parent": "upBar",
+      "socket": "bottom",
+      "at": [-120, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "UVAC_ON", "vac": "UVAC_SW1" }
+    },
+    {
+      "id": "ucup2",
+      "type": "vacuumCup",
+      "label": "UNLOAD CUP 2",
+      "station": "ST3",
+      "parent": "upBar",
+      "socket": "bottom",
+      "at": [-60, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "UVAC_ON", "vac": "UVAC_SW2" }
+    },
+    {
+      "id": "ucup3",
+      "type": "vacuumCup",
+      "label": "UNLOAD CUP 3",
+      "station": "ST3",
+      "parent": "upBar",
+      "socket": "bottom",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "UVAC_ON", "vac": "UVAC_SW3" }
+    },
+    {
+      "id": "ucup4",
+      "type": "vacuumCup",
+      "label": "UNLOAD CUP 4",
+      "station": "ST3",
+      "parent": "upBar",
+      "socket": "bottom",
+      "at": [60, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "UVAC_ON", "vac": "UVAC_SW4" }
+    },
+    {
+      "id": "ucup5",
+      "type": "vacuumCup",
+      "label": "UNLOAD CUP 5",
+      "station": "ST3",
+      "parent": "upBar",
+      "socket": "bottom",
+      "at": [120, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "UVAC_ON", "vac": "UVAC_SW5" }
+    },
+    {
+      "id": "binFrame",
+      "type": "frame",
+      "label": "NEXT PROCESS",
+      "at": [2382, 0, 0],
+      "params": { "size": [360, 300, 600] }
+    },
+    {
+      "id": "rmNext",
+      "type": "remover",
+      "label": "NEXT PROCESS",
+      "parent": "binFrame",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [340, 300, 300] },
+      "io": { "count": "RM_CNT" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbJogGXP",
+      "type": "pushbutton",
+      "label": "JOG GANTRY X +",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_GX_P", "lamp": "GX_JOG_P" }
+    },
+    {
+      "id": "pbJogGXN",
+      "type": "pushbutton",
+      "label": "JOG GANTRY X -",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_GX_N", "lamp": "GX_JOG_N" }
+    },
+    {
+      "id": "pbJogGYP",
+      "type": "pushbutton",
+      "label": "JOG GANTRY Y +",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_GY_P", "lamp": "GY_JOG_P" }
+    },
+    {
+      "id": "pbJogGYN",
+      "type": "pushbutton",
+      "label": "JOG GANTRY Y -",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_GY_N", "lamp": "GY_JOG_N" }
+    },
+    {
+      "id": "pbIndVac",
+      "type": "pushbutton",
+      "label": "IND HEAD VACUUM",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_VAC", "lamp": "VAC_ON" }
+    },
+    {
+      "id": "pbIndLift",
+      "type": "pushbutton",
+      "label": "IND HEAD LIFT DOWN",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_LIFT", "lamp": "SOL_Z_DN" }
+    },
+    {
+      "id": "pbIndPal",
+      "type": "pushbutton",
+      "label": "IND PALLET CLAMP",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_PAL", "lamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pbIndJig",
+      "type": "pushbutton",
+      "label": "IND JIG CLAMP",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_JIG", "lamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "pbIndIndex",
+      "type": "pushbutton",
+      "label": "IND INDEX (HOLD)",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_INDEX", "lamp": "TBL_RUN" }
+    },
+    {
+      "id": "pbIndUVac",
+      "type": "pushbutton",
+      "label": "IND UNLOAD VACUUM",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_UVAC", "lamp": "UVAC_ON" }
+    },
+    {
+      "id": "pbIndULift",
+      "type": "pushbutton",
+      "label": "IND UNLOAD LIFT DOWN",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_ULIFT", "lamp": "SOL_U_DN" }
+    },
+    {
+      "id": "pbIndUShift",
+      "type": "pushbutton",
+      "label": "IND UNLOAD TO BIN",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_USHIFT", "lamp": "SOL_U_BIN" }
+    }
+  ]
+}

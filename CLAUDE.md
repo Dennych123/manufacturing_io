@@ -127,6 +127,94 @@ in the code but break things silently** when violated. Most were paid for once i
   that keep completing. The 30-minute soak reported OK on a `buffer-queue` that had stopped
   after 15 minutes, because every part was still accounted for. Both the soak script and the
   scene test now check that cycles keep coming.
+- **A machine drawn all in grey cannot be read.** Every component family takes its own material
+  (`MAT` in `web/app.js`, `mat` on each shape in `lib/components.js`): blue `tube` is pneumatic
+  power, bronze `motion` is what drives (servo rails, index tables), orange `tool` is what touches
+  the part (pusher plates, stopper pins, press heads), green `holder` is what holds it (nests,
+  gripper fingers, vacuum cups), teal `sensor` is what senses it, and the structure stays grey so
+  the working parts stand out against it. A `mat` the viewer does not know falls back to grey
+  SILENTLY, so `tests/web.test.js` checks that the palette covers every material the types use.
+- **A beam needs columns under its ends, and a long stroke needs a supported rail.** Measured by
+  looking at `palletizing`: the gantry rail's columns were nowhere near its ends, the cross beam
+  hung 850 mm from the carriage that carried it, and the unload transfer was a 900 mm rod
+  cantilevered off one post. None of it is wrong to the solver and all of it is wrong to the eye,
+  which is the only thing that reviews a scene's mechanics. A transfer longer than about 400 mm
+  is a slide on two columns, not a rod on a bracket.
+- **Every servo can be jogged** (`jogP`/`jogN` on `servoLinear`): the axis creeps while the button
+  is held, at the speed override. Jog is REFUSED while Execute is held, because two sources of
+  motion for one axis is how a machine gets broken, and both buttons at once is a stop, as on a
+  real pendant.
+- **A magazine that runs out must be refilled, or the machine just stands there.** An emitter with
+  `gridCols`/`gridRows`/`gridPitch` fills a whole tray from ONE component: part n goes to hole n.
+  `palletizing` starts with an empty pallet and loads its own 100 plugs, and calls for a fresh
+  pallet when the twentieth cycle empties it. Twenty cycles are too slow to drive through the
+  physics, so the pallet change is pinned in `tests/ctl.test.js` against a faked plant.
+- **The viewer's hand WALKS a part to the pointer, it does not teleport it** (`sim.handMmS`,
+  1200 mm/s by default). A pointer jumps half a metre between frames, and a kinematic body dropped
+  into a queue of resting parts scatters them across the hall. Measured on a nine-part queue with
+  the belt stopped: dragging the front one out now moves the rest by 0.2 mm.
+- **An E-STOP never makes a holder let go.** Measured live on `palletizing`: the mushroom was hit
+  while the pallet was unclamped for a pick, a hundred plugs were left loose in their pockets, and
+  the plant went from 355 to over 2800 µs a step - the machine came back stalling at 2x world
+  speed. Loose parts are Rapier-dynamic and never sleep; held ones are kinematic and nearly free.
+  The E-STOP and FAULT steps therefore SET the tray clamps, they do not clear them.
+- **A head takes what is there.** A hole may be empty because a plug was lifted out by hand or the
+  tray is finished, and a station that waits for all five stands there until the watchdog. It
+  picks for a fixed time and carries on with what it got; nothing at all means the tray is empty,
+  which is how `palletizing` knows to call for a fresh pallet.
+- **Stations that can run at once must be separate state machines**, one step tag each, meeting on
+  shared state. `palletizing` ran pick, index and unload as one sequence and the gantry stood
+  still for both: as three stations sharing `FULL[i]` per jig, with each head blocking the index
+  while it is over the table, the cycle went from about 9.5 s to 5.8 s.
+- **The status block above the operator panel has a fixed height.** Its hints come and go, and
+  every line it gained or lost moved the panel under the pointer. Buttons that move get pressed by
+  mistake.
+- **A part parked on furniture is written to Rapier ONCE** (`parked` in `server/plant.js`): a part
+  held by a component that never moves cannot have gone anywhere, so it needs no kinematic target
+  and no fresh world centre each step. Ninety-five plugs standing in pallet pockets were costing
+  300 allocations and 200 boundary calls a step to be told where they already were.
+- **A feeder that is switched off has nothing pending, and one that is blocked does not remember
+  what it missed** (the emitter in `lib/components.js`). Measured live on `palletizing`: the tray
+  loader banked a backlog while the tray was full, then refilled every hole the machine emptied -
+  1700 plugs loaded, a pallet that never ran out, and a plant slow enough to stall at 2x. A tray
+  loader also steps PAST a hole that is already full (`slot` in the emitter loop), or a
+  half-full tray can never be topped up.
+- **The mount offset is built once per scene object** (`mount` in `compile()`), not from three
+  Euler angles on every step, and `Math.hypot` is not used in the hot path: it rescales to guard
+  against overflow, which quaternions and unit axes never need.
+- **A holder only ever looks at the parts that are FREE** (the `free` set in `server/plant.js`),
+  and every part's world centre is read from Rapier ONCE a step into `pt.cw`. Profiled on
+  `palletizing` at 4x world speed: each of 120 nests scanned all 100 parts every step, two Rapier
+  boundary calls apiece, about 4000 of them a step. That alone was 1469 µs of the step; with both
+  fixes it is 355 µs and the scene holds 4.00x with a viewer attached. The physics was never the
+  problem: the profile put `world.step()` at about a tenth of the cost.
+- **Most of a scene never moves, and `worldPoses()` caches it** (`still` in `lib/scene.js`). Frames,
+  plates, pallet pockets and the parts standing in them are computed once per scene object.
+  Measured on `palletizing` (265 components): 2276 -> 663 µs a step. A component is cached only
+  when no link of it has a DOF AND nothing it is mounted on moves, so anything riding a carriage
+  is still recomputed. The cached poses are SHARED between calls: never write to a pose you were
+  given. `tests/lib.test.js` pins both halves.
+- **The first pacer tick after `start()` is not an overrun** (`firstTick` in `server/plant.js`).
+  Measured on every scene: one stall of 240-440 ms lands exactly on the first tick - a major GC
+  right after setup - and counting it left a permanent "overruns 171" on a plant that then held
+  99% of real time for the next 40 s.
+- **A vacuum cup's bar must clear the parts it picks.** Measured on `palletizing`: the cup bar sat
+  2 mm into the plug tops, and the moment the pallet unclamped, the solver had nowhere to put the
+  plug and flung it out of the world. The cups hang 20 mm below the bar. This is the same rule as
+  a kinematic tool closing onto a part, seen from above.
+- **A remover ZONE must stand clear of anything that sweeps past it.** Measured on `palletizing`:
+  the "next process" bin overlapped the rotary carrier's swept circle, and an outer jig pocket
+  passed through the zone during an index, so the bin quietly ate plugs off the moving carrier.
+- **A pin cannot come down between parts that TOUCH**, so a stop-and-go escapement only works
+  where the parts arrive with a gap. `buffer-queue` therefore meters ONE part into the line at a
+  time, and its HOLD pin always lands on free belt.
+- **A nest only takes a part whose CENTRE is inside the pocket depth** (`candidate` in
+  `server/plant.js`). Measured while building `press-station`: a 40 mm part over an 18 mm pocket
+  was never taken, and nothing said why. The pocket must be at least half the part's height.
+- **The IO image starts from what the components say, not from zeros** (`settle()` in
+  `server/plant.js`, at creation and after Reset). Measured: with zeros, the first scan after
+  Reset saw the selector off and the next scan saw it "turn to AUTO" on the same scan as START,
+  and the controller faulted.
 - **A nest LOCATES the part it catches** (`snap` on the type): the part is seated square on the
   pocket floor, not frozen wherever it was when its centre entered the pocket. Measured: a base
   caught mid-fall hung 11.6 mm high, which then put it inside the press's stroke.
@@ -172,9 +260,55 @@ in the code but break things silently** when violated. Most were paid for once i
   needs about 12 mm, so stoppers are square blocks. `tests/rapier.test.js` pins both halves.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
-- **Time scale is 1× whenever a PLC is connected.** Sysmac timers run on wall time.
+- **Time scale is 1× whenever a PLC is connected.** Sysmac timers run on wall time. `setScale()`
+  in `server/plant.js` enforces it and warns; the viewer's picker only asks. Slow motion is
+  0.05..4×: below 1 it is slow motion for watching, above it the plant runs ahead and pays for it
+  in CPU, and an overrun is the honest report when it cannot. **The pacer's step cap scales with
+  it** (`MAX_STEPS * scale` in `tick()`): the cap is on SIM time, so at 4× one 15 ms tick
+  legitimately owes 60 ms of plant and a tick that slips to 30 ms owes 120 ms. Left fixed at 50 it
+  warned "plant stalled" several times a second at 2×-4× on a plant that was holding 4.00× exactly
+  with a viewer attached. The viewer's render clock must be
+  scaled with it (`simScale` in `web/app.js`), or the
+  interpolation offset drifts and the picture jumps.
+- **The panel's speed override is a different thing from the time scale.** It is the MACHINE's
+  own percentage dial (`speedDial`, `ovrK()` in `lib/components.js`): it scales servo velocity,
+  belt speed and the index cam, never acceleration and never the pneumatics. It survives a PLC
+  connection because it is part of the machine, and it reaches the axes only through the PLC
+  (`OVR_SET` in, `OVR` out), never directly.
 - **Twin mode is read-only inside the driver's `write()`**, not in the UI. Never write to a real
   machine.
+
+## The operator panel
+
+Every machine carries the same cell panel, drawn as HTML beside the 3D view and hideable. It is
+NOT 3D buttons: a WebGL canvas cannot be hit-tested from the DOM, and the panel is read far more
+often than it is looked at.
+
+- **The panel devices are scene components** (`group: 'operator'` in `lib/components.js`): they own
+  their tags like any other component, and `web/app.js` skips them in 3D and draws them in the
+  panel instead. The browser sends button EDGES and dial VALUES; the PLC program enforces every
+  condition. A condition enforced in the browser does not apply when the same tag is written from
+  anywhere else.
+- **The start-up order is the machine's own: energise, home, start.** MASTER ON closes the master
+  circuit, HOME POS drives every actuator to its home position, and only then will START run the
+  cycle. A machine that has not been homed refuses to start, which is the point of the button.
+- **E-STOP is a latching mushroom** (`kind: 'alternate'`), so its `pb` tag IS its state: pressed in
+  stays pressed in until it is twisted out. The panel shows that state on the button itself, not
+  through a lamp - an operator who cannot tell whether the mushroom is in has no way to work out
+  why the machine will not start. An E-STOP also LOSES the home position: the axes must be homed
+  again before AUTO will run.
+- **CYCLE STOP finishes the cycle**, it does not stop the machine where it stands. That is what
+  the red button on a cell does, and it is why the machine comes back to a known state.
+- **INDIVIDUAL is the other half of the selector.** Each actuator has its own button; the button
+  is MOMENTARY and the PLC keeps the toggle memory, cleared when INDIVIDUAL ends, so nothing stays
+  latched into AUTO. Servos are JOGGED rather than sent to positions (see the jog rule). Turning
+  the selector while the sequence runs is a FAULT, not a pause.
+- **The speed dial is an operator INPUT** (`speedDial`, dir `in`): the plant tells the PLC what the
+  dial says and the PLC passes it to the axes (`OVR_SET` in, `OVR` out). It never reaches an axis
+  directly, because on a real machine it does not either.
+- **The plant times the cycle** from the tag the scene names in `cycle.countTag`, and averages the
+  last `cycle.avgN`. The viewer shows the last cycle, the average, and two clocks side by side -
+  sim and wall - because that is how you see at a glance whether the world is running fast or slow.
 
 ## OPC UA and Sysmac Studio (each cost a round once)
 
@@ -278,6 +412,24 @@ in the code but break things silently** when violated. Most were paid for once i
   and `npm install` restores it from the lockfile). `tests/browser.test.js` already knew this and
   unlinks its junctions first, non-recursively; a throwaway worktree needs the same care, or its
   own `npm install`.
+=======
+- **A scene written by a generator loses every hand edit the generator does not know about.**
+  `palletizing` was regenerated after its speed dial, its `ovr` bindings and its jog buttons had
+  been added by hand, and all three vanished without a single error: the machine simply ran with
+  three fewer controls than the others. Anything a generated scene must have belongs IN the
+  generator. `tests/lib.test.js` now fails when a scene has a motor with no override, a motor and
+  no dial, or a servo with no jog buttons.
+- **`.st` and `.ctl.js` say "keep the two in step" and nothing checked it.** `tests/ctl.test.js`
+  compares the step numbers each CASE handles, per scene. It is the cheapest thing that must agree,
+  and it caught the watchdog being added to one file and not the other.
+- **A parameter that can make the plant loop for ever is a validate() error, not a comment.** A
+  workpiece of size zero has no collider radius, and the emitter's column check steps by that
+  radius: the server hangs on a scene the editor was happy to save.
+- **POST is refused unless the Host is this PC** (`postAllowed` in `server/http.js`). A page on
+  another site whose name now resolves to 127.0.0.1 arrives from the local browser with Origin and
+  Host equal to each other, so the Origin check alone lets it drive the machine.
+
+>>>>>>> origin/operator-panel-and-more-scenes
 - `.gitattributes` = `* -text`. Generated files are compared byte for byte.
 - Generators get `--check`, which exits 1 when committed output is stale.
 - Dependencies are pinned exactly (no `^`). three is served from `node_modules`, never from a CDN.

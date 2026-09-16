@@ -31,7 +31,7 @@
       "label": "PALLET BELT",
       "station": "ST1",
       "params": { "length": 2400, "width": 300, "height": 800, "speed": 250, "guides": 30 },
-      "io": { "run": "CV1_RUN" }
+      "io": { "run": "CV1_RUN", "ovr": "OVR" }
     },
     {
       "id": "plt",
@@ -136,35 +136,90 @@
       "at": [-900, -600, 0],
       "params": { "size": [300, 200, 900] }
     },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
     {
       "id": "pbStart",
       "type": "pushbutton",
       "label": "START",
-      "parent": "panel",
-      "socket": "top",
-      "at": [-80, 0, 0],
-      "params": { "color": "green", "lamp": true },
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
       "io": { "pb": "PB_START", "lamp": "PL_START" }
     },
     {
-      "id": "pbStop",
+      "id": "pbCstop",
       "type": "pushbutton",
-      "label": "STOP",
-      "parent": "panel",
-      "socket": "top",
-      "at": [0, 0, 0],
-      "params": { "color": "red", "lamp": false },
-      "io": { "pb": "PB_STOP" }
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
     },
     {
       "id": "lampAuto",
       "type": "lamp",
       "label": "AUTO",
-      "parent": "panel",
-      "socket": "top",
-      "at": [80, 0, 0],
       "params": { "color": "amber" },
       "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbIndCv",
+      "type": "pushbutton",
+      "label": "IND BELT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_CV", "lamp": "CV1_RUN" }
+    },
+    {
+      "id": "pbIndFeedP",
+      "type": "pushbutton",
+      "label": "IND PALLET FEED",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "IND_FEED_P" }
+    },
+    {
+      "id": "pbIndFeedW",
+      "type": "pushbutton",
+      "label": "IND PART FEED",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "IND_FEED_W" }
+    },
+    {
+      "id": "pbIndStop",
+      "type": "pushbutton",
+      "label": "IND STOP PIN",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STOP", "lamp": "SOL_STOP" }
+    },
+    {
+      "id": "pbIndLift",
+      "type": "pushbutton",
+      "label": "IND LIFT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_LIFT", "lamp": "SOL_LIFT" }
     }
   ]
 }

@@ -5,17 +5,17 @@
          schemaVersion="1"
          xmlns="www.iec.ch/public/TC65SC65BWG7TF10">
   <FileHeader companyName="manufacturing_io" productName="tools/gen_sysmac.js" productVersion="1.0.0.0" />
-  <ContentHeader name="pick-place" creationDateTime="2026-01-01T00:00:00">
+  <ContentHeader name="press-station" creationDateTime="2026-01-01T00:00:00">
     <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:DeviceInfo modelName="NX102" version="1.40" /></Data></AddData>
   </ContentHeader>
   <Types>
     <GlobalNamespace>
-      <Program name="PRG_PICK_PLACE">
+      <Program name="PRG_PRESS_STATION">
         <ExternalVars>
-          <Variable name="CLAMP_A">
+          <Variable name="CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="NEST_A_P">
+          <Variable name="NEST_P">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="EM_EMIT">
@@ -24,46 +24,25 @@
           <Variable name="EM_CNT">
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="SV_TGT">
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV_EXEC">
+          <Variable name="SOL_P_DN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_DONE">
+          <Variable name="SOL_P_UP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_INPOS">
+          <Variable name="AS_P_UP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR">
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV_JOG_P">
+          <Variable name="AS_P_DN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_JOG_N">
+          <Variable name="SOL_EJECT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_Z_DN">
+          <Variable name="AS_EJ_BACK">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_Z_UP">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="AS_Z_UP">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="AS_Z_DN">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="VAC_ON">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="VAC_SW">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="CV_RUN">
+          <Variable name="AS_EJ_OUT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="RM_CNT">
@@ -99,28 +78,16 @@
           <Variable name="AUTO_RUN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR_SET">
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_CV">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
           <Variable name="IND_FEED">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="IND_CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_LIFT">
+          <Variable name="IND_PRESS">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_VAC">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_SV_P">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_SV_N">
+          <Variable name="IND_EJECT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="ST1_STEP">
@@ -150,11 +117,14 @@
           <Variable name="SEL_CHANGED">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="T_WD">
-            <Type><TypeName>TON</TypeName></Type>
-          </Variable>
           <Variable name="EM_LAST">
             <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="T_PRESS">
+            <Type><TypeName>TON</TypeName></Type>
+          </Variable>
+          <Variable name="T_WD">
+            <Type><TypeName>TON</TypeName></Type>
           </Variable>
           <Variable name="STEP_LAST">
             <Type><TypeName>UDINT</TypeName></Type>
@@ -162,28 +132,22 @@
           <Variable name="GONE">
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="MEM_CV">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_CV_LAST">
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
           <Variable name="MEM_CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="IND_CLAMP_LAST">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="MEM_LIFT">
+          <Variable name="MEM_PRESS">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_LIFT_LAST">
+          <Variable name="IND_PRESS_LAST">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="MEM_VAC">
+          <Variable name="MEM_EJECT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_VAC_LAST">
+          <Variable name="IND_EJECT_LAST">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="ESTOP">
@@ -213,22 +177,21 @@
         </Vars>
         <MainBody>
           <BodyContent xsi:type="ST">
-            <ST>// Generated by manufacturing_io tools/gen_sysmac.js from scenes/pick-place.st. Edit the .st, then regenerate.
+            <ST>// Generated by manufacturing_io tools/gen_sysmac.js from scenes/press-station.st. Edit the .st, then regenerate.
 
 // Heartbeat: the plant says &quot;program not running or not assigned to a task&quot; when this stops.
 MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
 
-// pick-place: feed a part into the pick nest, pick it with the vacuum cup on the lift cylinder,
-// traverse on the servo, lay it on the running outfeed belt, and come home while the belt takes
-// it to the unloader. Repeat until STOP. The same sequence runs without a PLC in
-// pick-place.ctl.js.
+// press-station: the feeder drops a part into the clamped nest, the press comes down onto it
+// and holds for the press time, comes up, the nest unclamps and the ejector pushes the part
+// off the nest onto the chute into the bin. Repeat until STOP. The same sequence runs without
+// a PLC in press-station.ctl.js.
 //
-// Two handshakes matter. The servo's Execute is a LEVEL held until Done, and Done must be seen
-// to drop before the next Execute. The nest clamp must open BEFORE the cup can take the part:
-// one part is held by one holder.
+// The clamp goes on BEFORE the feed: a nest that holds the part locates it square on the pocket
+// floor, so the press stroke meets it where the drawing says.
 //
-// Waiting steps wait for an INVARIANT, not for a counter to move: a change cannot say which
-// part moved (measured on a-to-b against the simulator: parts piled up, then pipelined).
+// Waiting steps wait for an INVARIANT, not for a counter to move: every part fed has reached
+// the bin.
 //
 // The panel has a selector AUTO / INDIVIDUAL: START only in AUTO, the individual buttons only in
 // INDIVIDUAL, and a change while the sequence runs is a FAULT, not a pause.
@@ -257,146 +220,108 @@ END_IF;
 READY := MASTER_ON AND NOT ESTOP;
 
 // A write-off goes STALE when the part turns up after all, and then RM + GONE runs PAST EM and
-// step 130 stops waiting at all. GONE is a UDINT, so EM_CNT - RM_CNT with RM ahead underflows to
-// about 4 billion: guard before you subtract.
+// the step waiting on that invariant stops waiting at all. GONE is a UDINT, so the subtraction
+// underflows to about 4 billion when RM is ahead: guard before you subtract.
 IF RM_CNT &gt;= EM_CNT THEN
 	GONE := 0;
 ELSIF RM_CNT + GONE &gt; EM_CNT THEN
 	GONE := EM_CNT - RM_CNT;
 END_IF;
-
 CASE ST1_STEP OF
-	0:	// idle
-		CV_RUN := FALSE;
+	0:	// idle: press up, ejector back, nest free
+		CLAMP := FALSE;
 		EM_EMIT := FALSE;
-		VAC_ON := FALSE;
-		SOL_Z_DN := FALSE;
-		SOL_Z_UP := TRUE;
-		SV_EXEC := FALSE;
-		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_Z_UP AND SV_INPOS AND NOT SV_DONE THEN
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_P_UP AND AS_EJ_BACK THEN
 			STOP_REQ := FALSE;
 			EM_LAST := EM_CNT;
 			ST1_STEP := 10;
 		END_IF;
-	10:	// belt on, feed one part
-		CV_RUN := TRUE;
-		CLAMP_A := TRUE;
+	10:	// clamp, then feed one part into the nest
+		CLAMP := TRUE;
 		EM_EMIT := TRUE;
 		IF EM_CNT &lt;&gt; EM_LAST THEN
 			EM_EMIT := FALSE;
 			ST1_STEP := 20;
 		END_IF;
 	20:	// the nest reports the part
-		IF NEST_A_P THEN
+		IF NEST_P THEN
 			ST1_STEP := 30;
 		END_IF;
-	30:	// lift down onto the part
-		SOL_Z_UP := FALSE;
-		SOL_Z_DN := TRUE;
-		IF AS_Z_DN THEN
+	30:	// press down
+		SOL_P_UP := FALSE;
+		SOL_P_DN := TRUE;
+		IF AS_P_DN THEN
 			ST1_STEP := 40;
 		END_IF;
-	40:	// nest lets go, vacuum takes over
-		CLAMP_A := FALSE;
-		VAC_ON := TRUE;
-		IF VAC_SW THEN
+	40:	// press time
+		IF T_PRESS.Q THEN
 			ST1_STEP := 50;
 		END_IF;
-	50:	// lift up with the part
-		SOL_Z_DN := FALSE;
-		SOL_Z_UP := TRUE;
-		IF AS_Z_UP THEN
+	50:	// press up
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF AS_P_UP THEN
 			ST1_STEP := 60;
 		END_IF;
-	60:	// traverse to the belt
-		SV_TGT := 600.0;
-		SV_EXEC := TRUE;
-		IF SV_DONE THEN
-			SV_EXEC := FALSE;
+	60:	// unclamp and eject onto the chute
+		CLAMP := FALSE;
+		SOL_EJECT := TRUE;
+		IF AS_EJ_OUT THEN
 			ST1_STEP := 70;
 		END_IF;
-	70:	// wait until the plant has seen Execute drop
-		IF NOT SV_DONE THEN
+	70:	// ejector back, and every part fed has reached the bin
+		SOL_EJECT := FALSE;
+		IF AS_EJ_BACK AND (RM_CNT + GONE &gt;= EM_CNT) THEN
 			ST1_STEP := 80;
 		END_IF;
-	80:	// lift down over the belt
-		SOL_Z_UP := FALSE;
-		SOL_Z_DN := TRUE;
-		IF AS_Z_DN THEN
-			ST1_STEP := 90;
+	80:	// cycle complete
+		CYCLE_CNT := CYCLE_CNT + 1;
+		IF STOP_REQ THEN
+			ST1_STEP := 0;
+		ELSE
+			EM_LAST := EM_CNT;
+			ST1_STEP := 10;
 		END_IF;
-	90:	// let the part go onto the belt
-		VAC_ON := FALSE;
-		IF NOT VAC_SW THEN
-			ST1_STEP := 100;
-		END_IF;
-	100:	// lift up
-		SOL_Z_DN := FALSE;
-		SOL_Z_UP := TRUE;
-		IF AS_Z_UP THEN
-			ST1_STEP := 110;
-		END_IF;
-	110:	// traverse home
-		SV_TGT := 0.0;
-		SV_EXEC := TRUE;
-		IF SV_DONE THEN
-			SV_EXEC := FALSE;
-			ST1_STEP := 120;
-		END_IF;
-	120:	// wait until the plant has seen Execute drop
-		IF NOT SV_DONE THEN
-			ST1_STEP := 130;
-		END_IF;
-	130:	// the belt carries the part to the unloader: everything loaded must have left
-		IF RM_CNT + GONE &gt;= EM_CNT THEN
-			CYCLE_CNT := CYCLE_CNT + 1;
-			IF STOP_REQ THEN
-				ST1_STEP := 0;
-			ELSE
-				EM_LAST := EM_CNT;
-				ST1_STEP := 10;
-			END_IF;
-		END_IF;
-	800:	// HOME: lift up and traverse home. The cup is left alone: a real machine does not drop the part it holds
-		CV_RUN := FALSE;
+	800:	// HOME: press up, ejector back. The clamp is left alone: a real machine does not drop the part it holds
 		EM_EMIT := FALSE;
-		SOL_Z_DN := FALSE;
-		SOL_Z_UP := TRUE;
-		SV_TGT := 0.0;
-		SV_EXEC := TRUE;
-		IF AS_Z_UP AND SV_DONE THEN
-			SV_EXEC := FALSE;
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF AS_P_UP AND AS_EJ_BACK THEN
 			HOMED := TRUE;
 			ST1_STEP := 0;
 		END_IF;
 	910:	// E-STOP: the master circuit is open, so every solenoid de-energises - which is what
 		// really happens: a 5/2 single-solenoid valve springs back, a double one holds. The holders keep their parts: a real machine does not let go when the power drops.
 		EM_EMIT := FALSE;
-		SV_EXEC := FALSE;
-		SOL_Z_DN := FALSE;
-		SOL_Z_UP := FALSE;
-		CV_RUN := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := FALSE;
+		SOL_EJECT := FALSE;
 		IF READY THEN	// MASTER ON after the mushroom is released
 			ST1_STEP := 0;
 		END_IF;
-	900:	// FAULT: a step stopped moving, or the selector was turned while running. Stop feeding
-		// and the servo, but KEEP vacuum: a real machine does not drop the part it is holding.
+	900:	// FAULT: a step stopped moving (part taken out of the nest, never arrived, never reached
+		// the bin), or the selector was turned while running. Feeding off, press up, ejector
+		// back; the clamp keeps whatever it holds.
 		EM_EMIT := FALSE;
-		CV_RUN := FALSE;
-		SV_EXEC := FALSE;
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
 		IF START_EDGE AND SEL_AUTO THEN
 			STOP_REQ := FALSE;
-			// Acknowledging writes off whatever never reached the unloader. Only HERE: at every
-			// START it would write off parts still legitimately in the machine, and then an older
-			// part's removal ends this cycle - the pipelining bug that cost two live rounds.
+			// Acknowledging writes off whatever never reached the bin. Only HERE.
 			GONE := EM_CNT - RM_CNT;
 			ST1_STEP := 0;
 		END_IF;
 END_CASE;
 
-// Watchdog: a running step that stops moving is a jam, not patience. Measured before this existed:
-// taking the part out of the nest left ST1_STEP at 20 indefinitely with AUTO_RUN still on. A
-// selector change while running trips the same way.
+T_PRESS(In := (ST1_STEP = 40), PT := T#500ms);
+
+// Watchdog: a running step that stops moving is a jam, not patience. A selector change while
+// running trips the same way.
 T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910), PT := T#15s);
 IF ST1_STEP &lt;&gt; STEP_LAST THEN
 	STEP_LAST := ST1_STEP;
@@ -404,8 +329,9 @@ END_IF;
 IF T_WD.Q OR (SEL_CHANGED AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910)) THEN
 	ST1_STEP := 900;
 	EM_EMIT := FALSE;
-	CV_RUN := FALSE;
-	SV_EXEC := FALSE;
+	SOL_EJECT := FALSE;
+	SOL_P_DN := FALSE;
+	SOL_P_UP := TRUE;
 END_IF;
 
 // E-STOP at any moment, and the HOME button when the machine is energised and idle.
@@ -414,10 +340,9 @@ IF ESTOP THEN
 		ST1_STEP := 910;
 	END_IF;
 	EM_EMIT := FALSE;
-	SV_EXEC := FALSE;
-	SOL_Z_DN := FALSE;
-	SOL_Z_UP := FALSE;
-	CV_RUN := FALSE;
+	SOL_P_DN := FALSE;
+	SOL_P_UP := FALSE;
+	SOL_EJECT := FALSE;
 ELSIF HOME_EDGE AND READY AND (ST1_STEP = 0) THEN
 	ST1_STEP := 800;
 END_IF;
@@ -425,43 +350,30 @@ END_IF;
 AUTO_RUN := (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 800) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910);
 
 // Individual operation: momentary buttons, a PLC toggle memory per actuator, cleared when INDIVIDUAL
-// ends. The servo buttons are held: Execute is a level, and the axis finishes the move on its own.
+// ends. The feed button pulses one part.
 IF NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) THEN
-	IF IND_CV AND NOT IND_CV_LAST THEN
-		MEM_CV := NOT MEM_CV;
-	END_IF;
 	IF IND_CLAMP AND NOT IND_CLAMP_LAST THEN
 		MEM_CLAMP := NOT MEM_CLAMP;
 	END_IF;
-	IF IND_LIFT AND NOT IND_LIFT_LAST THEN
-		MEM_LIFT := NOT MEM_LIFT;
+	IF IND_PRESS AND NOT IND_PRESS_LAST THEN
+		MEM_PRESS := NOT MEM_PRESS;
 	END_IF;
-	IF IND_VAC AND NOT IND_VAC_LAST THEN
-		MEM_VAC := NOT MEM_VAC;
+	IF IND_EJECT AND NOT IND_EJECT_LAST THEN
+		MEM_EJECT := NOT MEM_EJECT;
 	END_IF;
-	CV_RUN := MEM_CV;
 	EM_EMIT := IND_FEED;
-	CLAMP_A := MEM_CLAMP;
-	SOL_Z_DN := MEM_LIFT;
-	SOL_Z_UP := NOT MEM_LIFT;
-	VAC_ON := MEM_VAC;
+	CLAMP := MEM_CLAMP;
+	SOL_P_DN := MEM_PRESS;
+	SOL_P_UP := NOT MEM_PRESS;
+	SOL_EJECT := MEM_EJECT;
 ELSE
-	MEM_CV := FALSE;
 	MEM_CLAMP := FALSE;
-	MEM_LIFT := FALSE;
-	MEM_VAC := FALSE;
+	MEM_PRESS := FALSE;
+	MEM_EJECT := FALSE;
 END_IF;
-IND_CV_LAST := IND_CV;
 IND_CLAMP_LAST := IND_CLAMP;
-IND_LIFT_LAST := IND_LIFT;
-IND_VAC_LAST := IND_VAC;
-
-// The speed override the operator dialled in, passed on to the axes and the belts.
-OVR := OVR_SET;
-
-// Jog: the axis creeps while the button is held, and only on INDIVIDUAL.
-SV_JOG_P := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV_P;
-SV_JOG_N := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV_N;
+IND_PRESS_LAST := IND_PRESS;
+IND_EJECT_LAST := IND_EJECT;
 
 PL_START := AUTO_RUN;
 PL_MASTER := MASTER_ON;
@@ -472,16 +384,16 @@ PL_HOME := HOMED;</ST>
     </GlobalNamespace>
   </Types>
   <Instances>
-    <Configuration name="pick-place">
+    <Configuration name="press-station">
       <Resource name="MainResource" resourceTypeName="">
         <GlobalVars>
-          <Variable name="CLAMP_A">
-            <Documentation xsi:type="SimpleText">ST1 PICK NEST CLAMP</Documentation>
+          <Variable name="CLAMP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS NEST CLAMP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="NEST_A_P">
-            <Documentation xsi:type="SimpleText">ST1 PICK NEST EXIST</Documentation>
+          <Variable name="NEST_P">
+            <Documentation xsi:type="SimpleText">ST1 PRESS NEST EXIST</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
@@ -495,83 +407,43 @@ PL_HOME := HOMED;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="SV_TGT">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE TARGET</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE EXEC</Documentation>
+          <Variable name="SOL_P_DN">
+            <Documentation xsi:type="SimpleText">ST1 PRESS DOWN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_DONE">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE DONE</Documentation>
+          <Variable name="SOL_P_UP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS UP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_ACT">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE ACTPOS</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE INPOS</Documentation>
+          <Variable name="AS_P_UP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS UP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE OVR</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE JOG_P</Documentation>
+          <Variable name="AS_P_DN">
+            <Documentation xsi:type="SimpleText">ST1 PRESS DOWN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 TRAVERSE JOG_N</Documentation>
+          <Variable name="SOL_EJECT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR OUT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_Z_DN">
-            <Documentation xsi:type="SimpleText">ST1 LIFT DOWN</Documentation>
+          <Variable name="AS_EJ_BACK">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR BACK</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_Z_UP">
-            <Documentation xsi:type="SimpleText">ST1 LIFT UP</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="AS_Z_UP">
-            <Documentation xsi:type="SimpleText">ST1 LIFT UP</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="AS_Z_DN">
-            <Documentation xsi:type="SimpleText">ST1 LIFT DOWN</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="VAC_ON">
-            <Documentation xsi:type="SimpleText">ST1 SUCTION CUP VAC</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="VAC_SW">
-            <Documentation xsi:type="SimpleText">ST1 SUCTION CUP VAC</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="CV_RUN">
-            <Documentation xsi:type="SimpleText">ST1 OUTFEED BELT RUN</Documentation>
+          <Variable name="AS_EJ_OUT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR OUT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="RM_CNT">
-            <Documentation xsi:type="SimpleText">OUTFEED COUNT</Documentation>
+            <Documentation xsi:type="SimpleText">UNLOAD BIN COUNT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
@@ -625,16 +497,6 @@ PL_HOME := HOMED;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR_SET">
-            <Documentation xsi:type="SimpleText">SPEED OVR</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_CV">
-            <Documentation xsi:type="SimpleText">IND BELT PB</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
           <Variable name="IND_FEED">
             <Documentation xsi:type="SimpleText">IND FEED PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
@@ -645,23 +507,13 @@ PL_HOME := HOMED;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_LIFT">
-            <Documentation xsi:type="SimpleText">IND LIFT DOWN PB</Documentation>
+          <Variable name="IND_PRESS">
+            <Documentation xsi:type="SimpleText">IND PRESS PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_VAC">
-            <Documentation xsi:type="SimpleText">IND VACUUM PB</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_SV_P">
-            <Documentation xsi:type="SimpleText">JOG TRAVERSE + PB</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>BOOL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_SV_N">
-            <Documentation xsi:type="SimpleText">JOG TRAVERSE - PB</Documentation>
+          <Variable name="IND_EJECT">
+            <Documentation xsi:type="SimpleText">IND EJECT PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>

@@ -6,7 +6,8 @@
 //   GET  /web/* /lib/* /vendor/three/*   static, fixed prefixes only
 //   GET  /api/stream           SSE: scene, state (30 Hz deltas, full every 5 s), status (1 Hz), warn
 //   GET  /api/ping /api/scenes /api/tags
-//   POST /api/cmd {op: run|stop|reset}   /api/press {id, key, down}   /api/force {tag, value|null}
+//   POST /api/cmd {op: run|stop|reset}   /api/press {id, key, down}   /api/dial {id, key, value}
+//        /api/scale {value}   /api/force {tag, value|null}
 //   GET  /api/scene/:name -> {version, scene}   PUT /api/scene/:name {baseVersion, scene} (409 when stale)
 import http from 'node:http';
 import fs from 'node:fs';
@@ -51,6 +52,11 @@ export function postAllowed(req, { lanControl = false } = {}) {
   const ra = req.socket.remoteAddress || '';
   const local = ra === '127.0.0.1' || ra === '::1' || ra === '::ffff:127.0.0.1';
   if (!local && !lanControl) return false;
+  // DNS rebinding: a page on evil.example whose name now resolves to 127.0.0.1 arrives from the
+  // local browser with Origin == Host == evil.example, so the Origin check alone passes it.
+  // Without --lan-control the Host itself must be this PC.
+  const h = String(req.headers.host || '').replace(/:\d+$/, '');
+  if (!lanControl && h !== '127.0.0.1' && h !== 'localhost' && h !== '[::1]') return false;
   const o = req.headers.origin;
   if (o) { try { if (new URL(o).host !== req.headers.host) return false; } catch { return false; } }
   return true;
@@ -263,6 +269,10 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
           return json(res, 200, { ok: true, scene: sceneName, internal: !usePlc });
         }
         if (url.pathname === '/api/press') { plant.press(String(b.id), String(b.key), !!b.down); return json(res, 200, { ok: true }); }
+        // A panel dial (speed override) carries a value, not an edge.
+        // Slow motion for watching; the plant refuses anything but 1x with a PLC connected.
+        if (url.pathname === '/api/scale') { const v = plant.setScale(Number(b.value)); broadcast('status', plant.status()); return json(res, 200, { ok: true, scale: v }); }
+        if (url.pathname === '/api/dial') { plant.dial(String(b.id), String(b.key), Number(b.value)); return json(res, 200, { ok: true }); }
         // The hand: hold a loose part still to jam the line on purpose (docs/PLAN.md §3).
         if (url.pathname === '/api/hold') { plant.holdPart(String(b.uid), !!b.down, b.at); return json(res, 200, { ok: true }); }
         if (url.pathname === '/api/force') { plant.force(String(b.tag), b.value ?? null); return json(res, 200, { ok: true }); }
