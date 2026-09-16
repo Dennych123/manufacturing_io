@@ -1,6 +1,6 @@
 {
   "format": "mio-scene/1",
-  "name": "buffer-queue",
+  "name": "sort-by-material",
   "sim": { "dtMs": 2 },
   "io": {
     "driver": "opcua",
@@ -12,13 +12,13 @@
   "stations": [
     {
       "id": "ST1",
-      "name": "Stop and go",
-      "members": ["cv1", "stpHold", "stpGate", "peHold", "peGate"],
+      "name": "Sort by material",
+      "members": ["cv1", "px1", "pe1", "psh"],
       "stepTag": "ST1_STEP"
     }
   ],
   "cycle": {
-    "exitTag": "PE_GATE",
+    "exitTag": "PE_STOP",
     "autoTag": "AUTO_RUN",
     "countTag": "CYCLE_CNT",
     "exclude": 1,
@@ -28,105 +28,128 @@
     {
       "id": "cv1",
       "type": "conveyor",
-      "label": "LINE BELT",
+      "label": "SORT BELT",
       "station": "ST1",
       "params": { "length": 2400, "width": 200, "height": 800, "speed": 300, "guides": 0 },
       "io": { "run": "CV_RUN", "ovr": "OVR" }
     },
     {
-      "id": "wp",
+      "id": "wpSteel",
       "type": "workpiece",
-      "label": "PART TEMPLATE",
+      "label": "STEEL TEMPLATE",
       "at": [0, 1200, 0],
-      "params": { "size": [60, 40, 30], "color": "#2a6fdb", "material": "alu" }
+      "params": { "size": [60, 40, 30], "color": "#8a939c", "material": "steel" }
     },
     {
-      "id": "em1",
+      "id": "wpPlastic",
+      "type": "workpiece",
+      "label": "PLASTIC TEMPLATE",
+      "at": [200, 1200, 0],
+      "params": { "size": [60, 40, 30], "color": "#2a6fdb", "material": "plastic" }
+    },
+    {
+      "id": "emSteel",
       "type": "emitter",
-      "label": "LOADER",
+      "label": "STEEL FEEDER",
       "parent": "cv1",
       "socket": "start",
       "at": [100, 0, 60],
-      "params": { "template": "wp", "mode": "tag" },
-      "io": { "emit": "EM_EMIT", "count": "EM_CNT" }
+      "params": { "template": "wpSteel", "mode": "tag" },
+      "io": { "emit": "EM_M_EMIT", "count": "EM_M_CNT" }
     },
     {
-      "id": "stpHold",
-      "type": "cylinder",
-      "label": "HOLD STOPPER",
+      "id": "emPlastic",
+      "type": "emitter",
+      "label": "PLASTIC FEEDER",
+      "parent": "cv1",
+      "socket": "start",
+      "at": [300, 0, 60],
+      "params": { "template": "wpPlastic", "mode": "tag" },
+      "io": { "emit": "EM_P_EMIT", "count": "EM_P_CNT" }
+    },
+    {
+      "id": "px1",
+      "type": "proximity",
+      "label": "METAL DETECT",
       "station": "ST1",
       "parent": "cv1",
       "socket": "top",
-      "at": [-200, 0, 190],
-      "rot": [180, 0, 0],
-      "params": {
-        "bore": 16,
-        "stroke": 50,
-        "valve": "5/2-single",
-        "extendMs": 150,
-        "retractMs": 150,
-        "extWord": "DOWN",
-        "retWord": "UP",
-        "head": "plate",
-        "headSize": [12, 12, 25]
-      },
-      "io": { "solExt": "SOL_HOLD", "sw.ret": "AS_HOLD_UP", "sw.ext": "AS_HOLD_DN" }
+      "at": [400, -26, 15],
+      "rot": [0, 0, 90],
+      "params": { "range": 16, "metalOnly": true },
+      "io": { "out": "PX_METAL" }
     },
     {
-      "id": "peHold",
+      "id": "pe1",
       "type": "photoEye",
-      "label": "HOLD SENSOR",
+      "label": "STOP SENSOR",
       "station": "ST1",
       "parent": "cv1",
       "socket": "top",
-      "at": [-230, -140, 15],
+      "at": [700, -140, 12],
       "rot": [0, 0, 90],
       "params": { "range": 300 },
-      "io": { "out": "PE_HOLD" }
+      "io": { "out": "PE_STOP" }
     },
     {
-      "id": "stpGate",
+      "id": "pst",
+      "type": "plate",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, 300, -800],
+      "params": { "size": [50, 50, 800] }
+    },
+    {
+      "id": "psh",
       "type": "cylinder",
-      "label": "GATE STOPPER",
+      "label": "METAL PUSHER",
       "station": "ST1",
       "parent": "cv1",
       "socket": "top",
-      "at": [100, 0, 190],
-      "rot": [180, 0, 0],
+      "at": [690, 440, 30],
+      "rot": [90, 0, 0],
       "params": {
-        "bore": 16,
-        "stroke": 50,
+        "bore": 25,
+        "stroke": 250,
         "valve": "5/2-single",
-        "extendMs": 150,
-        "retractMs": 150,
-        "extWord": "DOWN",
-        "retWord": "UP",
+        "extendMs": 700,
+        "retractMs": 500,
+        "extWord": "PUSH",
+        "retWord": "BACK",
         "head": "plate",
-        "headSize": [12, 12, 25]
+        "headSize": [100, 60, 8]
       },
-      "io": { "solExt": "SOL_GATE", "sw.ret": "AS_GATE_UP", "sw.ext": "AS_GATE_DN" }
+      "io": { "solExt": "SOL_PUSH", "sw.ret": "AS_PUSH_RET", "sw.ext": "AS_PUSH_EXT" }
     },
     {
-      "id": "peGate",
-      "type": "photoEye",
-      "label": "GATE SENSOR",
-      "station": "ST1",
+      "id": "chute",
+      "type": "plate",
+      "label": "METAL CHUTE",
       "parent": "cv1",
       "socket": "top",
-      "at": [70, -140, 15],
-      "rot": [0, 0, 90],
-      "params": { "range": 300 },
-      "io": { "out": "PE_GATE" }
+      "at": [690, -273, -138],
+      "rot": [35, 0, 0],
+      "params": { "size": [300, 400, 10] }
     },
     {
-      "id": "rm1",
+      "id": "rmMetal",
+      "type": "remover",
+      "label": "METAL BIN",
+      "parent": "cv1",
+      "socket": "top",
+      "at": [690, -700, -800],
+      "params": { "size": [400, 600, 400] },
+      "io": { "count": "RM_M_CNT" }
+    },
+    {
+      "id": "rmPlastic",
       "type": "remover",
       "label": "OUTFEED",
       "parent": "cv1",
       "socket": "end",
       "at": [-60, 0, 0],
       "params": { "size": [120, 260, 200] },
-      "io": { "count": "RM_CNT" }
+      "io": { "count": "RM_P_CNT" }
     },
     { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
     {
@@ -186,25 +209,25 @@
       "io": { "pb": "IND_CV", "lamp": "CV_RUN" }
     },
     {
-      "id": "pbIndFeed",
+      "id": "pbIndFeedM",
       "type": "pushbutton",
-      "label": "IND FEED",
+      "label": "IND FEED STEEL",
       "params": { "kind": "momentary", "color": "yellow", "lamp": false },
-      "io": { "pb": "IND_FEED" }
+      "io": { "pb": "IND_FEED_M" }
     },
     {
-      "id": "pbIndHold",
+      "id": "pbIndFeedP",
       "type": "pushbutton",
-      "label": "IND HOLD PIN",
-      "params": { "kind": "momentary", "color": "white", "lamp": true },
-      "io": { "pb": "IND_HOLD", "lamp": "SOL_HOLD" }
+      "label": "IND FEED PLASTIC",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "IND_FEED_P" }
     },
     {
-      "id": "pbIndGate",
+      "id": "pbIndPush",
       "type": "pushbutton",
-      "label": "IND GATE PIN",
+      "label": "IND PUSHER",
       "params": { "kind": "momentary", "color": "white", "lamp": true },
-      "io": { "pb": "IND_GATE", "lamp": "SOL_GATE" }
+      "io": { "pb": "IND_PUSH", "lamp": "SOL_PUSH" }
     }
   ]
 }

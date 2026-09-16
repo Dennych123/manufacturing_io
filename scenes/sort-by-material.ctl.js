@@ -1,10 +1,10 @@
-// INTERNAL CONTROLLER - not a PLC. The same sequence as sort-by-height.st, for tests and demos
+// INTERNAL CONTROLLER - not a PLC. The same sequence as sort-by-material.st, for tests and demos
 // without Sysmac. Keep the two in step: a change to one is a change to both.
 // Loaded from disk only, never through the API.
 
-/** A step that has not moved for this long is stuck: the longest normal step is the ~6 s belt run. */
+/** A step that has not moved for this long is stuck: the longest normal step is the ~5 s belt run. */
 const WD_MS = 15000;
-/** Fault step: belt, feeders and pusher off, AUTO_RUN off, waits for START to be acknowledged. */
+/** Fault step: feeding, belt and pusher off, AUTO_RUN off, waits for START to be acknowledged. */
 const FAULT = 900;
 /** Home step: every actuator is driven to its home position. AUTO will not start until it ends. */
 const HOME = 800;
@@ -14,15 +14,15 @@ const ESTOP = 910;
 const TOGGLES = ['IND_CV', 'IND_PUSH'];
 
 export function create() {
-  let pbLast = false, stopReq = false, selLast = true, tallTurn = false, emTLast = 0, emSLast = 0, settleFrom = -1, settleQ = false;
-  let stepLast = -1, stepFrom = 0, goneT = 0, goneS = 0;
+  let pbLast = false, stopReq = false, selLast = true, metalTurn = true, metal = false, emMLast = 0, emPLast = 0;
+  let settleFrom = -1, settleQ = false, stepLast = -1, stepFrom = 0, goneM = 0, goneP = 0;
   let masterOn = false, homed = false, masterLast = false, homeLast = false;
   const indMem = {}, indLast = {};
   return {
     /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
     reset() {
-      pbLast = false; stopReq = false; selLast = true; tallTurn = false; emTLast = 0; emSLast = 0; settleFrom = -1; settleQ = false;
-      stepLast = -1; stepFrom = 0; goneT = 0; goneS = 0;
+      pbLast = false; stopReq = false; selLast = true; metalTurn = true; metal = false; emMLast = 0; emPLast = 0;
+      settleFrom = -1; settleQ = false; stepLast = -1; stepFrom = 0; goneM = 0; goneP = 0;
       masterOn = false; homed = false; masterLast = false; homeLast = false;
       for (const b of TOGGLES) { indMem[b] = false; indLast[b] = false; }
     },
@@ -50,69 +50,76 @@ export function create() {
 
       switch (io.ST1_STEP) {
         case 0:
-          io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
-          if (startEdge && auto && ready && homed && io.AS_PUSH_RET) { stopReq = false; emTLast = io.EM_T_CNT; emSLast = io.EM_S_CNT; io.ST1_STEP = 10; }
+          io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
+          if (startEdge && auto && ready && homed && io.AS_PUSH_RET) { stopReq = false; emMLast = io.EM_M_CNT; emPLast = io.EM_P_CNT; io.ST1_STEP = 10; }
           break;
         case 10:
-          if (tallTurn) {
-            io.EM_T_EMIT = true;
-            if (io.EM_T_CNT !== emTLast) { io.EM_T_EMIT = false; io.ST1_STEP = 15; }
+          // feed one part, steel and plastic by turns; the metal latch starts clean
+          metal = false;
+          if (metalTurn) {
+            io.EM_M_EMIT = true;
+            if (io.EM_M_CNT !== emMLast) { io.EM_M_EMIT = false; io.ST1_STEP = 15; }
           } else {
-            io.EM_S_EMIT = true;
-            if (io.EM_S_CNT !== emSLast) { io.EM_S_EMIT = false; io.ST1_STEP = 15; }
+            io.EM_P_EMIT = true;
+            if (io.EM_P_CNT !== emPLast) { io.EM_P_EMIT = false; io.ST1_STEP = 15; }
           }
           break;
         case 15:
           io.CV_RUN = true;
-          if (!io.PE_LOW) io.ST1_STEP = 20;
+          if (!io.PE_STOP) io.ST1_STEP = 20;
           break;
         case 20:
           io.CV_RUN = true;
-          if (io.PE_LOW) { io.CV_RUN = false; io.ST1_STEP = 30; }
+          if (io.PE_STOP) { io.CV_RUN = false; io.ST1_STEP = 30; }
           break;
         case 30:
           if (settleQ) io.ST1_STEP = 40;
           break;
         case 40:
-          // the high beam only sees the tall part
-          io.ST1_STEP = io.PE_HIGH ? 50 : 60;
+          // the inductive sensor upstream saw this part pass (or not): sort by the latch
+          io.ST1_STEP = metal ? 50 : 60;
           break;
         case 50:
           io.SOL_PUSH = true;
           if (io.AS_PUSH_EXT) io.ST1_STEP = 55;
           break;
         case 55:
-          // the invariant, not "a count moved": every tall part fed has reached the bin
+          // the invariant, not "a count moved": every metal part fed has reached the bin
           io.SOL_PUSH = false;
-          if (io.AS_PUSH_RET && io.RM_T_CNT + goneT >= io.EM_T_CNT) io.ST1_STEP = 70;
+          if (io.AS_PUSH_RET && io.RM_M_CNT + goneM >= io.EM_M_CNT) io.ST1_STEP = 70;
           break;
         case 60:
           io.CV_RUN = true;
-          if (io.RM_S_CNT + goneS >= io.EM_S_CNT) { io.CV_RUN = false; io.ST1_STEP = 70; }
+          if (io.RM_P_CNT + goneP >= io.EM_P_CNT) { io.CV_RUN = false; io.ST1_STEP = 70; }
           break;
         case 70:
           io.CYCLE_CNT += 1;
-          tallTurn = !tallTurn;
-          if (stopReq) io.ST1_STEP = 0; else { emTLast = io.EM_T_CNT; emSLast = io.EM_S_CNT; io.ST1_STEP = 10; }
+          metalTurn = !metalTurn;
+          if (stopReq) io.ST1_STEP = 0; else { emMLast = io.EM_M_CNT; emPLast = io.EM_P_CNT; io.ST1_STEP = 10; }
           break;
         case HOME:
           // HOME: pusher back, belt and feeders off.
-          io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
+          io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
           if (io.AS_PUSH_RET) { homed = true; io.ST1_STEP = 0; }
           break;
         case ESTOP:
           // The master circuit is open, so every solenoid de-energises - which is what really
           // happens: a 5/2 single-solenoid valve springs back, a double one holds where it is.
-          io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
+          io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
           if (ready) io.ST1_STEP = 0;                  // MASTER ON after the mushroom is released
           break;
         case FAULT:
-          // Stuck: a part was taken, jammed, lost, or the selector was turned while running.
-          io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
+          // Stuck: a part was taken, jammed, lost, sorted the wrong way, or the selector was turned
+          // while running. Hold everything.
+          io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
           // Acknowledging writes off whatever never reached its bin. Only HERE (docs/PLAN.md §13).
-          if (startEdge && auto) { stopReq = false; goneT = io.EM_T_CNT - io.RM_T_CNT; goneS = io.EM_S_CNT - io.RM_S_CNT; io.ST1_STEP = 0; }
+          if (startEdge && auto) { stopReq = false; goneM = io.EM_M_CNT - io.RM_M_CNT; goneP = io.EM_P_CNT - io.RM_P_CNT; io.ST1_STEP = 0; }
           break;
       }
+
+      // The metal latch: the part passes the inductive sensor on its way to the stop beam, so
+      // the sensor is read while the belt carries it, not when it stands at the pusher.
+      if ((io.ST1_STEP === 15 || io.ST1_STEP === 20) && io.PX_METAL) metal = true;
 
       // TON after the CASE, as in the ST: its Q is read by the NEXT scan.
       if (io.ST1_STEP === 30) { if (settleFrom < 0) settleFrom = t; } else settleFrom = -1;
@@ -122,20 +129,20 @@ export function create() {
       // while running trips the same way.
       if (io.ST1_STEP !== stepLast) { stepLast = io.ST1_STEP; stepFrom = t; }
       if (io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT && io.ST1_STEP !== ESTOP && (t - stepFrom >= WD_MS || selChanged)) {
-        io.ST1_STEP = FAULT; io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
+        io.ST1_STEP = FAULT; io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
       }
 
       // E-STOP at any moment, and the HOME button when the machine is energised and idle.
       if (estop) {
         if (io.ST1_STEP !== ESTOP) io.ST1_STEP = ESTOP;
-        io.CV_RUN = false; io.EM_T_EMIT = false; io.EM_S_EMIT = false; io.SOL_PUSH = false;
+        io.CV_RUN = false; io.EM_M_EMIT = false; io.EM_P_EMIT = false; io.SOL_PUSH = false;
       } else if (homeEdge && ready && io.ST1_STEP === 0) io.ST1_STEP = HOME;
 
       io.AUTO_RUN = io.ST1_STEP !== 0 && io.ST1_STEP !== HOME && io.ST1_STEP !== FAULT && io.ST1_STEP !== ESTOP;
       // Individual operation: momentary buttons, PLC toggle memory cleared when INDIVIDUAL ends.
       const individual = !auto && !io.AUTO_RUN && ready && io.ST1_STEP !== HOME;
       for (const b of TOGGLES) { if (individual && io[b] && !indLast[b]) indMem[b] = !indMem[b]; if (!individual) indMem[b] = false; indLast[b] = !!io[b]; }
-      if (individual) { io.CV_RUN = !!indMem.IND_CV; io.EM_T_EMIT = !!io.IND_FEED_T; io.EM_S_EMIT = !!io.IND_FEED_S; io.SOL_PUSH = !!indMem.IND_PUSH; }
+      if (individual) { io.CV_RUN = !!indMem.IND_CV; io.EM_M_EMIT = !!io.IND_FEED_M; io.EM_P_EMIT = !!io.IND_FEED_P; io.SOL_PUSH = !!indMem.IND_PUSH; }
       // The speed override the operator dialled in, passed on to the axes and the belts.
       io.OVR = io.OVR_SET;
       io.PL_START = io.AUTO_RUN;

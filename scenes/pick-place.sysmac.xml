@@ -36,6 +36,15 @@
           <Variable name="SV_INPOS">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
+          <Variable name="OVR">
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="SV_JOG_P">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="SV_JOG_N">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
           <Variable name="SOL_Z_DN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
@@ -60,16 +69,58 @@
           <Variable name="RM_CNT">
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
+          <Variable name="SEL_AUTO">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_MASTER">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_ESTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
           <Variable name="PB_START">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="PL_START">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="PB_STOP">
+          <Variable name="PB_CSTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_HOME">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="AUTO_RUN">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR_SET">
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CV">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CLAMP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_LIFT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_VAC">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_SV_P">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_SV_N">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="ST1_STEP">
@@ -92,6 +143,13 @@
           <Variable name="STOP_REQ">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
+          <Variable name="SEL_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+            <InitialValue><SimpleValue value="TRUE" /></InitialValue>
+          </Variable>
+          <Variable name="SEL_CHANGED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
           <Variable name="T_WD">
             <Type><TypeName>TON</TypeName></Type>
           </Variable>
@@ -103,6 +161,54 @@
           </Variable>
           <Variable name="GONE">
             <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_CV">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CV_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_CLAMP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CLAMP_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_LIFT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_LIFT_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_VAC">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_VAC_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="ESTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="READY">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MASTER_ON">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="HOMED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MASTER_EDGE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="HOME_EDGE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
         </Vars>
         <MainBody>
@@ -123,12 +229,32 @@ MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
 //
 // Waiting steps wait for an INVARIANT, not for a counter to move: a change cannot say which
 // part moved (measured on a-to-b against the simulator: parts piled up, then pipelined).
+//
+// The panel has a selector AUTO / INDIVIDUAL: START only in AUTO, the individual buttons only in
+// INDIVIDUAL, and a change while the sequence runs is a FAULT, not a pause.
 
 START_EDGE := PB_START AND NOT PB_START_LAST;
 PB_START_LAST := PB_START;
-IF PB_STOP THEN
+IF PB_CSTOP THEN
 	STOP_REQ := TRUE;
 END_IF;
+SEL_CHANGED := SEL_AUTO &lt;&gt; SEL_LAST;
+SEL_LAST := SEL_AUTO;
+
+// The master circuit, as on the cell panel: E-STOP is a latching mushroom, MASTER ON energises
+// the machine, and nothing runs without it. An E-STOP also loses the home position.
+ESTOP := PB_ESTOP;
+MASTER_EDGE := PB_MASTER AND NOT PB_MASTER_LAST;
+PB_MASTER_LAST := PB_MASTER;
+HOME_EDGE := PB_HOME AND NOT PB_HOME_LAST;
+PB_HOME_LAST := PB_HOME;
+IF ESTOP THEN
+	MASTER_ON := FALSE;
+	HOMED := FALSE;
+ELSIF MASTER_EDGE THEN
+	MASTER_ON := TRUE;
+END_IF;
+READY := MASTER_ON AND NOT ESTOP;
 
 CASE ST1_STEP OF
 	0:	// idle
@@ -138,7 +264,7 @@ CASE ST1_STEP OF
 		SOL_Z_DN := FALSE;
 		SOL_Z_UP := TRUE;
 		SV_EXEC := FALSE;
-		IF START_EDGE AND AS_Z_UP AND SV_INPOS AND NOT SV_DONE THEN
+		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_Z_UP AND SV_INPOS AND NOT SV_DONE THEN
 			STOP_REQ := FALSE;
 			EM_LAST := EM_CNT;
 			ST1_STEP := 10;
@@ -222,12 +348,34 @@ CASE ST1_STEP OF
 				ST1_STEP := 10;
 			END_IF;
 		END_IF;
-	900:	// FAULT: a step stopped moving. Stop feeding and the servo, but KEEP vacuum: a real
-		// machine does not drop the part it is holding.
+	800:	// HOME: lift up and traverse home. The cup is left alone: a real machine does not drop the part it holds
+		CV_RUN := FALSE;
+		EM_EMIT := FALSE;
+		SOL_Z_DN := FALSE;
+		SOL_Z_UP := TRUE;
+		SV_TGT := 0.0;
+		SV_EXEC := TRUE;
+		IF AS_Z_UP AND SV_DONE THEN
+			SV_EXEC := FALSE;
+			HOMED := TRUE;
+			ST1_STEP := 0;
+		END_IF;
+	910:	// E-STOP: the master circuit is open, so every solenoid de-energises - which is what
+		// really happens: a 5/2 single-solenoid valve springs back, a double one holds. The holders keep their parts: a real machine does not let go when the power drops.
+		EM_EMIT := FALSE;
+		SV_EXEC := FALSE;
+		SOL_Z_DN := FALSE;
+		SOL_Z_UP := FALSE;
+		CV_RUN := FALSE;
+		IF READY THEN	// MASTER ON after the mushroom is released
+			ST1_STEP := 0;
+		END_IF;
+	900:	// FAULT: a step stopped moving, or the selector was turned while running. Stop feeding
+		// and the servo, but KEEP vacuum: a real machine does not drop the part it is holding.
 		EM_EMIT := FALSE;
 		CV_RUN := FALSE;
 		SV_EXEC := FALSE;
-		IF START_EDGE THEN
+		IF START_EDGE AND SEL_AUTO THEN
 			STOP_REQ := FALSE;
 			// Acknowledging writes off whatever never reached the unloader. Only HERE: at every
 			// START it would write off parts still legitimately in the machine, and then an older
@@ -237,21 +385,78 @@ CASE ST1_STEP OF
 		END_IF;
 END_CASE;
 
-// Watchdog: a step that stops moving is a jam, not patience. Measured before this existed: taking
-// the part out of the nest left ST1_STEP at 20 indefinitely with AUTO_RUN still on.
-T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900), PT := T#15s);
+// Watchdog: a running step that stops moving is a jam, not patience. Measured before this existed:
+// taking the part out of the nest left ST1_STEP at 20 indefinitely with AUTO_RUN still on. A
+// selector change while running trips the same way.
+T_WD(In := (ST1_STEP = STEP_LAST) AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910), PT := T#15s);
 IF ST1_STEP &lt;&gt; STEP_LAST THEN
 	STEP_LAST := ST1_STEP;
 END_IF;
-IF T_WD.Q THEN
+IF T_WD.Q OR (SEL_CHANGED AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910)) THEN
 	ST1_STEP := 900;
 	EM_EMIT := FALSE;
 	CV_RUN := FALSE;
 	SV_EXEC := FALSE;
 END_IF;
 
-AUTO_RUN := (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900);
-PL_START := AUTO_RUN;</ST>
+// E-STOP at any moment, and the HOME button when the machine is energised and idle.
+IF ESTOP THEN
+	IF ST1_STEP &lt;&gt; 910 THEN
+		ST1_STEP := 910;
+	END_IF;
+	EM_EMIT := FALSE;
+	SV_EXEC := FALSE;
+	SOL_Z_DN := FALSE;
+	SOL_Z_UP := FALSE;
+	CV_RUN := FALSE;
+ELSIF HOME_EDGE AND READY AND (ST1_STEP = 0) THEN
+	ST1_STEP := 800;
+END_IF;
+
+AUTO_RUN := (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 800) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910);
+
+// Individual operation: momentary buttons, a PLC toggle memory per actuator, cleared when INDIVIDUAL
+// ends. The servo buttons are held: Execute is a level, and the axis finishes the move on its own.
+IF NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) THEN
+	IF IND_CV AND NOT IND_CV_LAST THEN
+		MEM_CV := NOT MEM_CV;
+	END_IF;
+	IF IND_CLAMP AND NOT IND_CLAMP_LAST THEN
+		MEM_CLAMP := NOT MEM_CLAMP;
+	END_IF;
+	IF IND_LIFT AND NOT IND_LIFT_LAST THEN
+		MEM_LIFT := NOT MEM_LIFT;
+	END_IF;
+	IF IND_VAC AND NOT IND_VAC_LAST THEN
+		MEM_VAC := NOT MEM_VAC;
+	END_IF;
+	CV_RUN := MEM_CV;
+	EM_EMIT := IND_FEED;
+	CLAMP_A := MEM_CLAMP;
+	SOL_Z_DN := MEM_LIFT;
+	SOL_Z_UP := NOT MEM_LIFT;
+	VAC_ON := MEM_VAC;
+ELSE
+	MEM_CV := FALSE;
+	MEM_CLAMP := FALSE;
+	MEM_LIFT := FALSE;
+	MEM_VAC := FALSE;
+END_IF;
+IND_CV_LAST := IND_CV;
+IND_CLAMP_LAST := IND_CLAMP;
+IND_LIFT_LAST := IND_LIFT;
+IND_VAC_LAST := IND_VAC;
+
+// The speed override the operator dialled in, passed on to the axes and the belts.
+OVR := OVR_SET;
+
+// Jog: the axis creeps while the button is held, and only on INDIVIDUAL.
+SV_JOG_P := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV_P;
+SV_JOG_N := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV_N;
+
+PL_START := AUTO_RUN;
+PL_MASTER := MASTER_ON;
+PL_HOME := HOMED;</ST>
           </BodyContent>
         </MainBody>
       </Program>
@@ -306,6 +511,21 @@ PL_START := AUTO_RUN;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
+          <Variable name="OVR">
+            <Documentation xsi:type="SimpleText">ST1 TRAVERSE OVR</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="SV_JOG_P">
+            <Documentation xsi:type="SimpleText">ST1 TRAVERSE JOG_P</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="SV_JOG_N">
+            <Documentation xsi:type="SimpleText">ST1 TRAVERSE JOG_N</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
           <Variable name="SOL_Z_DN">
             <Documentation xsi:type="SimpleText">ST1 LIFT DOWN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
@@ -346,6 +566,26 @@ PL_START := AUTO_RUN;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
+          <Variable name="SEL_AUTO">
+            <Documentation xsi:type="SimpleText">AUTO / INDIVIDUAL AUTO</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER">
+            <Documentation xsi:type="SimpleText">MASTER ON PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_MASTER">
+            <Documentation xsi:type="SimpleText">MASTER ON LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_ESTOP">
+            <Documentation xsi:type="SimpleText">EMERGENCY STOP PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
           <Variable name="PB_START">
             <Documentation xsi:type="SimpleText">START PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
@@ -356,13 +596,63 @@ PL_START := AUTO_RUN;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="PB_STOP">
-            <Documentation xsi:type="SimpleText">STOP PB</Documentation>
+          <Variable name="PB_CSTOP">
+            <Documentation xsi:type="SimpleText">CYCLE STOP PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME">
+            <Documentation xsi:type="SimpleText">HOME POS PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_HOME">
+            <Documentation xsi:type="SimpleText">HOME POS LAMP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="AUTO_RUN">
             <Documentation xsi:type="SimpleText">AUTO LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR_SET">
+            <Documentation xsi:type="SimpleText">SPEED OVR</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CV">
+            <Documentation xsi:type="SimpleText">IND BELT PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED">
+            <Documentation xsi:type="SimpleText">IND FEED PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_CLAMP">
+            <Documentation xsi:type="SimpleText">IND CLAMP PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_LIFT">
+            <Documentation xsi:type="SimpleText">IND LIFT DOWN PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_VAC">
+            <Documentation xsi:type="SimpleText">IND VACUUM PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_SV_P">
+            <Documentation xsi:type="SimpleText">JOG TRAVERSE + PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_SV_N">
+            <Documentation xsi:type="SimpleText">JOG TRAVERSE - PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>

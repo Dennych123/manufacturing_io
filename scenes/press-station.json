@@ -1,6 +1,6 @@
 {
   "format": "mio-scene/1",
-  "name": "buffer-queue",
+  "name": "press-station",
   "sim": { "dtMs": 2 },
   "io": {
     "driver": "opcua",
@@ -10,15 +10,10 @@
     "minPulseMs": 20
   },
   "stations": [
-    {
-      "id": "ST1",
-      "name": "Stop and go",
-      "members": ["cv1", "stpHold", "stpGate", "peHold", "peGate"],
-      "stepTag": "ST1_STEP"
-    }
+    { "id": "ST1", "name": "Press", "members": ["nest1", "press", "eject"], "stepTag": "ST1_STEP" }
   ],
   "cycle": {
-    "exitTag": "PE_GATE",
+    "exitTag": "NEST_P",
     "autoTag": "AUTO_RUN",
     "countTag": "CYCLE_CNT",
     "exclude": 1,
@@ -26,106 +21,115 @@
   },
   "components": [
     {
-      "id": "cv1",
-      "type": "conveyor",
-      "label": "LINE BELT",
+      "id": "pedestal",
+      "type": "plate",
+      "label": "PEDESTAL",
+      "at": [0, 0, 0],
+      "params": { "size": [80, 120, 800] }
+    },
+    {
+      "id": "nest1",
+      "type": "nest",
+      "label": "PRESS NEST",
       "station": "ST1",
-      "params": { "length": 2400, "width": 200, "height": 800, "speed": 300, "guides": 0 },
-      "io": { "run": "CV_RUN", "ovr": "OVR" }
+      "parent": "pedestal",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [80, 60, 22], "wall": 6 },
+      "io": { "clamp": "CLAMP", "present": "NEST_P" }
     },
     {
       "id": "wp",
       "type": "workpiece",
       "label": "PART TEMPLATE",
-      "at": [0, 1200, 0],
-      "params": { "size": [60, 40, 30], "color": "#2a6fdb", "material": "alu" }
+      "at": [0, -600, 0],
+      "params": { "size": [60, 40, 40], "color": "#27b045", "material": "alu" }
     },
     {
       "id": "em1",
       "type": "emitter",
-      "label": "LOADER",
-      "parent": "cv1",
-      "socket": "start",
-      "at": [100, 0, 60],
+      "label": "FEEDER",
+      "parent": "nest1",
+      "socket": "top",
+      "at": [0, 0, 100],
       "params": { "template": "wp", "mode": "tag" },
       "io": { "emit": "EM_EMIT", "count": "EM_CNT" }
     },
     {
-      "id": "stpHold",
+      "id": "col",
+      "type": "plate",
+      "label": "PRESS COLUMN",
+      "at": [-260, 0, 0],
+      "params": { "size": [80, 80, 1240] }
+    },
+    {
+      "id": "beam",
+      "type": "plate",
+      "label": "PRESS BEAM",
+      "at": [-130, 0, 1240],
+      "params": { "size": [340, 80, 40] }
+    },
+    {
+      "id": "press",
       "type": "cylinder",
-      "label": "HOLD STOPPER",
+      "label": "PRESS",
       "station": "ST1",
-      "parent": "cv1",
-      "socket": "top",
-      "at": [-200, 0, 190],
+      "at": [0, 0, 1240],
       "rot": [180, 0, 0],
       "params": {
-        "bore": 16,
-        "stroke": 50,
-        "valve": "5/2-single",
-        "extendMs": 150,
-        "retractMs": 150,
+        "bore": 40,
+        "stroke": 150,
+        "valve": "5/2-double",
+        "extendMs": 600,
+        "retractMs": 500,
         "extWord": "DOWN",
         "retWord": "UP",
         "head": "plate",
-        "headSize": [12, 12, 25]
+        "headSize": [70, 50, 10]
       },
-      "io": { "solExt": "SOL_HOLD", "sw.ret": "AS_HOLD_UP", "sw.ext": "AS_HOLD_DN" }
+      "io": { "solExt": "SOL_P_DN", "solRet": "SOL_P_UP", "sw.ret": "AS_P_UP", "sw.ext": "AS_P_DN" }
     },
     {
-      "id": "peHold",
-      "type": "photoEye",
-      "label": "HOLD SENSOR",
-      "station": "ST1",
-      "parent": "cv1",
-      "socket": "top",
-      "at": [-230, -140, 15],
-      "rot": [0, 0, 90],
-      "params": { "range": 300 },
-      "io": { "out": "PE_HOLD" }
+      "id": "ejPost",
+      "type": "plate",
+      "label": "EJECTOR STAND",
+      "at": [-165, 0, 0],
+      "params": { "size": [50, 50, 815] }
     },
     {
-      "id": "stpGate",
+      "id": "eject",
       "type": "cylinder",
-      "label": "GATE STOPPER",
+      "label": "EJECTOR",
       "station": "ST1",
-      "parent": "cv1",
-      "socket": "top",
-      "at": [100, 0, 190],
-      "rot": [180, 0, 0],
+      "at": [-245, 0, 831],
+      "rot": [0, 90, 0],
       "params": {
-        "bore": 16,
-        "stroke": 50,
+        "bore": 20,
+        "stroke": 120,
         "valve": "5/2-single",
-        "extendMs": 150,
-        "retractMs": 150,
-        "extWord": "DOWN",
-        "retWord": "UP",
+        "extendMs": 300,
+        "retractMs": 300,
+        "extWord": "OUT",
+        "retWord": "BACK",
         "head": "plate",
-        "headSize": [12, 12, 25]
+        "headSize": [14, 50, 8]
       },
-      "io": { "solExt": "SOL_GATE", "sw.ret": "AS_GATE_UP", "sw.ext": "AS_GATE_DN" }
+      "io": { "solExt": "SOL_EJECT", "sw.ret": "AS_EJ_BACK", "sw.ext": "AS_EJ_OUT" }
     },
     {
-      "id": "peGate",
-      "type": "photoEye",
-      "label": "GATE SENSOR",
-      "station": "ST1",
-      "parent": "cv1",
-      "socket": "top",
-      "at": [70, -140, 15],
-      "rot": [0, 0, 90],
-      "params": { "range": 300 },
-      "io": { "out": "PE_GATE" }
+      "id": "chute",
+      "type": "plate",
+      "label": "UNLOAD CHUTE",
+      "at": [230, 0, 650],
+      "rot": [0, 35, 0],
+      "params": { "size": [400, 200, 10] }
     },
     {
       "id": "rm1",
       "type": "remover",
-      "label": "OUTFEED",
-      "parent": "cv1",
-      "socket": "end",
-      "at": [-60, 0, 0],
-      "params": { "size": [120, 260, 200] },
+      "label": "UNLOAD BIN",
+      "at": [550, 0, 80],
+      "params": { "size": [400, 400, 400] },
       "io": { "count": "RM_CNT" }
     },
     { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
@@ -172,20 +176,6 @@
       "io": { "lamp": "AUTO_RUN" }
     },
     {
-      "id": "dialOvr",
-      "type": "speedDial",
-      "label": "SPEED",
-      "params": { "min": 10 },
-      "io": { "ovr": "OVR_SET" }
-    },
-    {
-      "id": "pbIndCv",
-      "type": "pushbutton",
-      "label": "IND BELT",
-      "params": { "kind": "momentary", "color": "blue", "lamp": true },
-      "io": { "pb": "IND_CV", "lamp": "CV_RUN" }
-    },
-    {
       "id": "pbIndFeed",
       "type": "pushbutton",
       "label": "IND FEED",
@@ -193,18 +183,25 @@
       "io": { "pb": "IND_FEED" }
     },
     {
-      "id": "pbIndHold",
+      "id": "pbIndClamp",
       "type": "pushbutton",
-      "label": "IND HOLD PIN",
+      "label": "IND CLAMP",
       "params": { "kind": "momentary", "color": "white", "lamp": true },
-      "io": { "pb": "IND_HOLD", "lamp": "SOL_HOLD" }
+      "io": { "pb": "IND_CLAMP", "lamp": "CLAMP" }
     },
     {
-      "id": "pbIndGate",
+      "id": "pbIndPress",
       "type": "pushbutton",
-      "label": "IND GATE PIN",
+      "label": "IND PRESS",
       "params": { "kind": "momentary", "color": "white", "lamp": true },
-      "io": { "pb": "IND_GATE", "lamp": "SOL_GATE" }
+      "io": { "pb": "IND_PRESS", "lamp": "SOL_P_DN" }
+    },
+    {
+      "id": "pbIndEject",
+      "type": "pushbutton",
+      "label": "IND EJECT",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_EJECT", "lamp": "SOL_EJECT" }
     }
   ]
 }

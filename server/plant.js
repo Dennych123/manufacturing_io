@@ -26,10 +26,24 @@ export const PART_RAYS = (0xffff << 16) | 0x0002;
 const LOST_Z = -1000;
 /** How far below an emitter the landing spot must be free: a part falls, it does not hover. mm */
 const DROP_CHECK = 250;
+/**
+ * How fast the viewer's hand may drag a part, mm/s, unless the scene says otherwise in
+ * `sim.handMmS`. A pointer can jump half a metre between two frames, and a kinematic body
+ * teleported into a queue of resting parts scatters them across the hall. Held to a speed a
+ * person could actually move something at, it pushes them instead: measured on a nine-part queue,
+ * dragging the front one out moves the rest by 0.2 mm.
+ */
+const HAND_MM_S = 1200;
 
 /** mm -> m. The ONLY unit conversion between the scene and Rapier. */
 export const SK = 0.001;
-const MAX_STEPS = 50;             // per tick; past it the step is dropped and counted as an overrun
+/**
+ * Steps one tick may run at 1x, past which the rest are dropped and counted as overruns. It is a
+ * cap on SIM time, so it has to grow with the world speed: at 4x one 15 ms tick legitimately owes
+ * 60 ms of plant, and a tick that slips to 30 ms owes 120 ms. Left fixed at 50 it warned
+ * "plant stalled" several times a second at 2x-4x on a plant that was keeping up perfectly.
+ */
+const MAX_STEPS = 50;
 const RING = 200000;
 /** Rapier cylinders run along Y; scene cylinders run along Z. */
 const Y_TO_Z = qaxis([1, 0, 0], 90);
@@ -105,11 +119,18 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // 20 ms: measured on the Studio 1.66 simulator (docs/SETUP.md §4). The PLC counts 10 ms
   // pulses; the hold covers the plant's own exchange tick plus the write.
   const minPulseMs = scene.io?.minPulseMs ?? 20;
-  const { order, defs } = compile(scene);
+  const handMmS = scene.sim?.handMmS ?? HAND_MM_S;
+  const { order, defs, still } = compile(scene);
   const tagInfo = sceneTags(scene);
   const inTags = [...tagInfo].filter(([, i]) => i.dir === 'in').map(([t]) => t);
   const outTags = [...tagInfo].filter(([, i]) => i.dir === 'out').map(([t]) => t);
   const stepTags = new Map((scene.stations || []).filter((/** @type {any} */ s) => s.stepTag).map((/** @type {any} */ s) => [s.stepTag, s.id]));
+  /** The scene says which tag counts finished cycles; the plant times the gaps between them. */
+  const countTag = scene.cycle?.countTag ?? null;
+  const avgN = Math.max(1, scene.cycle?.avgN ?? 10);
+  let cycleAt = 0, cycleLast = 0;
+  /** @type {number[]} */
+  const cycleRing = [];
   const zero = (/** @type {string} */ tag) => (tagInfo.get(tag)?.type === 'BOOL' ? false : 0);
 
   // ------------------------------------------------------------ components
@@ -120,7 +141,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
              outs: bound.filter(b => b[2] === 'out'), ins: bound.filter(b => b[2] === 'in') };
   });
   const byId = new Map(comps.map(r => [r.id, r]));
-  const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null) }));
+  const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null), slot: 0 }));
   const removers = comps.filter(r => r.t.flow === 'remover');
   const sensors = comps.filter(r => r.t.sense);
   const holders = comps.filter(r => r.t.hold).map(r => ({ r, link: '', prev: /** @type {any} */ (null) }));
@@ -196,10 +217,17 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
   // kinematic pusher without an error; tests/rapier.test.js). `tpl` names the component whose
   // shapes and physics params the part has.
-  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], rf: number, held: any, rel: any, pin: any, off: boolean}>} */
+  /** @type {Map<string, {uid: string, tpl: string, body: any, cols: any[], ctr: number[], cw: number[], rf: number, held: any, rel: any, pin: any, off: boolean, parked: boolean}>} */
   const parts = new Map();
   /** collider handle -> part, for sensors that must know WHAT they see (metal or not). */
   const colPart = new Map();
+  /**
+   * Parts no holder and no hand has: the only ones a holder can take. A scene like the palletizing scene
+   * has 100 parts of which 95 sit held in pallet pockets, and every empty nest used to scan all
+   * of them every step to find the one it might take. Measured in the profile as the single
+   * biggest cost in the plant after the physics itself.
+   */
+  const free = new Set();
   /** @param {string} tpl @param {import('../lib/math.js').Pose} P @param {string} uid @param {string} [src] */
   function spawnPart(tpl, P, uid, src) {
     const d = defs.get(tpl), pp = d.p;
@@ -216,8 +244,15 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const s0 = d.shapes.find((/** @type {any} */ s) => s.collide !== false);
     // rf: effective friction radius of the footprint (m), for the belt's friction torque
     const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
-    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], held: /** @type {any} */ (null), rel: /** @type {any} */ (null), pin: /** @type {any} */ (null), off: false };
+    const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], cw: /** @type {number[]} */ ([0, 0, 0]),
+                 held: /** @type {any} */ (null), rel: /** @type {any} */ (null), pin: /** @type {any} */ (null), pinTo: /** @type {any} */ (null), off: false,
+                 // A part held by something that never moves is written to Rapier once and then
+                 // left alone: 95 plugs standing in pallet pockets used to cost 300 allocations
+                 // and 200 boundary calls a step to be told, again, exactly where they already are.
+                 parked: false };
+    pt.cw = partCentre(pt);
     parts.set(uid, pt);
+    free.add(pt);
     for (const c of cols) colPart.set(c.handle, pt);
     rec({ t: plant.t, k: 'part', uid, ev: 'spawn', ...(src ? { src } : {}) });
   }
@@ -232,7 +267,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     pt.off = true;
   }
 
-  /** World centre of a part in mm. @param {{body: any, ctr: number[]}} pt */
+  /**
+   * World centre of a part in mm. It crosses into Rapier twice, so it is read ONCE a step into
+   * pt.cw (below) and every remover and holder uses that: reading it per holder was 4000 boundary
+   * calls a step in the palletizing scene, which is what kept it from holding 4x world speed.
+   * @param {{body: any, ctr: number[]}} pt
+   */
   function partCentre(pt) {
     const t = pt.body.translation(), q = pt.body.rotation();
     return apply({ p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] }, pt.ctr);
@@ -240,10 +280,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   /** A free part (or this holder's own) whose centre is inside `z`, a box in the holder's frame. @param {any} r @param {any} F @param {any} z */
   function inZone(r, F, z) {
     const inv = invert(F);
-    for (const pt of parts.values()) {
+    const mine = r.s.uid ? parts.get(r.s.uid) : null;
+    for (const pt of (mine ? [mine, ...free] : free)) {
       if (pt.pin) continue;                                   // a part the viewer is holding is not there to be taken
       if (pt.held && pt.held.id !== r.id) continue;
-      const l = apply(inv, partCentre(pt));
+      const l = apply(inv, pt.cw);
       if (l.every((v, i) => Math.abs(v - z.at[i]) <= z.size[i] / 2)) return pt;
     }
     return null;
@@ -278,9 +319,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       return found;
     }
     const inv = invert(F), [sx, sy, sz] = r.p.size;
-    for (const pt of parts.values()) {
-      if (pt.held || pt.pin) continue;
-      const l = apply(inv, partCentre(pt));
+    for (const pt of free) {
+      const l = apply(inv, pt.cw);
       if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= -sz / 2 && l[2] <= sz) return pt;
     }
     return null;
@@ -312,6 +352,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     for (const c of pt.cols) colPart.delete(c.handle);
     world.removeRigidBody(pt.body);
     parts.delete(uid);
+    free.delete(pt);
     rec({ t: plant.t, k: 'part', uid, ev });
   }
   function spawnSceneParts() {
@@ -334,19 +375,23 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const inbox = [];
   /** @type {Array<[string, string, boolean]>} */
   const presses = [];
+  /** Dial settings from the browser: [id, key, value]. Queued like presses, so a run replays. @type {Array<[string, string, number]>} */
+  const dials = [];
   /** Viewer hand edges: [part uid, down, at]. Queued like presses, so a recorded run replays. @type {Array<[string, boolean, number[]|null]>} */
   const hands = [];
   const ctlIo = /** @type {Record<string, any>} */ ({});
   const events = [];
   const warned = new Set();
+  /** Scratch list, reused: removing while iterating the map is what the copy was for. */
+  const taken = /** @type {string[]} */ ([]);
 
   const plant = {
     scene, world, bodies, parts, io, dtMs, inTags, outTags,
-    t: 0, mode: 'stop', overruns: 0, stepUs: 0, events,
+    t: 0, mode: 'stop', overruns: 0, stepUs: 0, events, scale: 1,
     /** @type {Array<(msg: string, t: number) => void>} */
     warnListeners: [],
     dof: dofOf(),
-    step, exchange, start, stop, reset, press, holdPart, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn,
+    step, exchange, start, stop, reset, press, dial, holdPart, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn, setScale,
     /** Advance `ms` of sim time now, without pacing (tests, fast internal runs). @param {number} ms */
     run(ms) { for (let n = Math.round(ms / dtMs); n > 0; n--) step(); },
   };
@@ -371,12 +416,22 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
   initIo();
   spawnSceneParts();
+  settle();
 
   /** @param {string} tag @param {any} v @param {number} [tp] PLC-stamped sim time */
   function applyOut(tag, v, tp) {
     plc[tag] = v;
     if (forced.has(tag) || io[tag] === v) return;
     io[tag] = v;
+    if (tag === countTag && typeof v === 'number' && v > 0) {
+      // A finished cycle: the gap since the last one is the cycle time, in sim milliseconds.
+      if (cycleAt > 0) {
+        cycleLast = plant.t - cycleAt;
+        cycleRing.push(cycleLast);
+        if (cycleRing.length > avgN) cycleRing.shift();
+      }
+      cycleAt = plant.t;
+    }
     const st = stepTags.get(tag);
     const ev = st ? { t: plant.t, k: 'step', st, v } : { t: plant.t, k: 'out', tag, v };
     if (tp != null && Math.round(tp) !== plant.t) /** @type {any} */ (ev).tp = Math.round(tp);
@@ -410,6 +465,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     // 1. commands
     for (const [tag, v, tp] of inbox.splice(0)) applyOut(tag, v, tp);
     for (const [id, key, down] of presses.splice(0)) { const r = byId.get(id); r?.t.press?.(r.s, r.p, key, down); }
+    for (const [id, key, v] of dials.splice(0)) { const r = byId.get(id); r?.t.dial?.(r.s, r.p, key, v); }
     for (const [uid, down, at] of hands.splice(0)) grab(uid, down, at);
     if (controller) {
       for (const tag of inTags) ctlIo[tag] = io[tag];
@@ -417,12 +473,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       for (const tag of outTags) if (ctlIo[tag] !== plc[tag]) applyOut(tag, ctlIo[tag]);
     }
     // 2. component models
-    for (const r of comps) {
-      if (!r.t.step) continue;
-      for (const [key, tag] of r.outs) r.cio[key] = io[tag];
-      r.t.step(r.s, r.p, r.cio, dt);
-      for (const [key, tag] of r.ins) raw[tag] = r.cio[key];
-    }
+    sample(dt);
     // 3. kinematic targets from THE pose function
     plant.dof = dofOf();
     const W = worldPoses(scene, plant.dof);
@@ -465,14 +516,25 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       // belt slips under it and the parts behind it queue up. The machine sees a jam, not a
       // teleport.
       if (pt.pin) {
+        // Walk the hold toward where the pointer is, at a hand's speed. Teleporting it there
+        // scatters whatever it is resting against.
+        if (pt.pinTo) {
+          const lim = handMmS * SK * dt;
+          const d = [pt.pinTo[0] - pt.pin.p[0], pt.pinTo[1] - pt.pin.p[1], pt.pinTo[2] - pt.pin.p[2]];
+          const m = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+          const k = m > lim ? lim / m : 1;
+          pt.pin.p = [pt.pin.p[0] + d[0] * k, pt.pin.p[1] + d[1] * k, pt.pin.p[2] + d[2] * k];
+        }
         pt.body.setNextKinematicTranslation({ x: pt.pin.p[0], y: pt.pin.p[1], z: pt.pin.p[2] });
         pt.body.setNextKinematicRotation({ x: pt.pin.q[0], y: pt.pin.q[1], z: pt.pin.q[2], w: pt.pin.q[3] });
         continue;
       }
       if (!pt.held) continue;
+      if (pt.parked) continue;                 // its holder never moves: it is already there
       const P = compose(W[pt.held.id][pt.held.link], pt.rel);
       pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
       pt.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
+      if (still.has(pt.held.id)) pt.parked = true;
     }
     // 5. physics
     world.step();
@@ -483,26 +545,43 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       warn('part lost ' + pt.uid + ' at ' + [t.x, t.y, t.z].map(v => Math.round(v / SK)).join(', ') + ' mm');
       removePart(pt.uid, 'lost');
     }
+    // Every part's world centre for this step: the removers and the holders all read it from here.
+    // A parked part sits still on something that never moves, so its centre is read once.
+    for (const pt of parts.values()) if (!pt.parked) pt.cw = partCentre(pt);
     // 6a. material flow: emitters spawn at their frame once the spot is clear; removers take
     // every part whose centre is inside their box.
     for (const em of emitters) {
       const r = em.r;
       if (r.s.req <= r.s.done) continue;
+      const cols = r.p.gridCols || 1, rows = r.p.gridRows || 1, slots = cols * rows;
       if (!em.next) {
-        const j = r.p.jitterMm;
-        em.next = compose(W[r.id][defs.get(r.id).root], pose(j > 0 ? [(em.rand() * 2 - 1) * j, (em.rand() * 2 - 1) * j, 0] : undefined));
+        // A grid emitter fills a tray: one part per hole, going round the grid.
+        const j = r.p.jitterMm, pitch = r.p.gridPitch || 0;
+        const n = slots > 1 ? em.slot % slots : 0;
+        const gx = slots > 1 ? (n % cols - (cols - 1) / 2) * pitch : 0;
+        const gy = slots > 1 ? (Math.floor(n / cols) - (rows - 1) / 2) * pitch : 0;
+        const off = j > 0 ? [gx + (em.rand() * 2 - 1) * j, gy + (em.rand() * 2 - 1) * j, 0] : (gx || gy ? [gx, gy, 0] : undefined);
+        em.next = compose(W[r.id][defs.get(r.id).root], pose(off));
       }
-      if (!spawnClear(defs.get(r.p.template), em.next, r.p.dropOnto)) continue;
+      if (!spawnClear(defs.get(r.p.template), em.next, r.p.dropOnto)) {
+        // A tray loader moves on to the next hole rather than waiting on a full one, one hole a
+        // step. A single-spot feeder just waits, as it must: its part has not gone yet.
+        if (slots > 1) { em.slot = (em.slot + 1) % slots; em.next = null; }
+        continue;
+      }
       r.s.done++;
       spawnPart(r.p.template, em.next, r.id + '.' + r.s.done, r.id);
+      if (slots > 1) em.slot = (em.slot + 1) % slots;
       em.next = null;
     }
     for (const r of removers) {
       const F = invert(W[r.id][defs.get(r.id).root]), [sx, sy, sz] = r.p.size;
-      for (const pt of [...parts.values()]) {
-        const l = apply(F, partCentre(pt));
-        if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz) { removePart(pt.uid, 'remove'); r.s.n++; }
+      taken.length = 0;
+      for (const pt of parts.values()) {
+        const l = apply(F, pt.cw);
+        if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz) taken.push(pt.uid);
       }
+      for (const uid of taken) { removePart(uid, 'remove'); r.s.n++; }
     }
     // 6b. part sensors: Rapier queries against PARTS only (PART_RAYS). The component model
     // turns s.hit into its output at the next step (NO/NC, off-delay).
@@ -545,6 +624,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
           // that stops at the nominal part height squeeze it and fling it off the table.
           pt.rel = r.t.snap ? pose([0, 0, 0]) : compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
           pt.held = { id: r.id, link };
+          pt.parked = false;
+          free.delete(pt);
           pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
           refreshPart(pt);
           r.s.uid = pt.uid;
@@ -555,6 +636,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         r.s.uid = null;
         if (pt) {
           pt.held = null;
+          pt.parked = false;
+          free.add(pt);
           pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
           refreshPart(pt);
           const v = h.prev ? F.p.map((x, i) => (x - h.prev.p[i]) / dt * SK) : [0, 0, 0];
@@ -565,8 +648,26 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       h.prev = F;
     }
     // 7. sensors -> PLC image
-    for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]);
+    publishAll();
   }
+
+  /** Every component model for one interval, PLC outputs in, sensor values out (raw). @param {number} dt s */
+  function sample(dt) {
+    for (const r of comps) {
+      if (!r.t.step) continue;
+      for (const [key, tag] of r.outs) r.cio[key] = io[tag];
+      r.t.step(r.s, r.p, r.cio, dt);
+      for (const [key, tag] of r.ins) raw[tag] = r.cio[key];
+    }
+  }
+  function publishAll() { for (const tag of inTags) publish(tag, forced.has(tag) ? forced.get(tag) : raw[tag]); }
+  /**
+   * The IO image starts from what the components really say, not from zeros: a selector on AUTO,
+   * a cylinder's retracted switch on. Otherwise the first scan (and the first scan after Reset)
+   * sees every sensor off for one step and a phantom edge on the next. Measured: the a-to-b
+   * controller saw the selector "turn to AUTO" on the same scan as START and tripped to FAULT.
+   */
+  function settle() { sample(0); publishAll(); }
 
   /** The ONE path from the plant to the PLC: one batch, at most one in flight. */
   let inFlight = false;
@@ -621,7 +722,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const pt = parts.get(uid);
     if (!pt) return;
     if (down && pt.pin) {                                          // a drag: the same hold, moved
-      if (at) pt.pin.p = [at[0] * SK, at[1] * SK, at[2] * SK];
+      if (at) pt.pinTo = [at[0] * SK, at[1] * SK, at[2] * SK];
       return;
     }
     if (!!pt.pin === down) return;
@@ -634,11 +735,16 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         if (h) h.s.uid = null;
         pt.held = null;
       }
+      pt.parked = false;
       const t = pt.body.translation(), q = pt.body.rotation();
       pt.pin = { p: [t.x, t.y, t.z], q: [q.x, q.y, q.z, q.w] };     // metres: written straight back to Rapier
+      pt.pinTo = null;
+      free.delete(pt);
       pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
     } else {
       pt.pin = null;
+      pt.pinTo = null;
+      free.add(pt);
       pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
       pt.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       pt.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -660,6 +766,18 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
 
   /**
+   * A panel dial carries a VALUE, not an edge: the speed override is a percentage the operator
+   * sets. Applied at the start of the next step, like a press.
+   * @param {string} id @param {string} key @param {number} value
+   */
+  function dial(id, key, value) {
+    if (!byId.get(id)?.t.dial) throw new Error('not a dial: ' + id);
+    if (!Number.isFinite(Number(value))) throw new Error('dial value must be a number');
+    dials.push([id, key, Number(value)]);
+    rec({ t: plant.t, k: 'dial', id, key, v: Number(value) });
+  }
+
+  /**
    * Forcing acts on the IO image, so the PLC sees it too. null releases.
    * @param {string} tag @param {any} value
    */
@@ -678,9 +796,12 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     forced.clear();
     stretched.clear();
     initIo();
+    cycleAt = 0; cycleLast = 0; cycleRing.length = 0;
     hands.length = 0;                                          // a hand edge for a part that is about to go
+    dials.length = 0;
     for (const uid of [...parts.keys()]) removePart(uid, 'reset');
     spawnSceneParts();
+    settle();
     // The internal controller keeps its own copies of plant counters (the last emitter count it
     // saw). Reset zeroes the plant's, so a controller that kept the old ones waits for a part
     // that already "arrived" and the sequence stalls. A real PLC cannot be reset from here:
@@ -692,17 +813,44 @@ export async function createPlant(scene, { driver = null, controller = null, rec
 
   // ------------------------------------------------------------ real-time pacing
   /** @type {any} */
-  let timer = null, last = 0, acc = 0;
+  let timer = null, last = 0, acc = 0, firstTick = false;
+  /**
+   * World speed: sim time advances at this multiple of wall time. Below 1 it is slow motion for
+   * watching a fast machine; above it the plant runs ahead, which costs CPU in proportion - the
+   * step budget is what stops it, and an overrun says so. It is a SIMULATOR control, not a machine
+   * one: the speed override on the panel is the machine's own. Forced to 1 whenever a PLC is
+   * connected, because Sysmac timers run on wall time (docs/PLAN.md §5).
+   * @param {number} v 0.05 .. 4 @returns {number} the scale actually in force
+   */
+  function setScale(v) {
+    const want = Math.min(4, Math.max(0.05, Number(v) || 1));
+    if (driver && want !== 1) {
+      warnOnce('time scale stays 1x while a PLC is connected: its timers run on wall time');
+      plant.scale = 1;
+      return plant.scale;
+    }
+    if (want !== plant.scale) { plant.scale = want; rec({ t: plant.t, k: 'scale', v: want }); }
+    return plant.scale;
+  }
+
   function tick() {
     const now = clock();
-    acc += now - last;
+    // The gap before the FIRST tick is not the plant falling behind: it is everything that
+    // happened between start() and the event loop getting round to the timer, and on this PC that
+    // is a major GC right after setup - measured at 240-440 ms on every scene, always exactly one.
+    // Counting it left a permanent "overruns 171" on the status line of a plant that then held
+    // 99% of real time for the rest of the run.
+    if (firstTick) { firstTick = false; last = now; }
+    acc += (now - last) * plant.scale;
     last = now;
     let n = Math.floor(acc / dtMs);
-    if (n > MAX_STEPS) {
+    const cap = Math.round(MAX_STEPS * Math.max(1, plant.scale));
+    if (n > cap) {
       // Sim time falls behind wall time here. Say when and how long, so a stall can be traced
       // to what blocked the event loop (a synchronous require, a browse, GC).
-      warn('plant stalled ' + Math.round(n * dtMs) + ' ms: ' + (n - MAX_STEPS) + ' steps dropped (overruns)');
-      plant.overruns += n - MAX_STEPS; n = MAX_STEPS; acc = 0;
+      warn('plant stalled ' + Math.round(n * dtMs) + ' ms: ' + (n - cap) + ' steps dropped (overruns)'
+        + (plant.scale !== 1 ? ' at ' + plant.scale + 'x' : ''));
+      plant.overruns += n - cap; n = cap; acc = 0;
     } else acc -= n * dtMs;
     const t0 = performance.now();
     for (let i = 0; i < n; i++) step();
@@ -711,7 +859,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
   function start() {
     if (timer) return;
-    last = clock(); acc = 0;
+    last = clock(); acc = 0; firstTick = true;
     timer = setInterval(tick, 4);             // Windows fires this every ~15 ms; the accumulator catches up
     plant.mode = 'run';
     rec({ t: plant.t, k: 'mark', label: 'run' });
@@ -739,7 +887,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   function status() {
     return {
       io: driver ? driver.status() : { driver: 'internal', ok: true, msg: 'INTERNAL CONTROLLER - not a PLC', heartbeat: null },
-      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, parts: parts.size },
+      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, parts: parts.size, scale: plant.scale,
+               cycleMs: cycleLast, avgMs: cycleRing.length ? Math.round(cycleRing.reduce((a, b) => a + b, 0) / cycleRing.length) : 0,
+               cycles: cycleRing.length, cycleTag: countTag },
     };
   }
   async function close() {

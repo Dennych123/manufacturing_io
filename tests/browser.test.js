@@ -108,9 +108,29 @@ try {
     await cmd('Page.navigate', { url: `http://127.0.0.1:${PORT + 1}/` });
     chk('the viewer loads the a-to-b scene', await waitFor(`document.title.startsWith('a-to-b')`), await ev(`location.href + ' ' + document.title`));
     await abPost('/api/cmd', { op: 'run' });
-    await abPost('/api/press', { id: 'pbStart', key: 'pb', down: true });
-    await sleep(150);
-    await abPost('/api/press', { id: 'pbStart', key: 'pb', down: false });
+    // The whole start-up through the HTML operator panel, with real pointer events: MASTER ON,
+    // HOME POS, START. The page sends edges only; the controller decides what each one may do.
+    const opBtn = txt => "[...document.querySelectorAll('#op-body .op-btn')].find(b => b.textContent === " + JSON.stringify(txt) + ')';
+    const tapBtn = async txt => {
+      for (const type of ['pointerdown', 'pointerup']) {
+        await ev(opBtn(txt) + ".dispatchEvent(new PointerEvent(" + JSON.stringify(type) + ", { bubbles: true }))");
+        await sleep(150);
+      }
+    };
+    chk("the operator panel lists the machine's buttons", await waitFor(opBtn('START') + ' && ' + opBtn('MASTER ON') + ' && ' + opBtn('HOME POS') + ' && ' + opBtn('IND BELT')),
+      await ev("[...document.querySelectorAll('#op-body .op-btn')].map(b => b.textContent).join(', ')"));
+    chk('the speed override is on the panel as a slider', await waitFor("document.querySelector('#op-body .op-dial input[type=range]')"),
+      await ev("document.querySelectorAll('#op-body .op-dial').length + ' dials'"));
+    await tapBtn('MASTER ON');
+    chk('pressing MASTER ON in the panel energises the machine', ab.plant.io.PL_MASTER === true, 'PL_MASTER ' + ab.plant.io.PL_MASTER);
+    await tapBtn('HOME POS');
+    await sleep(600);
+    chk('HOME POS homes it, and the button lights', ab.plant.io.PL_HOME === true, 'PL_HOME ' + ab.plant.io.PL_HOME);
+    chk('the lit state reaches the page, so the operator sees which outputs are on',
+      await waitFor(opBtn('HOME POS') + ".classList.contains('lit')"), await ev(opBtn('HOME POS') + '.className'));
+    await tapBtn('START');
+    chk('START then runs the sequence (AUTO_RUN on)', ab.plant.io.PB_START === false && ab.plant.io.AUTO_RUN === true,
+      'PB_START ' + ab.plant.io.PB_START + ', AUTO_RUN ' + ab.plant.io.AUTO_RUN);
     const pinned = () => [...ab.plant.parts.values()].filter(p => p.pin).length;
     for (let i = 0; i < 200 && ab.plant.parts.size === 0; i++) await sleep(100);
     await sleep(1200);                                          // the viewer renders 50 ms behind
@@ -119,14 +139,16 @@ try {
     // sweep then had nothing left to grab (1380 points, 62 s, no hit).
     const mouse = (type, x, y) => cmd('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount: 1 });
     let hit = null, where = '';
-    for (let i = 0; i < 5 && !hit; i++) {
+    // The part is on a running belt, so the point the page reports is already a little stale by
+// the time the press lands. Try again quickly rather than waiting: a slow retry is a wronger aim.
+    for (let i = 0; i < 12 && !hit; i++) {
       const uid = [...ab.plant.parts.keys()][0];
       const at = uid && await ev(`window.mioPartScreen(${JSON.stringify(uid)})`);
       if (!at) { await sleep(500); continue; }
       const x = Math.round(at[0]), y = Math.round(at[1]);
       where = uid + ' at ' + x + ',' + y;
       await mouse('mousePressed', x, y);
-      await sleep(250);
+      await sleep(120);
       if (pinned() > 0) hit = [x, y]; else await mouse('mouseReleased', x, y);
     }
     chk('pressing the mouse on a part in 3D jams it in the plant', !!hit, where || 'no part on screen');

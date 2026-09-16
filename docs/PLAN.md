@@ -437,7 +437,7 @@ The scene is the same, with `io.mode: "twin"`:
   already supports `e.publish`. Until then, bulk-edit that column in Studio.
 - **`--check`** compares all generated files byte for byte. The XSD check uses sysmac's
   `scripts/validate_xml.ps1`, with a **loud** SKIP when it is absent.
-- **Documented manual Studio steps** (they cannot be automated):
+- **Documented individual Studio steps** (they cannot be automated):
   1. import;
   2. Build;
   3. **assign the program to the primary task**;
@@ -483,6 +483,10 @@ The scene is the same, with `io.mode: "twin"`:
 | P3 | Buffer Station / Queue of Items | stoppers and pallets |
 | P3 | Pick & Place (XZ pneumatic) | two-axis pneumatic pick and place with vacuum or gripper |
 | P3 | Assembler | lid onto base on an **index table** |
+| P3 | sort-by-material | inductive proximity (metalOnly) latched upstream of the stop beam; steel and plastic templates |
+| P3 | gripper-transfer | 2-finger gripper on a pneumatic lift on a pneumatic traverse, cylinder mounted on a rod end, a cross belt; a missed grip is a FAULT |
+| P3 | press-station | process station without a belt: feeder into a clamped nest, press with a dwell, ejector onto a chute |
+| P3 | palletizing | the heaviest scene: a 10 x 10 pallet of 100 spark plugs, a five-up vacuum gantry on two servo axes, a rotary carrier with five-slot jigs, an unload head. It is what pins the pose cache and the step budget |
 | P5 | **CE Insert Track** (ceinsert) | ST1 stoppers/dividers, ST2 buffer with servo in mirror mode, ST3 ejector/pusher, QR reader |
 | P6 | **Blurobot cell** (rb4axis) | rail + 3R arm (mirror joints), process stations with covers, physical PCBs |
 | P6 | press-fit, drill, seaming | lifter/radial cylinders, motor, servo, nest, index table; press-fit adds a nest that captures a pin at seat depth |
@@ -673,8 +677,11 @@ Each phase ends runnable, with a written exit criterion.
   legitimately on the belt, so an older part's removal ends this cycle — the pipelining bug that
   cost two live rounds on the simulator.
 
+  Done since (2026-09-16): the watchdog and FAULT step are in all ten controllers, together with
+  the operator panel (selector AUTO / INDIVIDUAL, individual buttons with PLC-side toggle memory,
+  selector change while running = FAULT). `tests/plant.test.js` drives the panel end to end.
+
   Open:
-  - the same watchdog for stopper-pusher, sort-by-height, buffer-queue and assembler;
   - pallets;
   - the live PLC runs of the newer scenes.
 

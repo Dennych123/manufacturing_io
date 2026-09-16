@@ -27,6 +27,20 @@ const scene = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'cyl-on-slide
 const errs = validate(scene);
 chk('cyl-on-slide validates', errs.length === 0, errs.join(' | '));
 
+// worldPoses caches the components that can never move. Most of a scene is furniture, and
+// recomputing it every 2 ms cost more than the machine did (palletizing: 2276 -> 663 us a step).
+{
+  const a = worldPoses(scene, { cyl1: 0, slide1: 0 });
+  const b = worldPoses(scene, { cyl1: 50, slide1: 300 });
+  chk('worldPoses caches a component that never moves, and hands back the same poses', a.base === b.base && a.base.body.p.join() === b.base.body.p.join());
+  chk('worldPoses still moves what has a DOF', a.cyl1.rod.p.join() !== b.cyl1.rod.p.join() && a.slide1.carriage.p.join() !== b.slide1.carriage.p.join(),
+    a.cyl1.rod.p.join() + ' vs ' + b.cyl1.rod.p.join());
+  // A component mounted on a moving link must NOT be cached: the cylinder rides the slide.
+  chk('a component mounted on a moving link is never cached', a.cyl1.body.p.join() !== b.cyl1.body.p.join(),
+    a.cyl1.body.p.join() + ' vs ' + b.cyl1.body.p.join());
+  chk('a part standing on the frame is cached (nothing under it moves)', a.part1 === b.part1);
+}
+
 const broken = (f, re, label) => {
   const s = clone(scene); f(s);
   const e = validate(s);
@@ -37,7 +51,9 @@ broken(s => { comp(s, 'cyl1').parent = 'nope'; }, /parent "nope" does not exist/
 broken(s => { comp(s, 'base').parent = 'cyl1'; }, /cycle/, 'a parent cycle');
 broken(s => { comp(s, 'part1').type = 'unicorn'; }, /unknown type/, 'an unknown type');
 broken(s => { comp(s, 'part1').id = 'base'; }, /duplicate id base/, 'duplicate ids');
-broken(s => { comp(s, 'pbStop').io.pb = 'PB_START'; }, /two components writing the same tag PB_START/, 'two writers of one tag');
+broken(s => { comp(s, 'pbCstop').io.pb = 'PB_START'; }, /two components writing the same tag PB_START/, 'two writers of one tag');
+broken(s => { comp(s, 'part1').params = { size: [60, 0, 30] }; }, /size must be positive/, 'a zero-size workpiece (the emitter column check would loop for ever)');
+broken(s => { s.sim = { ...s.sim, handMmS: 0 }; }, /sim.handMmS must be/, 'a hand speed of zero (a drag that never arrives)');
 broken(s => { comp(s, 'lampAuto').io.lamp = 'PB_START'; }, /PB_START is written by the plant .* AND by the PLC/, 'a tag both plant- and PLC-written');
 broken(s => { comp(s, 'cyl1').socket = 'nose'; }, /has no socket "nose"/, 'an unknown socket');
 broken(s => { comp(s, 'cyl1').params.boreDiameter = 32; }, /unknown parameter/, 'an unknown parameter (a typo is silent otherwise)');
@@ -171,6 +187,25 @@ chk('scenes/cyl-on-slide.json is in canonical form', fs.readFileSync(path.join(R
 for (const f of fs.readdirSync(path.join(ROOT, 'scenes')).filter(f => /^[a-z0-9_-]+\.json$/.test(f))) {
   const txt = fs.readFileSync(path.join(ROOT, 'scenes', f), 'utf8'), sc = JSON.parse(txt), errs = validate(sc);
   chk('scenes/' + f + ' is valid and canonical', errs.length === 0 && txt === stringify(sc) && sc.name + '.json' === f, errs.join('; '));
+  // The panel controls every scene owes its machine. A regenerated scene silently dropped its
+  // speed dial, its `ovr` bindings and its jog buttons once, and nothing failed: the machine simply
+  // ran with three fewer controls than the others.
+  {
+    const by = (/** @type {string} */ ty) => sc.components.filter((/** @type {any} */ c) => c.type === ty);
+    const motors = [...by('servoLinear'), ...by('conveyor'), ...by('indexTable')];
+    const servos = by('servoLinear');
+    const tags = new Set(sc.components.flatMap((/** @type {any} */ c) => Object.values(c.io || {})));
+    if (motors.length) {
+      const unbound = motors.filter((/** @type {any} */ c) => !c.io?.ovr).map((/** @type {any} */ c) => c.id);
+      chk(sc.name + ': every motor takes the speed override', unbound.length === 0, unbound.join(' '));
+      chk(sc.name + ': the panel has the speed dial', by('speedDial').length === 1, by('speedDial').length + ' dials');
+    }
+    for (const ax of servos) {
+      chk(sc.name + ': ' + ax.id + ' can be jogged', !!ax.io?.jogP && !!ax.io?.jogN, JSON.stringify(ax.io));
+      chk(sc.name + ': ' + ax.id + ' has a jog button each way on the panel',
+        tags.has(ax.io?.jogP) && tags.has(ax.io?.jogN) && sc.components.some((/** @type {any} */ c) => c.io?.lamp === ax.io?.jogP));
+    }
+  }
 }
 const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());

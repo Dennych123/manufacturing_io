@@ -6,25 +6,52 @@
 const WD_MS = 15000;
 /** Fault step: feeding and motion off, AUTO_RUN off, waits for START to be acknowledged. */
 const FAULT = 900;
+/** Home step: every actuator is driven to its home position. AUTO will not start until it ends. */
+const HOME = 800;
+/** E-STOP step: the master circuit is open and every solenoid is de-energised. */
+const ESTOP = 910;
+/** Individual buttons that toggle an actuator (the button is momentary, the memory is the PLC's). */
+const TOGGLES = ['IND_CV', 'IND_CLAMP', 'IND_LIFT', 'IND_VAC'];
 
 export function create() {
-  let pbLast = false, stopReq = false, emLast = 0;
+  let pbLast = false, stopReq = false, selLast = true, emLast = 0;
   let stepLast = -1, stepFrom = 0, gone = 0;
+  let masterOn = false, homed = false, masterLast = false, homeLast = false;
+  const indMem = {}, indLast = {};
   return {
     /** The plant was reset: its counters are back to 0, so drop the copies we compare against. */
-    reset() { pbLast = false; stopReq = false; emLast = 0; stepLast = -1; stepFrom = 0; gone = 0; },
+    reset() {
+      pbLast = false; stopReq = false; selLast = true; emLast = 0; stepLast = -1; stepFrom = 0; gone = 0;
+      masterOn = false; homed = false; masterLast = false; homeLast = false;
+      for (const b of TOGGLES) { indMem[b] = false; indLast[b] = false; }
+    },
 
     /** One PLC scan: reads `in` tags, writes `out` tags. @param {Record<string, any>} io @param {number} t ms */
     scan(io, t) {
       const startEdge = io.PB_START && !pbLast;
       pbLast = io.PB_START;
-      if (io.PB_STOP) stopReq = true;
+      if (io.PB_CSTOP) stopReq = true;
+      // Selector AUTO / INDIVIDUAL: START only in AUTO, individual buttons only in INDIVIDUAL, a change
+      // while running is a FAULT.
+      const auto = io.SEL_AUTO !== false, selChanged = auto !== selLast;
+      selLast = auto;
+      // The master circuit, as on the cell panel (rb4axis): E-STOP is a latching mushroom, MASTER
+      // ON energises the machine, and nothing runs without it. An E-STOP also loses the home
+      // position: the machine must be homed again before AUTO will start.
+      const estop = !!io.PB_ESTOP;
+      const masterEdge = io.PB_MASTER && !masterLast;
+      masterLast = !!io.PB_MASTER;
+      const homeEdge = io.PB_HOME && !homeLast;
+      homeLast = !!io.PB_HOME;
+      if (estop) { masterOn = false; homed = false; }
+      else if (masterEdge) masterOn = true;
+      const ready = masterOn && !estop;
 
       switch (io.ST1_STEP) {
         case 0:
           io.CV_RUN = false; io.EM_EMIT = false; io.VAC_ON = false;
           io.SOL_Z_DN = false; io.SOL_Z_UP = true; io.SV_EXEC = false;
-          if (startEdge && io.AS_Z_UP && io.SV_INPOS && !io.SV_DONE) { stopReq = false; emLast = io.EM_CNT; io.ST1_STEP = 10; }
+          if (startEdge && auto && ready && homed && io.AS_Z_UP && io.SV_INPOS && !io.SV_DONE) { stopReq = false; emLast = io.EM_CNT; io.ST1_STEP = 10; }
           break;
         case 10:
           io.CV_RUN = true; io.CLAMP_A = true; io.EM_EMIT = true;
@@ -80,29 +107,66 @@ export function create() {
             if (stopReq) io.ST1_STEP = 0; else { emLast = io.EM_CNT; io.ST1_STEP = 10; }
           }
           break;
+        case HOME:
+          // HOME: lift up and traverse home. The cup is left alone: a real machine does not drop the part it holds.
+          io.CV_RUN = false; io.EM_EMIT = false;
+          io.SOL_Z_DN = false; io.SOL_Z_UP = true;
+          io.SV_TGT = 0; io.SV_EXEC = true;
+          if (io.AS_Z_UP && io.SV_DONE) { io.SV_EXEC = false; homed = true; io.ST1_STEP = 0; }
+          break;
+        case ESTOP:
+          // The master circuit is open, so every solenoid de-energises - which is what really
+          // happens: a 5/2 single-solenoid valve springs back, a double one holds where it is. The holders keep their parts: a real machine does not let go when the power drops.
+          io.EM_EMIT = false; io.SV_EXEC = false; io.SOL_Z_DN = false; io.SOL_Z_UP = false;
+          io.CV_RUN = false;
+          if (ready) io.ST1_STEP = 0;                  // MASTER ON after the mushroom is released
+          break;
         case FAULT:
-          // Stuck: the part was taken out of the nest or the cup, or never arrived. Stop feeding
-          // and stop the servo, but do NOT drop vacuum - a real machine keeps hold of its part.
+          // Stuck: the part was taken out of the nest or the cup, never arrived, or the selector
+          // was turned while running. Stop feeding and the servo, but do NOT drop vacuum - a real
+          // machine keeps hold of its part.
           io.EM_EMIT = false;
           io.CV_RUN = false;
           io.SV_EXEC = false;
           // Acknowledging writes off whatever never reached the unloader. Only HERE: at every
           // START it would write off parts still legitimately in the machine, and an older part's
           // removal would end this cycle (the pipelining bug, docs/PLAN.md §13).
-          if (startEdge) { stopReq = false; gone = io.EM_CNT - io.RM_CNT; io.ST1_STEP = 0; }
+          if (startEdge && auto) { stopReq = false; gone = io.EM_CNT - io.RM_CNT; io.ST1_STEP = 0; }
           break;
       }
 
-      // Watchdog: a step that stops moving is a jam, not patience. Measured before this existed:
-      // taking the part out of the nest left ST1_STEP at 20 for as long as you care to watch,
-      // with AUTO_RUN still on.
+      // Watchdog: a running step that stops moving is a jam, not patience. Measured before this
+      // existed: taking the part out of the nest left ST1_STEP at 20 for as long as you care to
+      // watch, with AUTO_RUN still on. A selector change while running trips the same way.
       if (io.ST1_STEP !== stepLast) { stepLast = io.ST1_STEP; stepFrom = t; }
-      if (io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT && t - stepFrom >= WD_MS) {
+      if (io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT && io.ST1_STEP !== ESTOP && (t - stepFrom >= WD_MS || selChanged)) {
         io.ST1_STEP = FAULT; io.EM_EMIT = false; io.CV_RUN = false; io.SV_EXEC = false;
       }
 
-      io.AUTO_RUN = io.ST1_STEP !== 0 && io.ST1_STEP !== FAULT;
+      // E-STOP at any moment, and the HOME button when the machine is energised and idle.
+      if (estop) {
+        if (io.ST1_STEP !== ESTOP) io.ST1_STEP = ESTOP;
+        io.EM_EMIT = false; io.SV_EXEC = false; io.SOL_Z_DN = false; io.SOL_Z_UP = false;
+        io.CV_RUN = false;
+      } else if (homeEdge && ready && io.ST1_STEP === 0) io.ST1_STEP = HOME;
+
+      io.AUTO_RUN = io.ST1_STEP !== 0 && io.ST1_STEP !== HOME && io.ST1_STEP !== FAULT && io.ST1_STEP !== ESTOP;
+      // Individual operation: momentary buttons, PLC toggle memory cleared when INDIVIDUAL ends. The
+      // servo buttons are held: Execute is a level, and the axis finishes the move on its own.
+      const individual = !auto && !io.AUTO_RUN && ready && io.ST1_STEP !== HOME;
+      for (const b of TOGGLES) { if (individual && io[b] && !indLast[b]) indMem[b] = !indMem[b]; if (!individual) indMem[b] = false; indLast[b] = !!io[b]; }
+      if (individual) {
+        io.CV_RUN = !!indMem.IND_CV; io.EM_EMIT = !!io.IND_FEED; io.CLAMP_A = !!indMem.IND_CLAMP;
+        io.SOL_Z_DN = !!indMem.IND_LIFT; io.SOL_Z_UP = !indMem.IND_LIFT; io.VAC_ON = !!indMem.IND_VAC;
+      }
+      // The speed override the operator dialled in, passed on to the axes and the belts.
+      io.OVR = io.OVR_SET;
+      // Jog: the axis creeps while the button is held, and only on INDIVIDUAL.
+      io.SV_JOG_P = individual && !!io.IND_SV_P;
+      io.SV_JOG_N = individual && !!io.IND_SV_N;
       io.PL_START = io.AUTO_RUN;
+      io.PL_MASTER = masterOn;
+      io.PL_HOME = homed;
     },
   };
 }

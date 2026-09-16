@@ -5,45 +5,48 @@
          schemaVersion="1"
          xmlns="www.iec.ch/public/TC65SC65BWG7TF10">
   <FileHeader companyName="manufacturing_io" productName="tools/gen_sysmac.js" productVersion="1.0.0.0" />
-  <ContentHeader name="cyl-on-slide" creationDateTime="2026-01-01T00:00:00">
+  <ContentHeader name="press-station" creationDateTime="2026-01-01T00:00:00">
     <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:DeviceInfo modelName="NX102" version="1.40" /></Data></AddData>
   </ContentHeader>
   <Types>
     <GlobalNamespace>
-      <Program name="PRG_CYL_ON_SLIDE">
+      <Program name="PRG_PRESS_STATION">
         <ExternalVars>
-          <Variable name="SV1_TGT">
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV1_EXEC">
+          <Variable name="CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_DONE">
+          <Variable name="NEST_P">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_INPOS">
+          <Variable name="EM_EMIT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR">
-            <Type><TypeName>LREAL</TypeName></Type>
+          <Variable name="EM_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="SV1_JOG_P">
+          <Variable name="SOL_P_DN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_JOG_N">
+          <Variable name="SOL_P_UP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_ST1_PRSS_CYL_DN">
+          <Variable name="AS_P_UP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_ST1_PRSS_CYL_UP">
+          <Variable name="AS_P_DN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="AS_ST1_PRSS_CYL_UP">
+          <Variable name="SOL_EJECT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="AS_ST1_PRSS_CYL_DN">
+          <Variable name="AS_EJ_BACK">
             <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_EJ_OUT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
           <Variable name="SEL_AUTO">
             <Type><TypeName>BOOL</TypeName></Type>
@@ -75,16 +78,16 @@
           <Variable name="AUTO_RUN">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR_SET">
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_CYL">
+          <Variable name="IND_FEED">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_SV1_P">
+          <Variable name="IND_CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_SV1_N">
+          <Variable name="IND_PRESS">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_EJECT">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="ST1_STEP">
@@ -114,7 +117,10 @@
           <Variable name="SEL_CHANGED">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="T_DWELL">
+          <Variable name="EM_LAST">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="T_PRESS">
             <Type><TypeName>TON</TypeName></Type>
           </Variable>
           <Variable name="T_WD">
@@ -123,10 +129,25 @@
           <Variable name="STEP_LAST">
             <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="MEM_CYL">
+          <Variable name="GONE">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_CLAMP">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_CYL_LAST">
+          <Variable name="IND_CLAMP_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_PRESS">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_PRESS_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_EJECT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_EJECT_LAST">
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="ESTOP">
@@ -156,17 +177,21 @@
         </Vars>
         <MainBody>
           <BodyContent xsi:type="ST">
-            <ST>// Generated by manufacturing_io tools/gen_sysmac.js from scenes/cyl-on-slide.st. Edit the .st, then regenerate.
+            <ST>// Generated by manufacturing_io tools/gen_sysmac.js from scenes/press-station.st. Edit the .st, then regenerate.
 
 // Heartbeat: the plant says &quot;program not running or not assigned to a task&quot; when this stops.
 MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
 
-// cyl-on-slide: slide to the press position, press down, dwell, press up, slide home, repeat
-// until STOP. The same sequence runs without a PLC in cyl-on-slide.ctl.js.
+// press-station: the feeder drops a part into the clamped nest, the press comes down onto it
+// and holds for the press time, comes up, the nest unclamps and the ejector pushes the part
+// off the nest onto the chute into the bin. Repeat until STOP. The same sequence runs without
+// a PLC in press-station.ctl.js.
 //
-// The servo handshake is MC_MoveAbsolute's: Execute is a LEVEL held until Done, and Done must
-// be seen to drop before the next Execute. The plant samples PLC outputs every ~16 ms, so a
-// one-scan pulse would be missed.
+// The clamp goes on BEFORE the feed: a nest that holds the part locates it square on the pocket
+// floor, so the press stroke meets it where the drawing says.
+//
+// Waiting steps wait for an INVARIANT, not for a counter to move: every part fed has reached
+// the bin.
 //
 // The panel has a selector AUTO / INDIVIDUAL: START only in AUTO, the individual buttons only in
 // INDIVIDUAL, and a change while the sequence runs is a FAULT, not a pause.
@@ -195,87 +220,97 @@ END_IF;
 READY := MASTER_ON AND NOT ESTOP;
 
 CASE ST1_STEP OF
-	0:	// idle at home, cylinder up
-		SOL_ST1_PRSS_CYL_DN := FALSE;
-		SOL_ST1_PRSS_CYL_UP := TRUE;
-		SV1_EXEC := FALSE;
-		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_ST1_PRSS_CYL_UP AND SV1_INPOS AND NOT SV1_DONE THEN
+	0:	// idle: press up, ejector back, nest free
+		CLAMP := FALSE;
+		EM_EMIT := FALSE;
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF START_EDGE AND SEL_AUTO AND READY AND HOMED AND AS_P_UP AND AS_EJ_BACK THEN
 			STOP_REQ := FALSE;
+			EM_LAST := EM_CNT;
 			ST1_STEP := 10;
 		END_IF;
-	10:	// slide to the press position
-		SV1_TGT := 400.0;
-		SV1_EXEC := TRUE;
-		IF SV1_DONE THEN
-			SV1_EXEC := FALSE;
+	10:	// clamp, then feed one part into the nest
+		CLAMP := TRUE;
+		EM_EMIT := TRUE;
+		IF EM_CNT &lt;&gt; EM_LAST THEN
+			EM_EMIT := FALSE;
 			ST1_STEP := 20;
 		END_IF;
-	20:	// wait until the plant has seen Execute drop
-		IF NOT SV1_DONE THEN
+	20:	// the nest reports the part
+		IF NEST_P THEN
 			ST1_STEP := 30;
 		END_IF;
 	30:	// press down
-		SOL_ST1_PRSS_CYL_UP := FALSE;
-		SOL_ST1_PRSS_CYL_DN := TRUE;
-		IF AS_ST1_PRSS_CYL_DN THEN
+		SOL_P_UP := FALSE;
+		SOL_P_DN := TRUE;
+		IF AS_P_DN THEN
 			ST1_STEP := 40;
 		END_IF;
-	40:	// dwell on the part
-		IF T_DWELL.Q THEN
+	40:	// press time
+		IF T_PRESS.Q THEN
 			ST1_STEP := 50;
 		END_IF;
 	50:	// press up
-		SOL_ST1_PRSS_CYL_DN := FALSE;
-		SOL_ST1_PRSS_CYL_UP := TRUE;
-		IF AS_ST1_PRSS_CYL_UP THEN
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF AS_P_UP THEN
 			ST1_STEP := 60;
 		END_IF;
-	60:	// slide home
-		SV1_TGT := 0.0;
-		SV1_EXEC := TRUE;
-		IF SV1_DONE THEN
-			SV1_EXEC := FALSE;
+	60:	// unclamp and eject onto the chute
+		CLAMP := FALSE;
+		SOL_EJECT := TRUE;
+		IF AS_EJ_OUT THEN
 			ST1_STEP := 70;
 		END_IF;
-	70:	// cycle complete
-		IF NOT SV1_DONE THEN
-			CYCLE_CNT := CYCLE_CNT + 1;
-			IF STOP_REQ THEN
-				ST1_STEP := 0;
-			ELSE
-				ST1_STEP := 10;
-			END_IF;
+	70:	// ejector back, and every part fed has reached the bin
+		SOL_EJECT := FALSE;
+		IF AS_EJ_BACK AND (RM_CNT + GONE &gt;= EM_CNT) THEN
+			ST1_STEP := 80;
 		END_IF;
-	800:	// HOME: press cylinder up, slide back to zero
-		SOL_ST1_PRSS_CYL_DN := FALSE;
-		SOL_ST1_PRSS_CYL_UP := TRUE;
-		SV1_TGT := 0.0;
-		SV1_EXEC := TRUE;
-		IF AS_ST1_PRSS_CYL_UP AND SV1_DONE THEN
-			SV1_EXEC := FALSE;
+	80:	// cycle complete
+		CYCLE_CNT := CYCLE_CNT + 1;
+		IF STOP_REQ THEN
+			ST1_STEP := 0;
+		ELSE
+			EM_LAST := EM_CNT;
+			ST1_STEP := 10;
+		END_IF;
+	800:	// HOME: press up, ejector back. The clamp is left alone: a real machine does not drop the part it holds
+		EM_EMIT := FALSE;
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
+		IF AS_P_UP AND AS_EJ_BACK THEN
 			HOMED := TRUE;
 			ST1_STEP := 0;
 		END_IF;
 	910:	// E-STOP: the master circuit is open, so every solenoid de-energises - which is what
-		// really happens: a 5/2 single-solenoid valve springs back, a double one holds.
-		SV1_EXEC := FALSE;
-		SOL_ST1_PRSS_CYL_DN := FALSE;
-		SOL_ST1_PRSS_CYL_UP := FALSE;
+		// really happens: a 5/2 single-solenoid valve springs back, a double one holds. The holders keep their parts: a real machine does not let go when the power drops.
+		EM_EMIT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := FALSE;
+		SOL_EJECT := FALSE;
 		IF READY THEN	// MASTER ON after the mushroom is released
 			ST1_STEP := 0;
 		END_IF;
-	900:	// FAULT: a step stopped moving, or the selector was turned while running. Servo
-		// stopped, cylinder up, wait for START in AUTO.
-		SV1_EXEC := FALSE;
-		SOL_ST1_PRSS_CYL_DN := FALSE;
-		SOL_ST1_PRSS_CYL_UP := TRUE;
+	900:	// FAULT: a step stopped moving (part taken out of the nest, never arrived, never reached
+		// the bin), or the selector was turned while running. Feeding off, press up, ejector
+		// back; the clamp keeps whatever it holds.
+		EM_EMIT := FALSE;
+		SOL_EJECT := FALSE;
+		SOL_P_DN := FALSE;
+		SOL_P_UP := TRUE;
 		IF START_EDGE AND SEL_AUTO THEN
 			STOP_REQ := FALSE;
+			// Acknowledging writes off whatever never reached the bin. Only HERE.
+			GONE := EM_CNT - RM_CNT;
 			ST1_STEP := 0;
 		END_IF;
 END_CASE;
 
-T_DWELL(In := (ST1_STEP = 40), PT := T#300ms);
+T_PRESS(In := (ST1_STEP = 40), PT := T#500ms);
 
 // Watchdog: a running step that stops moving is a jam, not patience. A selector change while
 // running trips the same way.
@@ -285,9 +320,10 @@ IF ST1_STEP &lt;&gt; STEP_LAST THEN
 END_IF;
 IF T_WD.Q OR (SEL_CHANGED AND (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910)) THEN
 	ST1_STEP := 900;
-	SV1_EXEC := FALSE;
-	SOL_ST1_PRSS_CYL_DN := FALSE;
-	SOL_ST1_PRSS_CYL_UP := TRUE;
+	EM_EMIT := FALSE;
+	SOL_EJECT := FALSE;
+	SOL_P_DN := FALSE;
+	SOL_P_UP := TRUE;
 END_IF;
 
 // E-STOP at any moment, and the HOME button when the machine is energised and idle.
@@ -295,9 +331,10 @@ IF ESTOP THEN
 	IF ST1_STEP &lt;&gt; 910 THEN
 		ST1_STEP := 910;
 	END_IF;
-	SV1_EXEC := FALSE;
-	SOL_ST1_PRSS_CYL_DN := FALSE;
-	SOL_ST1_PRSS_CYL_UP := FALSE;
+	EM_EMIT := FALSE;
+	SOL_P_DN := FALSE;
+	SOL_P_UP := FALSE;
+	SOL_EJECT := FALSE;
 ELSIF HOME_EDGE AND READY AND (ST1_STEP = 0) THEN
 	ST1_STEP := 800;
 END_IF;
@@ -305,24 +342,30 @@ END_IF;
 AUTO_RUN := (ST1_STEP &lt;&gt; 0) AND (ST1_STEP &lt;&gt; 800) AND (ST1_STEP &lt;&gt; 900) AND (ST1_STEP &lt;&gt; 910);
 
 // Individual operation: momentary buttons, a PLC toggle memory per actuator, cleared when INDIVIDUAL
-// ends. The servo buttons are held: Execute is a level, and the axis finishes the move on its own.
+// ends. The feed button pulses one part.
 IF NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) THEN
-	IF IND_CYL AND NOT IND_CYL_LAST THEN
-		MEM_CYL := NOT MEM_CYL;
+	IF IND_CLAMP AND NOT IND_CLAMP_LAST THEN
+		MEM_CLAMP := NOT MEM_CLAMP;
 	END_IF;
-	SOL_ST1_PRSS_CYL_DN := MEM_CYL;
-	SOL_ST1_PRSS_CYL_UP := NOT MEM_CYL;
+	IF IND_PRESS AND NOT IND_PRESS_LAST THEN
+		MEM_PRESS := NOT MEM_PRESS;
+	END_IF;
+	IF IND_EJECT AND NOT IND_EJECT_LAST THEN
+		MEM_EJECT := NOT MEM_EJECT;
+	END_IF;
+	EM_EMIT := IND_FEED;
+	CLAMP := MEM_CLAMP;
+	SOL_P_DN := MEM_PRESS;
+	SOL_P_UP := NOT MEM_PRESS;
+	SOL_EJECT := MEM_EJECT;
 ELSE
-	MEM_CYL := FALSE;
+	MEM_CLAMP := FALSE;
+	MEM_PRESS := FALSE;
+	MEM_EJECT := FALSE;
 END_IF;
-IND_CYL_LAST := IND_CYL;
-
-// The speed override the operator dialled in, passed on to the axes and the belts.
-OVR := OVR_SET;
-
-// Jog: the axis creeps while the button is held, and only on INDIVIDUAL.
-SV1_JOG_P := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV1_P;
-SV1_JOG_N := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND (ST1_STEP &lt;&gt; 800) AND IND_SV1_N;
+IND_CLAMP_LAST := IND_CLAMP;
+IND_PRESS_LAST := IND_PRESS;
+IND_EJECT_LAST := IND_EJECT;
 
 PL_START := AUTO_RUN;
 PL_MASTER := MASTER_ON;
@@ -333,68 +376,68 @@ PL_HOME := HOMED;</ST>
     </GlobalNamespace>
   </Types>
   <Instances>
-    <Configuration name="cyl-on-slide">
+    <Configuration name="press-station">
       <Resource name="MainResource" resourceTypeName="">
         <GlobalVars>
-          <Variable name="SV1_TGT">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE TARGET</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV1_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE EXEC</Documentation>
+          <Variable name="CLAMP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS NEST CLAMP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_DONE">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE DONE</Documentation>
+          <Variable name="NEST_P">
+            <Documentation xsi:type="SimpleText">ST1 PRESS NEST EXIST</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_ACT_POS">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE ACTPOS</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="SV1_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE INPOS</Documentation>
+          <Variable name="EM_EMIT">
+            <Documentation xsi:type="SimpleText">FEEDER EMIT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE OVR</Documentation>
+          <Variable name="EM_CNT">
+            <Documentation xsi:type="SimpleText">FEEDER COUNT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
+            <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
-          <Variable name="SV1_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE JOG_P</Documentation>
+          <Variable name="SOL_P_DN">
+            <Documentation xsi:type="SimpleText">ST1 PRESS DOWN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SV1_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 PRESS SLIDE JOG_N</Documentation>
+          <Variable name="SOL_P_UP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS UP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_ST1_PRSS_CYL_DN">
-            <Documentation xsi:type="SimpleText">ST1 PRESS CYLINDER DOWN</Documentation>
+          <Variable name="AS_P_UP">
+            <Documentation xsi:type="SimpleText">ST1 PRESS UP</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="SOL_ST1_PRSS_CYL_UP">
-            <Documentation xsi:type="SimpleText">ST1 PRESS CYLINDER UP</Documentation>
+          <Variable name="AS_P_DN">
+            <Documentation xsi:type="SimpleText">ST1 PRESS DOWN</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="AS_ST1_PRSS_CYL_UP">
-            <Documentation xsi:type="SimpleText">ST1 PRESS CYLINDER UP</Documentation>
+          <Variable name="SOL_EJECT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR OUT</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="AS_ST1_PRSS_CYL_DN">
-            <Documentation xsi:type="SimpleText">ST1 PRESS CYLINDER DOWN</Documentation>
+          <Variable name="AS_EJ_BACK">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR BACK</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_EJ_OUT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR OUT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_CNT">
+            <Documentation xsi:type="SimpleText">UNLOAD BIN COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
           </Variable>
           <Variable name="SEL_AUTO">
             <Documentation xsi:type="SimpleText">AUTO / INDIVIDUAL AUTO</Documentation>
@@ -446,23 +489,23 @@ PL_HOME := HOMED;</ST>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="OVR_SET">
-            <Documentation xsi:type="SimpleText">SPEED OVR</Documentation>
-            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
-            <Type><TypeName>LREAL</TypeName></Type>
-          </Variable>
-          <Variable name="IND_CYL">
-            <Documentation xsi:type="SimpleText">IND PRESS CYL PB</Documentation>
+          <Variable name="IND_FEED">
+            <Documentation xsi:type="SimpleText">IND FEED PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_SV1_P">
-            <Documentation xsi:type="SimpleText">JOG SLIDE + PB</Documentation>
+          <Variable name="IND_CLAMP">
+            <Documentation xsi:type="SimpleText">IND CLAMP PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
-          <Variable name="IND_SV1_N">
-            <Documentation xsi:type="SimpleText">JOG SLIDE - PB</Documentation>
+          <Variable name="IND_PRESS">
+            <Documentation xsi:type="SimpleText">IND PRESS PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_EJECT">
+            <Documentation xsi:type="SimpleText">IND EJECT PB</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>

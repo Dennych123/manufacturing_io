@@ -47,21 +47,47 @@ node server/main.js --scene a-to-b                  # the same scene against the
 - **Timing is measured, not assumed.** ~39 ms IO round trip at p50 against the Studio 1.66
   simulator, which counts 10 ms pulses. Sensor blips too short for the PLC to see are held and
   reported as warnings.
+- **Every machine has a cell operator panel**, beside the 3D view and hideable: a selector
+  AUTO / INDIVIDUAL, MASTER ON, a latching E-STOP mushroom, START, CYCLE STOP, HOME POS, the AUTO
+  lamp, and one button per actuator. The start-up order is the machine's own: **energise, home,
+  start**. A machine that has not been homed refuses to start, an E-STOP de-energises every
+  solenoid and loses the home position, and CYCLE STOP lets the running cycle finish. On
+  INDIVIDUAL each button drives its own actuator: the button is momentary, the PLC keeps the
+  toggle memory and clears it when INDIVIDUAL ends, so nothing stays latched into AUTO. Turning
+  the selector while the sequence runs is a FAULT. Every sequence also has a 15 s watchdog that
+  faults instead of waiting for ever. The browser only sends button edges; the PLC program
+  enforces all of it.
+- **Two speed knobs, and they are different things.** The panel's **speed override** is the
+  machine's own: a percentage dial that scales what a motor does (servo axes, belts, the index
+  cam) and never the pneumatics, because a cylinder's speed is set by its flow regulator. It
+  scales the jog as well. The toolbar's **world speed** is the simulator's: 1/10x to watch a fast
+  machine, up to 4x to get through a cycle, and it is forced back to 1x whenever a PLC is
+  connected, because Sysmac timers run on wall time.
+- **Every servo can be jogged from the panel.** On INDIVIDUAL, hold + or - and the axis creeps at
+  the override speed. A jog is refused while a programmed move is running.
+- **Each family of parts has its own colour**, so a machine is readable at a glance: blue is
+  pneumatic, bronze moves, orange touches the part, green holds it, teal senses it, and the
+  structure stays grey behind them.
 - **The scene is editable in the browser.** Pick a part in 3D, move it with a gizmo, edit its
   parameters and tags, save. The running plant rebuilds from the saved file.
 
 ## Scenes
 
-Six machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
+Eleven machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
 
 | scene | what it shows |
 |---|---|
+| `cyl-on-slide` | button, valve, cylinder on a servo slide, reed switch, lamp. The hello world |
 | `a-to-b` | loader, belt, end sensor, unloader. The smallest complete cycle |
 | `stopper-pusher` | a stopper meters parts at a pusher; odd parts go down a reject chute |
 | `pick-place` | a servo traverse with a pneumatic lift and a vacuum cup, 6.5 s per cycle |
 | `sort-by-height` | a low beam sees any part, a high beam only the tall ones, which get pushed off |
-| `buffer-queue` | a buffer belt stands still between demands and meters out one part at a time |
+| `buffer-queue` | a two-cylinder stop-and-go escapement meters one part at a time, with a reed switch and a photo-eye at each pin |
 | `assembler` | a 4-station cam indexer: load a base, drop a lid, press it, index on |
+| `sort-by-material` | steel and plastic parts look alike to the beam; an inductive sensor upstream is latched, and steel gets pushed off |
+| `gripper-transfer` | a 2-finger gripper on a pneumatic lift and traverse moves parts from one belt to a cross belt; a missed grip faults |
+| `press-station` | feeder into a clamped nest, press with a dwell, unclamp, ejector pushes the part down a chute. No belt at all |
+| `palletizing` | a 10 x 10 pallet of spark plugs it loads itself, a five-up vacuum gantry on two servo axes, a rotary carrier of five-slot jigs, and an unload head feeding the next process. An empty pallet is replaced with a fresh one |
 
 | | |
 |---|---|
@@ -70,7 +96,7 @@ Six machines run with their own PLC programs, each in `scenes/<name>.{json,st,ct
 | ![sort-by-height](docs/img/sort-by-height.png) | ![assembler](docs/img/assembler.png) |
 | **`sort-by-height`** — a tall part runs at the two beams, the pusher waiting by the chute | **`assembler`** — lids ride their bases on friction alone as the table carries them on |
 
-All six passed a 30-minute soak: cycles keep completing, parts balance, none are lost, no
+The first six passed a 30-minute soak: cycles keep completing, parts balance, none are lost, no
 warnings, and the worst step was 69–441 µs against a 1000 µs budget.
 
 ## How it fits together

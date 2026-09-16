@@ -87,7 +87,10 @@
         "exec": "SV_EXEC",
         "done": "SV_DONE",
         "actPos": "SV_ACT",
-        "inPos": "SV_INPOS"
+        "inPos": "SV_INPOS",
+        "ovr": "OVR",
+        "jogP": "SV_JOG_P",
+        "jogN": "SV_JOG_N"
       }
     },
     {
@@ -136,7 +139,7 @@
       "station": "ST1",
       "at": [300, -400, 0],
       "params": { "length": 700, "width": 200, "height": 800, "speed": 250, "guides": 0 },
-      "io": { "run": "CV_RUN" }
+      "io": { "run": "CV_RUN", "ovr": "OVR" }
     },
     {
       "id": "rm1",
@@ -148,42 +151,104 @@
       "params": { "size": [120, 260, 200] },
       "io": { "count": "RM_CNT" }
     },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
     {
-      "id": "panel",
-      "type": "frame",
-      "label": "OPERATOR PANEL",
-      "at": [-700, -500, 0],
-      "params": { "size": [300, 200, 900] }
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
     },
     {
       "id": "pbStart",
       "type": "pushbutton",
       "label": "START",
-      "parent": "panel",
-      "socket": "top",
-      "at": [-80, 0, 0],
-      "params": { "color": "green", "lamp": true },
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
       "io": { "pb": "PB_START", "lamp": "PL_START" }
     },
     {
-      "id": "pbStop",
+      "id": "pbCstop",
       "type": "pushbutton",
-      "label": "STOP",
-      "parent": "panel",
-      "socket": "top",
-      "at": [0, 0, 0],
-      "params": { "color": "red", "lamp": false },
-      "io": { "pb": "PB_STOP" }
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
     },
     {
       "id": "lampAuto",
       "type": "lamp",
       "label": "AUTO",
-      "parent": "panel",
-      "socket": "top",
-      "at": [80, 0, 0],
       "params": { "color": "amber" },
       "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbIndCv",
+      "type": "pushbutton",
+      "label": "IND BELT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_CV", "lamp": "CV_RUN" }
+    },
+    {
+      "id": "pbIndFeed",
+      "type": "pushbutton",
+      "label": "IND FEED",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "IND_FEED" }
+    },
+    {
+      "id": "pbIndClamp",
+      "type": "pushbutton",
+      "label": "IND CLAMP",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_CLAMP", "lamp": "CLAMP_A" }
+    },
+    {
+      "id": "pbIndLift",
+      "type": "pushbutton",
+      "label": "IND LIFT DOWN",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_LIFT", "lamp": "SOL_Z_DN" }
+    },
+    {
+      "id": "pbIndVac",
+      "type": "pushbutton",
+      "label": "IND VACUUM",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "IND_VAC", "lamp": "VAC_ON" }
+    },
+    {
+      "id": "pbJogSVP",
+      "type": "pushbutton",
+      "label": "JOG TRAVERSE +",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_SV_P", "lamp": "SV_JOG_P" }
+    },
+    {
+      "id": "pbJogSVN",
+      "type": "pushbutton",
+      "label": "JOG TRAVERSE -",
+      "params": { "kind": "momentary", "color": "amber", "lamp": true },
+      "io": { "pb": "IND_SV_N", "lamp": "SV_JOG_N" }
     }
   ]
 }
