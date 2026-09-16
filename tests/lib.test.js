@@ -249,6 +249,21 @@ const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());
 chk('key order in the input does not change the output', stringify(shuffled) === once);
 
+// ---------------------------------------------------------------- conveyor side members
+// Nothing solid beside the belt may reach the belt surface. Measured on sort-by-material: with
+// the side members flush with the belt, steel #43 slid belt -> rail top -> off the rail edge and
+// came to rest 12 mm BESIDE the rail at belt height, held up by a stale rail-top manifold
+// (4 contacts, -0.03 mm, normal +Z) with nothing under it; the sequence then faulted for good.
+{
+  const t = TYPES.conveyor, p = withDefaults(t, { length: 2400, width: 200, height: 800, speed: 300, guides: 0 });
+  const top = (/** @type {any} */ s) => s.at[2] + s.size[2] / 2;
+  const shapes = t.shapes(p), belt = shapes.find((/** @type {any} */ s) => s.belt);
+  const flush = shapes.filter((/** @type {any} */ s) => !s.belt && s.collide !== false && s.kind === 'box'
+    && Math.abs(s.at[1]) >= p.width / 2 && top(s) >= top(belt) - 1e-9);
+  chk('conveyor: no side member reaches the belt surface (a part pushed off the edge hangs on it)', flush.length === 0, JSON.stringify(flush));
+  chk('conveyor: the side members are still there, just lower', shapes.some((/** @type {any} */ s) => s.size?.[1] === 30 && s.size?.[2] === 60));
+}
+
 // ---------------------------------------------------------------- index table (cam drive)
 {
   const { cycloid } = await import('../lib/components.js');

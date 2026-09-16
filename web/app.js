@@ -462,7 +462,7 @@ function onStatus(s) {
   const avg = pl.avgMs ? (pl.avgMs / 1000).toFixed(2) + ' s over ' + pl.cycles : '--';
   $('status').textContent = 'plant ' + pl.mode + '   sim ' + hms(pl.t) + '   wall ' + hms(Date.now() - pageAt) + '   ' + (pl.scale ?? 1) + 'x'
     + '\ncycle ' + cyc + '   avg ' + avg
-    + '\nstep ' + pl.stepUs + ' µs   overruns ' + pl.overruns + (pl.parts != null ? '   parts ' + pl.parts : '')
+    + '\nstep ' + pl.stepUs + ' µs   overruns ' + pl.overruns + (pl.behindMs ? '   behind ' + pl.behindMs + ' ms' : '') + (pl.parts != null ? '   parts ' + pl.parts : '')
     + (io.samplingMs != null ? '\nsampling ' + io.samplingMs + ' ms   publishing ' + io.publishingMs + ' ms' + (io.rttMs != null ? '   write ' + io.rttMs + ' ms' : '') : '')
     + (idle ? '\nidle: press the green START button in 3D (the sequence has not started)' : '')
     + (pl.scale != null && pl.scale !== 1 ? '\nworld speed ' + pl.scale + 'x: sim time does not match the wall clock' : '')

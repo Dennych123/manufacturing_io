@@ -1032,6 +1032,27 @@ await new Promise(res => setTimeout(res, 30));
 r.stop();
 chk('a 1 s stall runs 50 steps and counts the rest as overruns', r.t === 100 && r.overruns === 450, 't ' + r.t + ' ms, overruns ' + r.overruns);
 
+// A HICCUP is not a stall. A GC, or the OS scheduling Sysmac Studio and Chrome ahead of Node,
+// leaves the plant a few hundred ms behind; dropping those steps and warning "plant stalled"
+// on every such hiccup is what made the simulation feel fragile (found jogging palletizing
+// with the PLC on the same laptop). Below DEBT_MAX_MS the plant catches up within a wall budget
+// per tick and carries the rest: no step dropped, nothing warned, sim time back level.
+{
+  let hclk = 0;
+  const warned = [];
+  const h = await createPlant(scene, { clock: () => hclk });
+  h.warnListeners.push((/** @type {string} */ m) => warned.push(m));
+  h.start();
+  await new Promise(res => setTimeout(res, 30));
+  hclk = 300;                                                // a 300 ms hiccup
+  await new Promise(res => setTimeout(res, 120));            // a few ticks to repay it
+  h.stop();
+  chk('a 300 ms hiccup is caught up, not dropped: sim time is level again', h.t === 300 && h.overruns === 0, 't ' + h.t + ' ms, overruns ' + h.overruns);
+  chk('and it never warned about it', warned.length === 0, warned.join(' | '));
+  chk('the status says how far behind the plant is, and it is back to zero', h.behindMs === 0, h.behindMs + ' ms');
+  await h.close();
+}
+
 // World speed: sim time runs at a multiple of wall time - slow motion to watch, or ahead to get
 // through a cycle. It is
 // a SIMULATOR control, not a machine one, and it is forced back to 1x whenever a PLC is connected,

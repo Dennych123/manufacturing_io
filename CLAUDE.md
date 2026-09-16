@@ -252,6 +252,16 @@ in the code but break things silently** when violated. Most were paid for once i
   anything under 12 mm of clearance per side; at 5 mm it hung 20 mm above the floor. So a
   `nest` draws its walls without colliding, and any guide a part drops between leaves ≥ 12 mm
   per side (or is shorter than the part). `tests/rapier.test.js` pins it.
+- **A part must leave a surface into FREE AIR, never across the top of a solid box flush with
+  it.** Rapier 0.20 can keep a box-top contact manifold after the part has slid off the box.
+  Measured on `sort-by-material`: the conveyor's side members were flush with the belt, so a
+  pushed part slid belt → rail top → off the rail's far edge, and steel #43 of 43 came to rest
+  12 mm BESIDE the rail at belt height with 4 contacts at −0.03 mm, normal +Z, nothing under it,
+  velocity zero — it never fell, the discharge invariant never held, and the machine faulted
+  for good after 84 cycles. The other 42 identical pushes fell at once, so this is a landing
+  that is sensitive, not a landing that is wrong; the cure is structural: the side members now
+  sit `T` below the belt surface, so the part leaves the belt edge with nothing beside it.
+  `tests/lib.test.js` pins the geometry; the 30-minute soak is what found it.
 - **A kinematic link that comes to rest takes its colliders out for one step** (the contact
   refresh in `server/plant.js`). This was measured on Rapier 0.20: a part that was pressed
   against a stopper keeps a stale blocking contact after the stopper lifts clear. The part stays
@@ -260,6 +270,19 @@ in the code but break things silently** when violated. Most were paid for once i
   needs about 12 mm, so stoppers are square blocks. `tests/rapier.test.js` pins both halves.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
+- **A hiccup is not a stall: the pacer catches up, it does not drop.** Measured on `palletizing`
+  while Denny jogged a servo with the PLC on the same laptop: "plant stalled" warnings, yet the
+  plant itself was never the limit - a step costs 0.3–1.1 ms against a 4 ms dt in every mode
+  (jog held: avg 0.95 ms, p95 1.5, max 2.4, 0 of 1000 steps over dt), and through the real
+  server with SSE and jog POSTs it held sim/wall 1.000 at 1× and 4.004 at 4× with 0 overruns.
+  What tripped it was the pacer's cliff: owe more than 50 steps (200 ms) after any event-loop
+  gap - a GC, or Windows scheduling Sysmac Studio and Chrome ahead of Node - and the excess was
+  dropped and reported as a stall. Now anything under `DEBT_MAX_MS` (500 ms × world speed) is
+  repaid within `CATCHUP_MS` (10 ms) of wall time per tick with the rest carried, so nothing is
+  dropped and nothing warns; only a debt past that is a stall, and the warning now says the step
+  cost against dt so "the box hiccuped" and "the plant cannot keep up" read differently. The
+  status carries `behindMs`. `tests/plant.test.js` pins a 300 ms hiccup (caught up, 0 overruns,
+  no warning) beside the 1 s stall (50 steps run, 450 dropped).
 - **Time scale is 1× whenever a PLC is connected.** Sysmac timers run on wall time. `setScale()`
   in `server/plant.js` enforces it and warns; the viewer's picker only asks. Slow motion is
   0.05..4×: below 1 it is slow motion for watching, above it the plant runs ahead and pays for it

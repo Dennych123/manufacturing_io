@@ -44,6 +44,22 @@ export const SK = 0.001;
  * "plant stalled" several times a second at 2x-4x on a plant that was keeping up perfectly.
  */
 const MAX_STEPS = 50;
+/**
+ * How far behind wall time the plant may fall before that is a STALL. Below this it catches up:
+ * a hiccup on the box (a GC, the OS scheduling Sysmac Studio and Chrome ahead of Node, a timer
+ * that fires late) leaves the plant owing a few hundred ms, and dropping those steps at once and
+ * warning "plant stalled" is what made the simulation feel fragile - measured while jogging
+ * palletizing with the PLC on the same laptop. Sim time is in ms, so this scales with the world
+ * speed like MAX_STEPS does.
+ */
+const DEBT_MAX_MS = 500;
+/**
+ * Wall time one tick may spend stepping while it catches up. Windows fires the 4 ms interval
+ * every ~15 ms, so 10 leaves the event loop 5 ms for HTTP, SSE and the OPC UA client; the rest
+ * of the debt carries to the next tick instead of being dropped. A sustained overload (a step
+ * that costs more than dt) still grows the debt until DEBT_MAX_MS says so.
+ */
+const CATCHUP_MS = 10;
 const RING = 200000;
 /** Rapier cylinders run along Y; scene cylinders run along Z. */
 const Y_TO_Z = qaxis([1, 0, 0], 90);
@@ -397,7 +413,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
 
   const plant = {
     scene, world, bodies, parts, io, dtMs, inTags, outTags,
-    t: 0, mode: 'stop', overruns: 0, stepUs: 0, events, scale: 1,
+    t: 0, mode: 'stop', overruns: 0, stepUs: 0, behindMs: 0, events, scale: 1,
     /** @type {Array<(msg: string, t: number) => void>} */
     warnListeners: [],
     dof: dofOf(),
@@ -856,16 +872,26 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     acc += (now - last) * plant.scale;
     last = now;
     let n = Math.floor(acc / dtMs);
-    const cap = Math.round(MAX_STEPS * Math.max(1, plant.scale));
-    if (n > cap) {
-      // Sim time falls behind wall time here. Say when and how long, so a stall can be traced
-      // to what blocked the event loop (a synchronous require, a browse, GC).
-      warn('plant stalled ' + Math.round(n * dtMs) + ' ms: ' + (n - cap) + ' steps dropped (overruns)'
-        + (plant.scale !== 1 ? ' at ' + plant.scale + 'x' : ''));
-      plant.overruns += n - cap; n = cap; acc = 0;
-    } else acc -= n * dtMs;
+    const k = Math.max(1, plant.scale), cap = Math.round(MAX_STEPS * k);
     const t0 = performance.now();
-    for (let i = 0; i < n; i++) step();
+    if (acc > DEBT_MAX_MS * k) {
+      // A real stall: the plant owes more than it could sensibly catch up. Sim time falls behind
+      // wall time here. Say how long, so it can be traced to what blocked the event loop (a
+      // synchronous require, a browse, GC) or to steps that cost more than dt (see stepUs).
+      warn('plant stalled ' + Math.round(n * dtMs) + ' ms: ' + (n - cap) + ' steps dropped (overruns)'
+        + (plant.scale !== 1 ? ' at ' + plant.scale + 'x' : '') + ', step ' + plant.stepUs + ' us vs dt ' + dtMs + ' ms');
+      plant.overruns += n - cap; n = cap; acc = 0;
+      for (let i = 0; i < n; i++) step();
+    } else {
+      // Behind by less than that: CATCH UP. Run what is owed within this tick's wall budget and
+      // carry the rest to the next tick - nothing is dropped and nothing warns. A normal tick owes
+      // a handful of steps and never touches the budget; a hiccup owes a hundred and repays them
+      // over the next few ticks, sim time briefly running ahead of the clock.
+      let ran = 0;
+      while (ran < n) { step(); ran++; if (performance.now() - t0 > CATCHUP_MS) break; }
+      acc -= ran * dtMs; n = ran;
+    }
+    plant.behindMs = Math.round(acc / k);
     if (n) plant.stepUs = Math.round(plant.stepUs * 0.9 + (performance.now() - t0) / n * 1000 * 0.1);
     exchange();
   }
@@ -899,7 +925,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   function status() {
     return {
       io: driver ? driver.status() : { driver: 'internal', ok: true, msg: 'INTERNAL CONTROLLER - not a PLC', heartbeat: null },
-      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, parts: parts.size, scale: plant.scale,
+      plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, behindMs: plant.behindMs, parts: parts.size, scale: plant.scale,
                cycleMs: cycleLast, avgMs: cycleRing.length ? Math.round(cycleRing.reduce((a, b) => a + b, 0) / cycleRing.length) : 0,
                cycles: cycleRing.length, cycleTag: countTag },
     };

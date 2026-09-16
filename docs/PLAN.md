@@ -733,7 +733,15 @@ Each phase ends runnable, with a written exit criterion.
     panel has the speed dial" checks only because those are gated on motors and on `servoLinear`,
     and its axes are `joint`s — so neither rule ever looked at it. Giving it the panel means
     giving `joint` an `ovr` and a jog pair first, or it is a half panel again;
-  - the live PLC runs of the newer scenes.
+  - the live PLC runs of the newer scenes;
+  - **sort-by-material faults at 1204 s sim (cycle 163)**, found by the 30-minute soak after the
+    merge. Plastic #82 is fed, rides the belt at 300 mm/s, the stop beam (`pe1` at x 700) never
+    trips, and 4 s later the part sits dead still at x 773 on a RUNNING belt, its only contact the
+    belt top (normal +Z, −0.09 mm). Two questions, both unmeasured: why the beam missed a 60×40×30
+    part at y 0, and what holds a part still against the belt drive at x 773 (nothing solid is
+    mapped there — the positive-distance trap again, or a stale manifold). The first fault in
+    this scene (steel #43 perched beside the flush rail, 640 s) is fixed and pinned; this one was
+    behind it.
 
   **buffer-queue meters, it does not accumulate.** The belt itself is the stop, because a pin
   coming down between parts that touch lands on a part (the escapement that stopper-pusher
