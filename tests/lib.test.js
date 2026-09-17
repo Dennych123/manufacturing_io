@@ -283,6 +283,21 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
   chk('IK: an unreachable point is reported, not pretended', !out.ok && out.err > 100, 'err ' + out.err.toFixed(0));
 }
 
+// `to` and `arm: 'plate'` are mutually exclusive, and the joint draws the BAR when both are set.
+// A `to` says "the next joint is over there", which a door or a cover does not have; a plate is a
+// leaf drawn from `len`. Setting both on a CNC door gave a 43 mm bar where a 700 mm panel
+// belonged - drawn wrong, and nothing validates it. Pinned so the precedence is at least known.
+{
+  const t = TYPES.joint;
+  const leaf = withDefaults(t, { kind: 'revolute', axis: 'x', len: 620, arm: 'plate', width: 700, thick: 20 });
+  const both = withDefaults(t, { kind: 'revolute', axis: 'x', len: 620, to: [0, 620, 0], arm: 'plate', width: 700, thick: 20 });
+  const leafArm = t.shapes(leaf).find((/** @type {any} */ s) => s.link === 'arm');
+  const bothArm = t.shapes(both).find((/** @type {any} */ s) => s.link === 'arm');
+  chk('joint: arm "plate" with len draws a full-width leaf', leafArm.size[0] === 700 && leafArm.size[1] === 620 && leafArm.size[2] === 20, JSON.stringify(leafArm.size));
+  chk('joint: a `to` BEATS arm "plate" - both set gives the bar, so a door must not carry `to`',
+    bothArm.size[0] < 700 && bothArm.size[2] < 700, JSON.stringify(bothArm.size));
+}
+
 // The pitch-change head: ONE dof (the cam angle) and a `scale` per slot link, so five cups go
 // from 100 mm pitch (pallet) to 60 (jig) with the camshaft turning through 90.
 {

@@ -586,10 +586,10 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const cols = r.p.gridCols || 1, rows = r.p.gridRows || 1, slots = cols * rows;
       if (!em.next) {
         // A grid emitter fills a tray: one part per hole, going round the grid.
-        const j = r.p.jitterMm, pitch = r.p.gridPitch || 0;
+        const j = r.p.jitterMm, pitch = r.p.gridPitch || 0, pitchY = r.p.gridPitchY || pitch;
         const n = slots > 1 ? em.slot % slots : 0;
         const gx = slots > 1 ? (n % cols - (cols - 1) / 2) * pitch : 0;
-        const gy = slots > 1 ? (Math.floor(n / cols) - (rows - 1) / 2) * pitch : 0;
+        const gy = slots > 1 ? (Math.floor(n / cols) - (rows - 1) / 2) * pitchY : 0;
         const off = j > 0 ? [gx + (em.rand() * 2 - 1) * j, gy + (em.rand() * 2 - 1) * j, 0] : (gx || gy ? [gx, gy, 0] : undefined);
         em.next = compose(W[r.id][defs.get(r.id).root], pose(off));
       }

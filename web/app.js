@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
 import { compile, worldPoses, bindings, partRoles, params } from '/lib/scene.js';
 import { TYPES, COLORS } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
@@ -93,12 +94,27 @@ function geometry(s) {
 // A `mesh` shape names an asset (a robot's own shell, from its URDF package) instead of a
 // primitive. It loads once per asset and the geometry is SHARED by every link that names it, so
 // a rebuild must not dispose it - see `shared` below.
+// Two formats, because robot makers do not agree on one: ROS-Industrial ships the Fanuc as STL
+// (one BufferGeometry) and DENSO ships the VS-060 as COLLADA (a whole scene graph, with its own
+// materials). So this hands back an OBJECT3D either way, and the caller clones it - a cached
+// geometry cannot be added to two links at once, but a clone of a cached prototype can.
 const stl = new STLLoader();
+const dae = new ColladaLoader();
 const meshGeo = new Map();
-function meshGeometry(asset) {
+function meshAsset(asset) {
   let p = meshGeo.get(asset);
   if (!p) {
-    p = stl.loadAsync(asset).then(g => { g.computeVertexNormals(); return g; })
+    p = (/\.dae$/i.test(asset)
+      ? dae.loadAsync(asset).then(c => {
+          // COLLADA carries its own up-axis. three applies it to the loaded scene, so the result
+          // is already Y-up-corrected into three's Y-up world - and this repo is Z-UP. One X+90
+          // puts a Y-up model on its feet; it is the same rule as a scene `rot`, applied once here
+          // rather than in every scene that names a .dae.
+          const o = c.scene;
+          o.rotateX(Math.PI / 2);
+          return o;
+        })
+      : stl.loadAsync(asset).then(g => { g.computeVertexNormals(); return new THREE.Mesh(g); }))
       .catch(e => { console.warn('mesh ' + asset + ' did not load:', e.message); return null; });
     meshGeo.set(asset, p);
   }
@@ -141,12 +157,20 @@ function build(sc) {
         const k = s.scale ?? 1;
         g.scale.set(k, k, k);
         byKey.get(c.id + '/' + s.link).add(g);
-        meshGeometry(s.asset).then(geo => {
-          if (!geo) return;
-          const m = new THREE.Mesh(geo, material(s, false));
-          m.castShadow = m.receiveShadow = true;
-          m.userData.id = c.id;
-          m.userData.shared = true;                 // the geometry is cached: never dispose it
+        meshAsset(s.asset).then(proto => {
+          if (!proto) return;
+          const m = proto.clone(true);
+          // A scene's own colour wins over the model's, so a robot can be painted the maker's
+          // yellow or white without editing the mesh. Without a colour, a COLLADA keeps the
+          // materials it shipped with.
+          m.traverse(o => {
+            if (!o.isMesh) return;
+            if (s.color || !/\.dae$/i.test(s.asset)) o.material = material(s, false);
+            o.castShadow = o.receiveShadow = true;
+            o.userData.id = c.id;
+            o.userData.shared = true;               // the prototype's geometry is cached: never dispose it
+          });
+          m.userData.shared = true;
           g.add(m);
         });
         continue;

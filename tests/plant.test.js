@@ -1064,6 +1064,45 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   await q.close();
 }
 
+// ---------------------------------------------------------------- what a part costs
+// A scene carries hundreds of parts only because most of them are HELD. Measured on this PC with
+// 200 identical plugs, loose on a running belt against sitting in nests with the clamp on:
+// 2058 us a step (10.3 per part) against 80 us (0.40 per part), a factor of 26; at 400 it is 36.
+// The cost is Rapier's solver on dynamic bodies - a CPU profile of 400 loose parts puts 87% of
+// the time inside the WASM and 3% in step() - so it is not something the plant's own loops or
+// the viewer's triangles can be tuned out of. It is a DESIGN rule: a machine that leaves a
+// hundred parts loose at once is the expensive one, and a carousel whose pallets are held costs
+// almost nothing. The ratio is pinned loosely (>= 4x) because a shared box makes the absolute
+// numbers move, but the shape of the curve does not.
+{
+  const many = (/** @type {number} */ n, /** @type {boolean} */ held) => {
+    const C = [{ id: 'cv', type: 'conveyor', params: { length: 4000, width: 400, height: 800, speed: 200, guides: 0 }, io: { run: 'CV_RUN' } },
+               { id: 'rack', type: 'frame', at: [0, 900, 0], params: { size: [4000, 600, 800] } }];
+    const cols = Math.ceil(Math.sqrt(n));
+    for (let i = 0; i < n; i++) {
+      const cx = -1900 + (i % cols) * (3800 / cols), cy = Math.floor(i / cols) * 60 - 200;
+      if (held) C.push({ id: 'n' + i, type: 'nest', parent: 'rack', socket: 'top', at: [cx, cy, 0], params: { size: [24, 24, 60], wall: 4 }, io: { clamp: 'CLAMP' } });
+      C.push({ id: 'p' + i, type: 'workpiece', at: [cx, held ? 900 + cy : 0, 806], params: { kind: 'cyl', size: [16, 16, 90], material: 'steel', dynamic: true } });
+    }
+    return { format: 'mio-scene/1', name: 'many', sim: { dtMs: 2 }, components: C };
+  };
+  const cost = async (/** @type {boolean} */ held) => {
+    const q = await createPlant(many(200, held), {});
+    q.force(held ? 'CLAMP' : 'CV_RUN', true);
+    q.run(1500);
+    const n = [...q.parts.values()].filter(p => p.held).length;
+    const t0 = performance.now();
+    for (let i = 0; i < 600; i++) q.run(2);
+    const us = (performance.now() - t0) / 600 * 1000;
+    await q.close();
+    return { us, n };
+  };
+  const loose = await cost(false), kept = await cost(true);
+  chk('200 parts held in nests are all held, and parked', kept.n === 200, kept.n + ' held');
+  chk('a held part costs a fraction of a loose one (the solver never sees it move)',
+    kept.us * 4 < loose.us, 'loose ' + loose.us.toFixed(0) + ' us/step, held ' + kept.us.toFixed(0) + ' us/step');
+}
+
 // Real-time pacing: a stalled second is capped at 50 steps and counted. Starting is not a stall:
 // the gap before the first tick is setup and a major GC, not the plant falling behind.
 let clk = 0;
