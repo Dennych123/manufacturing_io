@@ -268,6 +268,38 @@ in the code but break things silently** when violated. Most were paid for once i
   stuck even with the stopper 20 mm above it, whether the stopper is a cylinder or a box, and
   with CCD on or off. With the refresh, a box releases the part at any clearance, but a cylinder
   needs about 12 mm, so stoppers are square blocks. `tests/rapier.test.js` pins both halves.
+- **A six-axis arm is a chain of `joint`s copied from the maker's URDF, and its poses are solved
+  ONCE.** `robot-pitch` is the FANUC LR Mate 200iD straight from the ROS-Industrial xacro (which
+  takes its numbers from Fanuc's manual): each joint's `to` is the next joint's origin and the
+  axes are signed (`-y`, `-x`), so nothing is re-derived and the flange lands at (465, 0, 695)
+  from the base at all-zero, as the arm does. The controller commands joint ANGLES from a table,
+  as the real program does; `lib/ik.js` (damped least squares on a finite-difference Jacobian of
+  `worldPoses()`, so it cannot disagree with the picture) runs only in the build script and the
+  tests, never in the plant. The table and the ST twin are GENERATED from one IK output - 78
+  angles typed twice would drift - and `tests/lib.test.js` pins every pose against the scene:
+  13 poses within 0.05 mm, ≥ 30° from every limit. The IK had its update sign wrong once and
+  walked the arm 1191 mm the other way until the limits stopped it; the test that says
+  "unreachable is reported, not pretended" is from that.
+- **A pitch-change head is ONE dof with a `scale` per slot link.** Five cups on a camshaft:
+  slot i sits at (i − c)·pitchMax and slides by (i − c)·(pitchMin − pitchMax)/camDeg per
+  degree, and the cam link turns by the same dof, so the picture shows the shaft turning as
+  the cups close from 100 to 60. A second dof per slot would be five axes for a mechanism that
+  has one motor.
+- **A model is DRAWN and never collided.** A `mesh` shape names an asset under `assets/` (a
+  `shell` component for something that does not move, a `joint`'s `mesh` for a link that does).
+  The primitives stay as the colliders and carry `draw: false` so the viewer does not put a grey
+  box through the middle of the robot — a trimesh does not collide with a trimesh in Rapier, and
+  a part sensor would have to ray-trace thousands of triangles to answer "is something there".
+  `colliderDesc()` now THROWS on a kind it cannot build instead of falling through to a ball,
+  where `s.r` would be undefined and Rapier would take the NaN without complaint and break
+  contacts somewhere else entirely. A URDF mesh is in metres and its visual is expressed in its
+  own link frame, so it needs `scale: 1000` and no offset — and the arm's first joint is the
+  scene ROOT, because a pedestal box under it lifts every shell by its own height.
+- **Jog is a FRACTION of the cycle rate and stops at the axis limits.** `jogPct` (10% by default,
+  5% on the robot) scales `vmax` for jogging only: at full rate J1 crosses its whole range in
+  0.75 s and slide1 crosses its stroke in under two seconds, which cannot be placed by hand and
+  reads as a fault. The jog clamps to `min`/`max` exactly as a move does — a pendant cannot drive
+  an axis past a soft limit. `tests/plant.test.js` pins the creep rate and both end stops.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
 - **A hiccup is not a stall: the pacer catches up, it does not drop.** Measured on `palletizing`

@@ -914,7 +914,10 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   chk('jog: the axis starts at zero', j.dof.slide1 === 0);
   j.force('SV1_JOG_P', true); j.run(400);
   const fwd = j.dof.slide1;
-  chk('jog: holding + creeps the axis forward', fwd > 50 && fwd < 200, fwd.toFixed(1) + ' mm in 400 ms');
+  // A pendant jogs at a FRACTION of the cycle rate (`jogPct`, 10% by default): slide1 runs at
+  // 300 mm/s in a cycle, so it creeps at 30 and covers 12 mm in 400 ms. At the full rate it
+  // crossed its 500 mm stroke in under two seconds, which cannot be placed by hand.
+  chk('jog: holding + creeps the axis forward, at a tenth of the cycle rate', fwd > 8 && fwd < 20, fwd.toFixed(1) + ' mm in 400 ms');
   j.force('SV1_JOG_P', null); j.run(200);
   chk('jog: letting go stops it where it is', Math.abs(j.dof.slide1 - fwd) < 1e-9, j.dof.slide1.toFixed(1) + ' mm');
   j.force('SV1_JOG_N', true); j.run(200);
@@ -942,6 +945,19 @@ chk('the frame is a fixed body', !k.bodies.find(b => b.id === 'base').kinematic)
   const c100 = await creep(100), c50 = await creep(50);
   chk('jog: the speed override scales the jog as well', Math.abs(c50 / c100 - 0.5) < 0.02, c100.toFixed(1) + ' -> ' + c50.toFixed(1) + ' mm');
   await j.close();
+
+  // A jog STOPS at the axis limit. Held against the end for long enough to cross the stroke twice,
+  // the axis must sit exactly on it - a pendant cannot drive an axis past its soft limit, and an
+  // axis that creeps past one has left the machine the scene describes.
+  {
+    const k = await createPlant(scene, {});
+    k.run(100);
+    k.force('SV1_JOG_P', true); k.run(60000);
+    chk('jog: it stops at the axis limit and does not creep past it', Math.abs(k.dof.slide1 - 500) < 1e-9, k.dof.slide1.toFixed(3) + ' mm of a 500 mm stroke');
+    k.force('SV1_JOG_P', null); k.force('SV1_JOG_N', true); k.run(60000);
+    chk('jog: and stops at the other end too', Math.abs(k.dof.slide1) < 1e-9, k.dof.slide1.toFixed(3) + ' mm');
+    await k.close();
+  }
 }
 
 // ---------------------------------------------------------------- pusher and stopper presets
@@ -1019,6 +1035,34 @@ const ev = x.events.find(e => e.k === 'out' && e.tag === 'SOL_ST1_PRSS_CYL_DN');
 chk('PLC output applied at the next step, stamped with its source time', x.io.SOL_ST1_PRSS_CYL_DN === true && ev && ev.tp === ev.t - 32, JSON.stringify(ev));
 x.fromPlc('AS_ST1_PRSS_CYL_UP', true); x.run(2);
 chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e.k === 'out' && e.tag === 'AS_ST1_PRSS_CYL_UP')));
+
+// ---------------------------------------------------------------- robot-pitch (LR Mate + cam head)
+// A six-axis arm as a chain of joints, a cam-driven pitch-change head, and a 5 x 5 pallet: the
+// discriminating measurement is that the bin receives whole rows of five, and that the cam is
+// wide over the pallet and narrow over the jig - the pitch change is the point of the cell.
+{
+  const rp = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'robot-pitch.json'), 'utf8'));
+  const { create: createRP } = await import('../scenes/robot-pitch.ctl.js');
+  const q = await createPlant(rp, { controller: createRP() });
+  q.run(200); powerUp(q);
+  const cam = { pallet: /** @type {number|null} */ (null), jig: /** @type {number|null} */ (null) };
+  for (let i = 0; i < 600; i++) {
+    q.run(100);
+    if (q.io.ST1_STEP === 14 && cam.pallet == null) cam.pallet = q.dof.head;
+    if (q.io.ST1_STEP === 21 && cam.jig == null) cam.jig = q.dof.head;
+  }
+  const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('robot-pitch: the loader fills the pallet, 25 plugs in 25 pockets, before the arm picks', pev('spawn') >= 25 && q.io.EM_PAL_CNT >= 25, pev('spawn') + ' plugs');
+  chk('robot-pitch: rows go pallet -> jig -> bin, five at a time', q.io.CYCLE_CNT >= 5 && q.io.RM_BIN_CNT > 0 && q.io.RM_BIN_CNT % 5 === 0 && q.io.ST1_STEP < 900,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', bin ' + q.io.RM_BIN_CNT + ', step ' + q.io.ST1_STEP);
+  chk('robot-pitch: the cam is wide (0) while picking from the pallet and narrow (90) while setting into the jig',
+    cam.pallet != null && Math.abs(cam.pallet) < 0.5 && cam.jig != null && Math.abs(cam.jig - 90) < 0.5, JSON.stringify(cam));
+  chk('robot-pitch: every plug is accounted for and none was dropped', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('robot-pitch: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  chk('robot-pitch: a step costs well under its 2 ms budget', q.stepUs === 0 || q.stepUs < 1200, q.stepUs + ' us');
+  await q.close();
+}
 
 // Real-time pacing: a stalled second is capped at 50 steps and counted. Starting is not a stall:
 // the gap before the first tick is setup and a major GC, not the plant falling behind.

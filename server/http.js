@@ -22,7 +22,9 @@ const MIME = /** @type {Record<string, string>} */ ({
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.map': 'application/json',
 });
-const STATIC = /** @type {Record<string, string>} */ ({ '/web/': 'web', '/lib/': 'lib', '/vendor/three/': 'node_modules/three' });
+// `/assets/`: 3D shells a scene draws (a robot's own meshes from its URDF package). Read-only and
+// prefix-bound like the rest; nothing here is ever executed, only fetched as geometry.
+const STATIC = /** @type {Record<string, string>} */ ({ '/web/': 'web', '/lib/': 'lib', '/vendor/three/': 'node_modules/three', '/assets/': 'assets' });
 const FRAME_MS = 33, FULL_MS = 5000, STATUS_MS = 1000;
 
 /**

@@ -1,0 +1,834 @@
+{
+  "format": "mio-scene/1",
+  "name": "robot-pitch",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Pitch-change cell",
+      "members": [
+        "j1",
+        "j2",
+        "j3",
+        "j4",
+        "j5",
+        "j6",
+        "head",
+        "cup0",
+        "cup1",
+        "cup2",
+        "cup3",
+        "cup4",
+        "emPal",
+        "rmBin"
+      ],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "CAM_INPOS",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "base",
+      "type": "shell",
+      "label": "BASE",
+      "at": [0, 0, 0],
+      "params": {
+        "asset": "/assets/robots/lrmate200id/meshes/base_link.stl",
+        "scale": 1000,
+        "color": "#f2d024"
+      }
+    },
+    {
+      "id": "j1",
+      "type": "joint",
+      "label": "J1",
+      "station": "ST1",
+      "at": [0, 0, 330],
+      "params": {
+        "kind": "revolute",
+        "axis": "z",
+        "len": 0,
+        "to": [50, 0, 0],
+        "min": -170,
+        "max": 170,
+        "home": 0,
+        "vmax": 450,
+        "acc": 1350,
+        "width": 110,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_1.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J1_TGT",
+        "exec": "J1_EXEC",
+        "done": "J1_DONE",
+        "busy": "J1_BUSY",
+        "actPos": "J1_POS",
+        "inPos": "J1_INPOS",
+        "ovr": "OVR",
+        "jogP": "J1_JOG_P",
+        "jogN": "J1_JOG_N"
+      }
+    },
+    {
+      "id": "j2",
+      "type": "joint",
+      "label": "J2",
+      "station": "ST1",
+      "parent": "j1",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "y",
+        "len": 0,
+        "to": [0, 0, 330],
+        "min": -100,
+        "max": 145,
+        "home": 0,
+        "vmax": 380,
+        "acc": 1140,
+        "width": 100,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_2.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J2_TGT",
+        "exec": "J2_EXEC",
+        "done": "J2_DONE",
+        "busy": "J2_BUSY",
+        "actPos": "J2_POS",
+        "inPos": "J2_INPOS",
+        "ovr": "OVR",
+        "jogP": "J2_JOG_P",
+        "jogN": "J2_JOG_N"
+      }
+    },
+    {
+      "id": "j3",
+      "type": "joint",
+      "label": "J3",
+      "station": "ST1",
+      "parent": "j2",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "-y",
+        "len": 0,
+        "to": [0, 0, 35],
+        "min": -70,
+        "max": 205,
+        "home": 0,
+        "vmax": 520,
+        "acc": 1560,
+        "width": 90,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_3.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J3_TGT",
+        "exec": "J3_EXEC",
+        "done": "J3_DONE",
+        "busy": "J3_BUSY",
+        "actPos": "J3_POS",
+        "inPos": "J3_INPOS",
+        "ovr": "OVR",
+        "jogP": "J3_JOG_P",
+        "jogN": "J3_JOG_N"
+      }
+    },
+    {
+      "id": "j4",
+      "type": "joint",
+      "label": "J4",
+      "station": "ST1",
+      "parent": "j3",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "-x",
+        "len": 0,
+        "to": [335, 0, 0],
+        "min": -190,
+        "max": 190,
+        "home": 0,
+        "vmax": 550,
+        "acc": 1650,
+        "width": 70,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_4.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J4_TGT",
+        "exec": "J4_EXEC",
+        "done": "J4_DONE",
+        "busy": "J4_BUSY",
+        "actPos": "J4_POS",
+        "inPos": "J4_INPOS",
+        "ovr": "OVR",
+        "jogP": "J4_JOG_P",
+        "jogN": "J4_JOG_N"
+      }
+    },
+    {
+      "id": "j5",
+      "type": "joint",
+      "label": "J5",
+      "station": "ST1",
+      "parent": "j4",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "-y",
+        "len": 0,
+        "to": [80, 0, 0],
+        "min": -125,
+        "max": 125,
+        "home": -90,
+        "vmax": 545,
+        "acc": 1635,
+        "width": 60,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_5.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J5_TGT",
+        "exec": "J5_EXEC",
+        "done": "J5_DONE",
+        "busy": "J5_BUSY",
+        "actPos": "J5_POS",
+        "inPos": "J5_INPOS",
+        "ovr": "OVR",
+        "jogP": "J5_JOG_P",
+        "jogN": "J5_JOG_N"
+      }
+    },
+    {
+      "id": "j6",
+      "type": "joint",
+      "label": "J6",
+      "station": "ST1",
+      "parent": "j5",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "-x",
+        "len": 0,
+        "to": [0, 0, 0],
+        "min": -360,
+        "max": 360,
+        "home": 0,
+        "vmax": 1000,
+        "acc": 3000,
+        "width": 50,
+        "color": "#f2d024",
+        "mesh": "/assets/robots/lrmate200id/meshes/link_6.stl",
+        "meshScale": 1000,
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J6_TGT",
+        "exec": "J6_EXEC",
+        "done": "J6_DONE",
+        "busy": "J6_BUSY",
+        "actPos": "J6_POS",
+        "inPos": "J6_INPOS",
+        "ovr": "OVR",
+        "jogP": "J6_JOG_P",
+        "jogN": "J6_JOG_N"
+      }
+    },
+    {
+      "id": "head",
+      "type": "pitchBar",
+      "label": "PITCH HEAD",
+      "station": "ST1",
+      "parent": "j6",
+      "socket": "end",
+      "rot": [0, -90, 0],
+      "params": {
+        "n": 5,
+        "pitchMin": 60,
+        "pitchMax": 100,
+        "camDeg": 90,
+        "home": 0,
+        "vmax": 180,
+        "acc": 720,
+        "band": 0.2,
+        "bar": [0, 60, 12]
+      },
+      "io": {
+        "target": "CAM_TGT",
+        "exec": "CAM_EXEC",
+        "done": "CAM_DONE",
+        "busy": "CAM_BUSY",
+        "actPos": "CAM_POS",
+        "inPos": "CAM_INPOS"
+      }
+    },
+    {
+      "id": "cup0",
+      "type": "vacuumCup",
+      "label": "CUP 1",
+      "station": "ST1",
+      "parent": "head",
+      "socket": "s0",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_C0" }
+    },
+    {
+      "id": "cup1",
+      "type": "vacuumCup",
+      "label": "CUP 2",
+      "station": "ST1",
+      "parent": "head",
+      "socket": "s1",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_C1" }
+    },
+    {
+      "id": "cup2",
+      "type": "vacuumCup",
+      "label": "CUP 3",
+      "station": "ST1",
+      "parent": "head",
+      "socket": "s2",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_C2" }
+    },
+    {
+      "id": "cup3",
+      "type": "vacuumCup",
+      "label": "CUP 4",
+      "station": "ST1",
+      "parent": "head",
+      "socket": "s3",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_C3" }
+    },
+    {
+      "id": "cup4",
+      "type": "vacuumCup",
+      "label": "CUP 5",
+      "station": "ST1",
+      "parent": "head",
+      "socket": "s4",
+      "at": [0, 0, -20],
+      "params": { "d": 14, "reach": 8, "buildMs": 80, "dropMs": 60 },
+      "io": { "on": "VAC_ON", "vac": "VAC_C4" }
+    },
+    {
+      "id": "plugTpl",
+      "type": "workpiece",
+      "label": "PLUG TEMPLATE",
+      "at": [0, -1600, 0],
+      "params": { "kind": "cyl", "size": [16, 16, 90], "color": "#b9c0c8", "material": "steel" }
+    },
+    {
+      "id": "palFrame",
+      "type": "frame",
+      "label": "PALLET",
+      "at": [400, 0, 0],
+      "params": { "size": [520, 520, 300], "style": "solid", "color": "#64748b" }
+    },
+    {
+      "id": "pal0_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-200, -200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-100, -200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, -200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [100, -200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal0_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [200, -200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-200, -100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-100, -100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, -100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [100, -100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal1_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [200, -100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-200, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-100, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [100, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal2_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [200, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-200, 100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-100, 100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, 100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [100, 100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal3_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [200, 100, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_0",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-200, 200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_1",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [-100, 200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_2",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, 200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_3",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [100, 200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "pal4_4",
+      "type": "nest",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [200, 200, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "PAL_CLAMP" }
+    },
+    {
+      "id": "emPal",
+      "type": "emitter",
+      "label": "PALLET LOADER",
+      "station": "ST1",
+      "parent": "palFrame",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": {
+        "template": "plugTpl",
+        "mode": "interval",
+        "intervalMs": 40,
+        "gridCols": 5,
+        "gridRows": 5,
+        "gridPitch": 100
+      },
+      "io": { "enable": "EM_PAL_EN", "count": "EM_PAL_CNT" }
+    },
+    {
+      "id": "jigFrame",
+      "type": "frame",
+      "label": "JIG",
+      "at": [100, 450, 0],
+      "params": { "size": [360, 140, 300], "style": "solid", "color": "#14b8a6" }
+    },
+    {
+      "id": "jig0",
+      "type": "nest",
+      "parent": "jigFrame",
+      "socket": "top",
+      "at": [-120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig1",
+      "type": "nest",
+      "parent": "jigFrame",
+      "socket": "top",
+      "at": [-60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig2",
+      "type": "nest",
+      "parent": "jigFrame",
+      "socket": "top",
+      "at": [0, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig3",
+      "type": "nest",
+      "parent": "jigFrame",
+      "socket": "top",
+      "at": [60, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "jig4",
+      "type": "nest",
+      "parent": "jigFrame",
+      "socket": "top",
+      "at": [120, 0, 0],
+      "params": { "size": [24, 24, 60], "wall": 4 },
+      "io": { "clamp": "JIG_CLAMP" }
+    },
+    {
+      "id": "binFrame",
+      "type": "frame",
+      "label": "BIN",
+      "at": [420, 450, 0],
+      "params": { "size": [300, 200, 200], "style": "solid", "color": "#64748b" }
+    },
+    {
+      "id": "rmBin",
+      "type": "remover",
+      "label": "BIN",
+      "station": "ST1",
+      "parent": "binFrame",
+      "socket": "top",
+      "at": [0, 0, 100],
+      "params": { "size": [280, 180, 200] },
+      "io": { "count": "RM_BIN_CNT" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbJogJ1P",
+      "type": "pushbutton",
+      "label": "JOG J1 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J1_P", "lamp": "J1_JOG_P" }
+    },
+    {
+      "id": "pbJogJ1N",
+      "type": "pushbutton",
+      "label": "JOG J1 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J1_N", "lamp": "J1_JOG_N" }
+    },
+    {
+      "id": "pbJogJ2P",
+      "type": "pushbutton",
+      "label": "JOG J2 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J2_P", "lamp": "J2_JOG_P" }
+    },
+    {
+      "id": "pbJogJ2N",
+      "type": "pushbutton",
+      "label": "JOG J2 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J2_N", "lamp": "J2_JOG_N" }
+    },
+    {
+      "id": "pbJogJ3P",
+      "type": "pushbutton",
+      "label": "JOG J3 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J3_P", "lamp": "J3_JOG_P" }
+    },
+    {
+      "id": "pbJogJ3N",
+      "type": "pushbutton",
+      "label": "JOG J3 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J3_N", "lamp": "J3_JOG_N" }
+    },
+    {
+      "id": "pbJogJ4P",
+      "type": "pushbutton",
+      "label": "JOG J4 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J4_P", "lamp": "J4_JOG_P" }
+    },
+    {
+      "id": "pbJogJ4N",
+      "type": "pushbutton",
+      "label": "JOG J4 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J4_N", "lamp": "J4_JOG_N" }
+    },
+    {
+      "id": "pbJogJ5P",
+      "type": "pushbutton",
+      "label": "JOG J5 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J5_P", "lamp": "J5_JOG_P" }
+    },
+    {
+      "id": "pbJogJ5N",
+      "type": "pushbutton",
+      "label": "JOG J5 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J5_N", "lamp": "J5_JOG_N" }
+    },
+    {
+      "id": "pbJogJ6P",
+      "type": "pushbutton",
+      "label": "JOG J6 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J6_P", "lamp": "J6_JOG_P" }
+    },
+    {
+      "id": "pbJogJ6N",
+      "type": "pushbutton",
+      "label": "JOG J6 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J6_N", "lamp": "J6_JOG_N" }
+    },
+    {
+      "id": "pbCamWide",
+      "type": "pushbutton",
+      "label": "IND CAM WIDE",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "IND_CAM_WIDE" }
+    },
+    {
+      "id": "pbCamNarrow",
+      "type": "pushbutton",
+      "label": "IND CAM NARROW",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "IND_CAM_NARROW" }
+    },
+    {
+      "id": "pbIndVac",
+      "type": "pushbutton",
+      "label": "IND VACUUM",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_VAC", "lamp": "VAC_ON" }
+    }
+  ]
+}

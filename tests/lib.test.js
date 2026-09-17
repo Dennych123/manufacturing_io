@@ -249,6 +249,66 @@ const shuffled = clone(scene);
 shuffled.components[3] = Object.fromEntries(Object.entries(shuffled.components[3]).reverse());
 chk('key order in the input does not change the output', stringify(shuffled) === once);
 
+// ---------------------------------------------------------------- FANUC LR Mate 200iD (robot-pitch)
+// The chain is the ROS-Industrial xacro's: joint origins, axes (some negative), limits and speeds,
+// which it takes from Fanuc's mechanical unit manual. A joint's `to` carries the next joint's
+// origin, so the links are not laid end to end. Pinned against what the arm is known to do: at
+// all-zero the flange is 465 out and 695 up from the base (J2 50 out, J3 330 up, J4 35 up, J5
+// 335 out, J6 80 out), full stretch puts the wrist centre at 50 + 330 + 335 = 715 ~ the 717 mm
+// reach, J1 turns the arm toward +Y, and J5 -90 points the flange straight down.
+{
+  const J = [
+    ['j1', [0, 0, 330], 'z', [50, 0, 0], -170, 170], ['j2', [0, 0, 0], 'y', [0, 0, 330], -100, 145],
+    ['j3', [0, 0, 0], '-y', [0, 0, 35], -70, 205], ['j4', [0, 0, 0], '-x', [335, 0, 0], -190, 190],
+    ['j5', [0, 0, 0], '-y', [80, 0, 0], -125, 125], ['j6', [0, 0, 0], '-x', [0, 0, 0], -360, 360],
+  ];
+  const arm = { format: 'mio-scene/1', name: 'lrmate', components: [{ id: 'b', type: 'frame', params: { size: [300, 300, 1] } }] };
+  J.forEach(([id, at, axis, to, min, max], i) => arm.components.push({ id, type: 'joint', parent: i ? J[i - 1][0] : 'b', socket: i ? 'end' : 'top', at,
+    params: { kind: 'revolute', axis, to, len: 0, min, max, home: 0 } }));
+  chk('LR Mate: the chain validates', validate(arm).length === 0, validate(arm).join(' | '));
+  const fl = (/** @type {any} */ d) => { const W = worldPoses(arm, d); return { p: W.j6.arm.p, x: qrot(W.j6.arm.q, [1, 0, 0]) }; };
+  chk('LR Mate: at all-zero the flange is at (465, 0, 696) pointing +X', near(fl({}).p, [465, 0, 696], 1e-6) && near(fl({}).x, [1, 0, 0], 1e-9), fmt(fl({}).p));
+  chk('LR Mate: J2 at 90 swings the upper arm forward and hangs the forearm (J3 is relative to it)', near(fl({ j2: 90 }).p, [415, 0, -84], 1e-6), fmt(fl({ j2: 90 }).p));
+  chk('LR Mate: J1 at 90 turns the arm to +Y', near(fl({ j1: 90 }).p, [0, 465, 696], 1e-6), fmt(fl({ j1: 90 }).p));
+  chk('LR Mate: J5 at -90 points the flange straight down', near(fl({ j5: -90 }).x, [0, 0, -1], 1e-9), fmt(fl({ j5: -90 }).x));
+  chk('LR Mate: a negative URDF axis turns the other way (J3 -y vs J2 +y)',
+    fl({ j2: 30 }).p[2] < fl({}).p[2] && fl({ j3: 30 }).p[2] > fl({}).p[2], fmt(fl({ j2: 30 }).p) + ' vs ' + fmt(fl({ j3: 30 }).p));
+  // IK on that chain, as the build script uses it: a reachable point with the tool down
+  const { solveIk } = await import('../lib/ik.js');
+  const r = solveIk(arm, J.map(([id, , , , min, max]) => ({ id, min, max })), { id: 'j6', at: [0, 0, 0], dir: [1, 0, 0], along: [0, 0, 1] },
+    { p: [500, 0, 300], dir: [0, 0, -1], along: [0, 1, 0] }, { start: { j2: 30, j3: 30, j5: 30 } });
+  chk('IK: a reachable point with the tool down solves to under 0.05 mm', r.ok && r.err < 0.05, 'err ' + r.err.toFixed(3) + ' mm, iters ' + r.iters);
+  chk('IK: the solution respects the joint limits', J.every(([id, , , , min, max]) => r.dof[id] >= min && r.dof[id] <= max));
+  const out = solveIk(arm, J.map(([id, , , , min, max]) => ({ id, min, max })), { id: 'j6' }, { p: [1500, 0, 300] });
+  chk('IK: an unreachable point is reported, not pretended', !out.ok && out.err > 100, 'err ' + out.err.toFixed(0));
+}
+
+// The pitch-change head: ONE dof (the cam angle) and a `scale` per slot link, so five cups go
+// from 100 mm pitch (pallet) to 60 (jig) with the camshaft turning through 90.
+{
+  const head = { format: 'mio-scene/1', name: 'pb', components: [{ id: 'h', type: 'pitchBar', params: { n: 5, pitchMin: 60, pitchMax: 100, camDeg: 90 } }] };
+  chk('pitchBar validates', validate(head).length === 0, validate(head).join(' | '));
+  const xs = (/** @type {number} */ cam) => [0, 1, 2, 3, 4].map(i => worldPoses(head, { h: cam })['h']['s' + i].p[0]);
+  chk('pitchBar: cam 0 spreads the slots at 100 mm', near(xs(0), [-200, -100, 0, 100, 200], 1e-9), fmt(xs(0)));
+  chk('pitchBar: cam 90 closes them to 60 mm', near(xs(90), [-120, -60, 0, 60, 120], 1e-9), fmt(xs(90)));
+  chk('pitchBar: the middle slot never moves', xs(45)[2] === 0);
+}
+
+// Every pose the robot-pitch controller commands lands its middle cup on the station it names,
+// against the scene's own kinematics. A pose table that drifts from the scene is silent otherwise.
+{
+  const sc = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'robot-pitch.json'), 'utf8'));
+  const { POSE } = await import('../scenes/robot-pitch.ctl.js');
+  const ids = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'];
+  const tcp = (/** @type {number[]} */ a) => { const W = worldPoses(sc, Object.fromEntries(ids.map((id, i) => [id, a[i]]))); return { p: apply(W.j6.arm, [20, 0, 0]), down: qrot(W.j6.arm.q, [1, 0, 0]) }; };
+  const want = { jigUp: [100, 450, 494], jigAt: [100, 450, 394], binUp: [420, 450, 544] };
+  for (let r = 0; r < 5; r++) { want['pal' + r + 'Up'] = [400, (r - 2) * 100, 494]; want['pal' + r + 'At'] = [400, (r - 2) * 100, 394]; }
+  const off = Object.entries(want).map(([k, p]) => [k, Math.hypot(...tcp(POSE[k]).p.map((v, i) => v - p[i]))]).filter(([, d]) => d > 0.1);
+  chk('robot-pitch: all 13 controller poses land within 0.1 mm of their stations', off.length === 0, JSON.stringify(off));
+  chk('robot-pitch: every pose has the cups pointing straight down', Object.keys(want).every(k => tcp(POSE[k]).down[2] < -0.9999));
+  chk('robot-pitch: home is above everything with the cups down', tcp(POSE.home).p[2] > 550 && tcp(POSE.home).down[2] < -0.9999, fmt(tcp(POSE.home).p));
+}
+
 // ---------------------------------------------------------------- conveyor side members
 // Nothing solid beside the belt may reach the belt surface. Measured on sort-by-material: with
 // the side members flush with the belt, steel #43 slid belt -> rail top -> off the rail edge and

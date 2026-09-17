@@ -4,6 +4,7 @@
 // from the component types' shapes in lib/components.js.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { compile, worldPoses, bindings, partRoles, params } from '/lib/scene.js';
 import { TYPES, COLORS } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
@@ -89,6 +90,21 @@ function geometry(s) {
   return g;
 }
 
+// A `mesh` shape names an asset (a robot's own shell, from its URDF package) instead of a
+// primitive. It loads once per asset and the geometry is SHARED by every link that names it, so
+// a rebuild must not dispose it - see `shared` below.
+const stl = new STLLoader();
+const meshGeo = new Map();
+function meshGeometry(asset) {
+  let p = meshGeo.get(asset);
+  if (!p) {
+    p = stl.loadAsync(asset).then(g => { g.computeVertexNormals(); return g; })
+      .catch(e => { console.warn('mesh ' + asset + ' did not load:', e.message); return null; });
+    meshGeo.set(asset, p);
+  }
+  return p;
+}
+
 /** A shape from lib/components.js as a mesh in its link's frame. */
 function shapeMesh(s, own) {
   const mesh = new THREE.Mesh(geometry(s), material(s, own));
@@ -102,7 +118,7 @@ function shapeMesh(s, own) {
 let model = null;          // { scene, links: [{id, link, g}], glows: [...], pick: [meshes] }
 let editorRef = null;      // set once the editor exists; in edit mode loose parts show at their start pose
 function build(sc) {
-  if (model) for (const l of model.links) { scene3.remove(l.g); l.g.traverse(o => o.geometry?.dispose()); }
+  if (model) for (const l of model.links) { scene3.remove(l.g); l.g.traverse(o => { if (!o.userData.shared) o.geometry?.dispose(); }); }
   const { order, defs } = compile(sc);
   const loose = editorRef?.active ? new Map() : partRoles(sc);   // streamed, not drawn as machine
   const links = [], glows = [], pick = [], meshes = [], byKey = new Map();
@@ -112,6 +128,29 @@ function build(sc) {
     if (d.t.group === 'operator') continue;                     // drawn in the HTML operator panel, not in 3D
     for (const l of d.links) { const g = new THREE.Group(); scene3.add(g); links.push({ id: c.id, link: l.name, g }); byKey.set(c.id + '/' + l.name, g); }
     for (const s of d.shapes) {
+      // `draw: false` is a collider the viewer must not draw: the link has a real shell instead,
+      // and drawing both puts a grey box through the middle of the robot.
+      if (s.draw === false) continue;
+      if (s.kind === 'mesh') {
+        // The asset loads asynchronously, so the link gets an empty group now and the shell when
+        // it arrives. A rebuild in between removes this group from the scene, and the load then
+        // resolves into an orphan that is never drawn - which is what should happen.
+        const g = new THREE.Group();
+        g.position.set(s.at[0], s.at[1], s.at[2]);
+        if (s.rot) g.quaternion.fromArray(qeuler(s.rot));
+        const k = s.scale ?? 1;
+        g.scale.set(k, k, k);
+        byKey.get(c.id + '/' + s.link).add(g);
+        meshGeometry(s.asset).then(geo => {
+          if (!geo) return;
+          const m = new THREE.Mesh(geo, material(s, false));
+          m.castShadow = m.receiveShadow = true;
+          m.userData.id = c.id;
+          m.userData.shared = true;                 // the geometry is cached: never dispose it
+          g.add(m);
+        });
+        continue;
+      }
       const tag = s.glow && c.io?.[s.glow];
       const mesh = shapeMesh(s, !!tag);
       mesh.userData.id = c.id;

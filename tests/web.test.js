@@ -57,6 +57,8 @@ chk('editor: the pickers are locked while editing', /'scene-pick', 'mode-pick'/.
 const is = (u, rel) => staticPath(ROOT, u) === (rel && path.join(ROOT, ...rel.split('/')));
 chk('/ -> web/index.html', is('/', 'web/index.html'));
 chk('/lib/scene.js and /vendor/three/... map to their folders', is('/lib/scene.js', 'lib/scene.js') && is('/vendor/three/build/three.module.js', 'node_modules/three/build/three.module.js'));
+chk('/assets/... serves a scene\'s 3D shells', is('/assets/robots/lrmate200id/meshes/link_1.stl', 'assets/robots/lrmate200id/meshes/link_1.stl'));
+chk('the STL loader the viewer imports exists in node_modules', fs.existsSync(staticPath(ROOT, '/vendor/three/examples/jsm/loaders/STLLoader.js')));
 for (const u of ['/web/../server/pki/key.pem', '/web/%2e%2e/server/plant.js', '/lib/..%2fserver%2fplant.js', '/web/..\\server', '/web//x',
                  '/server/plant.js', '/scenes/cyl-on-slide.ctl.js', '/web/', '/node_modules/three/package.json', '/web/%E0%A4%A']) {
   chk('refused: ' + u, staticPath(ROOT, u) === null);

@@ -196,7 +196,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     let q = qeuler(s.rot), cd;
     if (s.kind === 'box') cd = R.ColliderDesc.cuboid(s.size[0] / 2 * SK, s.size[1] / 2 * SK, s.size[2] / 2 * SK);
     else if (s.kind === 'cyl') { cd = R.ColliderDesc.cylinder(s.h / 2 * SK, s.r * SK); q = qmul(q, Y_TO_Z); }
-    else cd = R.ColliderDesc.ball(s.r * SK);
+    else if (s.kind === 'sphere') cd = R.ColliderDesc.ball(s.r * SK);
+    // A drawn-only kind (a mesh shell) must carry collide:false and never reach here. Falling
+    // through to a ball would read s.r as undefined and make a NaN collider, which Rapier takes
+    // without complaint and which then breaks contacts somewhere else entirely.
+    else throw new Error('shape kind ' + s.kind + ' cannot be a collider: mark it collide:false');
     return cd.setTranslation(s.at[0] * SK, s.at[1] * SK, s.at[2] * SK).setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
   };
   const roles = partRoles(scene);

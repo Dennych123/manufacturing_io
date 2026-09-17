@@ -73,7 +73,7 @@ node server/main.js --scene a-to-b                  # the same scene against the
 
 ## Scenes
 
-Thirteen machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
+Fourteen machines run with their own PLC programs, each in `scenes/<name>.{json,st,ctl.js,sysmac.xml}`.
 
 | scene | what it shows |
 |---|---|
@@ -90,6 +90,7 @@ Thirteen machines run with their own PLC programs, each in `scenes/<name>.{json,
 | `gripper-transfer` | a 2-finger gripper on a pneumatic lift and traverse moves parts from one belt to a cross belt; a missed grip faults |
 | `press-station` | feeder into a clamped nest, press with a dwell, unclamp, ejector pushes the part down a chute. No belt at all |
 | `palletizing` | a 10 x 10 pallet of spark plugs it loads itself, a five-up vacuum gantry on two servo axes, a rotary carrier of five-slot jigs, and an unload head feeding the next process. An empty pallet is replaced with a fresh one |
+| `robot-pitch` | a FANUC LR Mate 200iD (chain, limits and speeds from the ROS-Industrial xacro) with a cam-driven pitch-change head: five cups pick a row from a 5 x 5 pallet at 100 mm, the camshaft closes them to 60, the row goes into a jig and then to the bin |
 
 | | |
 |---|---|
@@ -160,6 +161,22 @@ and pinned by a test.
 - Two Sysmac Studio steps cannot be automated: enabling the OPC UA server, and Run. The plant
   checks a PLC heartbeat tag and says so when nothing is running.
 - No CAD import yet, so machines are built from primitives or in the editor.
+
+## Assets
+
+`assets/robots/lrmate200id/` holds the FANUC LR Mate 200iD's own visual meshes, the LICENSE they
+come under and the xacro they were read from, vendored from
+[ROS-Industrial's `fanuc` package](https://github.com/ros-industrial/fanuc) (BSD, TU Delft
+Robotics Institute), whose numbers are Fanuc's mechanical unit manual. The kinematics in
+`scenes/robot-pitch.json` are from that same xacro, so the model and the geometry cannot
+disagree with each other.
+
+A scene draws a model through a `mesh` shape — a `shell` component for something that does not
+move, or a `joint`'s `mesh` parameter for a link that does. Models are **drawn and never
+collided**: a trimesh does not collide with a trimesh in Rapier, and a part sensor would have to
+ray-trace thousands of triangles to answer "is something there". The primitives stay underneath
+as the colliders, marked `draw: false` so the viewer does not put a grey box through the middle
+of the robot. STEP/CAD import lands on the same two pieces (`/assets/` and the `mesh` shape).
 
 ## Tests
 

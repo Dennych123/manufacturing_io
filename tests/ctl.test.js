@@ -620,6 +620,67 @@ function powerUp(ctl, io, each = () => {}) {
     'step ' + io2.ST1_STEP);
 }
 
+// ---------------------------------------------------------------- robot-pitch (LR Mate + cam head)
+// One cycle = one pallet row: cam wide, pick five at 100, cam narrow, set into the jig at 60, the
+// jig's process, pick again, drop in the bin, cam wide. The fake plant answers Execute with Done
+// after 40 ms, builds vacuum 100 ms after VAC_ON, and delivers a plug every 40 ms while the loader
+// is enabled, 25 to a pallet.
+{
+  const { create } = await import('../scenes/robot-pitch.ctl.js');
+  const fresh = () => {
+    const io = { t: 0, PB_START: false, PB_CSTOP: false, PB_MASTER: false, PB_ESTOP: false, PB_HOME: false, SEL_AUTO: true, OVR_SET: 100,
+                 ST1_STEP: 0, CYCLE_CNT: 0, EM_PAL_CNT: 0, EM_PAL_EN: false, RM_BIN_CNT: 0, VAC_ON: false, PAL_CLAMP: true, JIG_CLAMP: true,
+                 CAM_TGT: 0, CAM_EXEC: false, CAM_DONE: false, CAM_POS: 0, AUTO_RUN: false };
+    for (let i = 1; i <= 6; i++) Object.assign(io, { ['J' + i + '_TGT']: 0, ['J' + i + '_EXEC']: false, ['J' + i + '_DONE']: false, ['J' + i + '_POS']: 0 });
+    for (let i = 0; i < 5; i++) io['VAC_C' + i] = false;
+    return io;
+  };
+  const fake = (vacWorks = true) => {
+    let vacFrom = -1, fillLast = 0, filled = 0, enLast = false;
+    /** @type {Record<string, number>} */
+    const execFrom = {};
+    return (/** @type {any} */ o, /** @type {number} */ t) => {
+      for (const a of ['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'CAM']) {
+        if (o[a + '_EXEC']) { if (execFrom[a] == null) execFrom[a] = t; o[a + '_DONE'] = t - execFrom[a] >= 40; }
+        else { delete execFrom[a]; o[a + '_DONE'] = false; }
+      }
+      if (o.VAC_ON) { if (vacFrom < 0) vacFrom = t; } else vacFrom = -1;
+      for (let i = 0; i < 5; i++) o['VAC_C' + i] = vacWorks && vacFrom >= 0 && t - vacFrom >= 100;
+      if (o.EM_PAL_EN && !enLast) filled = 0;
+      enLast = o.EM_PAL_EN;
+      if (o.EM_PAL_EN && filled < 25 && t - fillLast >= 40) { o.EM_PAL_CNT++; filled++; fillLast = t; }
+    };
+  };
+  const ctl = create(), io = fresh(), plant = fake();
+  const seen = { camAtJig: null, camAtPallet: null, palClampAtPick: null, jigClampAtPlace: null, vacAtPlace: null };
+  powerUp(ctl, io, plant);
+  drive(ctl, io, 40000, o => {
+    plant(o, o.t);
+    // Sampled at the steps that USE the pitch, not at the step that commands it: `each` runs
+    // before the scan, so at the commanding step the target is still the previous one.
+    if (o.ST1_STEP === 21 && seen.camAtJig == null) seen.camAtJig = o.CAM_TGT;
+    if (o.ST1_STEP === 14 && o.CYCLE_CNT > 0 && seen.camAtPallet == null) seen.camAtPallet = o.CAM_TGT;
+    if (o.ST1_STEP === 14) seen.palClampAtPick = o.PAL_CLAMP;
+    if (o.ST1_STEP === 21) { seen.jigClampAtPlace = o.JIG_CLAMP; seen.vacAtPlace = o.VAC_ON; }
+  });
+  chk('robot-pitch: rows complete as cycles', io.CYCLE_CNT >= 3, 'CYCLE_CNT ' + io.CYCLE_CNT + ', step ' + io.ST1_STEP);
+  chk('robot-pitch: the cam is narrow (60 mm) on the way to the jig and wide (100 mm) back at the pallet', seen.camAtJig === 90 && seen.camAtPallet === 0, JSON.stringify(seen));
+  chk('robot-pitch: the pallet lets go while the cups take the row', seen.palClampAtPick === false);
+  chk('robot-pitch: the jig holds and the vacuum is off when the row is set down', seen.jigClampAtPlace === true && seen.vacAtPlace === false);
+  chk('robot-pitch: it never faults during normal running', io.ST1_STEP !== 900, 'step ' + io.ST1_STEP);
+  // A pallet is filled in whole 5 x 5 loads, never part of one: the loader is asked for a fresh
+  // pallet when the fifth row has gone, and it delivers 25 before the arm picks again.
+  chk('robot-pitch: pallets are loaded whole, 25 at a time', io.EM_PAL_CNT >= 25 && io.EM_PAL_CNT % 25 === 0, 'EM_PAL_CNT ' + io.EM_PAL_CNT);
+
+  // A row where nothing comes up (the plugs were taken out by hand) is not a cycle: the head
+  // carries on to the next row instead of standing over an empty one for ever.
+  const ctl2 = create(), io2 = fresh(), plant2 = fake(false);
+  powerUp(ctl2, io2, plant2);
+  drive(ctl2, io2, 20000, o => plant2(o, o.t));
+  chk('robot-pitch: an empty row is skipped, not counted, and does not fault', io2.CYCLE_CNT === 0 && io2.ST1_STEP !== 900 && io2.AUTO_RUN === true,
+    'CYCLE_CNT ' + io2.CYCLE_CNT + ', step ' + io2.ST1_STEP);
+}
+
 // ---------------------------------------------------------------- .st and .ctl.js in step
 // Every .ctl.js says "keep the two in step". Nothing checked it: the watchdog step (900) can be
 // added to one file and not the other, and neither the plant nor the simulator would notice.

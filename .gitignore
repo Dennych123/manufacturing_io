@@ -5,3 +5,6 @@ runs/
 plc/*.smc2
 plc/*.smc2.backup
 plc/*.bak
+# Imported CAD is confidential (docs/PLAN.md Part B). The robot meshes under assets/robots/ are
+# NOT: they are BSD, vendored with their licence, and the scenes need them to draw at all.
+assets/cad/

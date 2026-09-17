@@ -741,7 +741,9 @@ Each phase ends runnable, with a written exit criterion.
     part at y 0, and what holds a part still against the belt drive at x 773 (nothing solid is
     mapped there — the positive-distance trap again, or a stale manifold). The first fault in
     this scene (steel #43 perched beside the flush rail, 640 s) is fixed and pinned; this one was
-    behind it.
+    behind it. A second 30-minute soak with a different start phase (the harness taps the panel
+    with slightly different timing) ran 245 cycles clean, so this is a rare landing, not a
+    systematic one - which is also why it needs its own reproduction, not a fix by inspection.
 
   **buffer-queue meters, it does not accumulate.** The belt itself is the stop, because a pin
   coming down between parts that touch lands on a part (the escapement that stopper-pusher
