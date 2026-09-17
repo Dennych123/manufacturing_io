@@ -302,6 +302,14 @@ in the code but break things silently** when violated. Most were paid for once i
   an axis past a soft limit. `tests/plant.test.js` pins the creep rate and both end stops.
 - **One motion model**, the trapezoid ported from rb4axis `langkahSumbu`. A second copy will
   disagree one day.
+- **A step cost measured next to a software renderer is not the scene's cost.** The screenshot
+  harness runs headless Chrome on SwiftShader, rendering 1440×860 at 30 fps on the same box, and
+  its shots of `robot-pitch` showed `plant stalled 534 ms … step 5702 us vs dt 2 ms` — the plant
+  apparently three times over its budget. Measured headless and alone, the same scene at the same
+  point in its cycle costs **198 µs average, p50 161, 1 step of 4000 over dt: 10% of a 2 ms
+  budget**, against `palletizing` at 13% of its 4 ms. Nothing was wrong with the scene; the OS was
+  taking the CPU and `performance.now()` around the step loop billed it to the step. Measure
+  headless before making a scene lighter, or you tune away a problem that was never there.
 - **A hiccup is not a stall: the pacer catches up, it does not drop.** Measured on `palletizing`
   while Denny jogged a servo with the PLC on the same laptop: "plant stalled" warnings, yet the
   plant itself was never the limit - a step costs 0.3–1.1 ms against a 4 ms dt in every mode
