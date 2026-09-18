@@ -8,3 +8,8 @@ plc/*.bak
 # Imported CAD is confidential (docs/PLAN.md Part B). The robot meshes under assets/robots/ are
 # NOT: they are BSD, vendored with their licence, and the scenes need them to draw at all.
 assets/cad/
+
+# Vendor robot CAD and the shells built from it. A maker's CAD from a member area is not ours to
+# redistribute: tools/step_to_stl.py rebuilds these from the download, and every scene falls back
+# to its primitives when they are not there.
+assets/robots/vs087/

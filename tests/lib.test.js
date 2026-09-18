@@ -337,22 +337,31 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
     const p = sc.components.find((/** @type {any} */ c) => c.id === id).params;
     return [id, [p.min, p.max]];
   }));
-  /** The jaw's catch-zone centre and the direction it reaches, for a pose. */
-  const at = (/** @type {number[]} */ a, /** @type {string} */ jaw) => {
-    const W = worldPoses(sc, Object.fromEntries(ids.map((id, i) => [id, a[i]])));
+  /** The jaw's catch-zone centre and the direction it reaches, for a pose. The carriage stands
+   * where the goal says: a machine pose is worked from the machine, a conveyor pose from the
+   * station, and the same joint angles land somewhere else entirely from the wrong end of the rail. */
+  const at = (/** @type {number[]} */ a, /** @type {string} */ jaw, /** @type {number} */ rail) => {
+    const W = worldPoses(sc, { ...Object.fromEntries(ids.map((id, i) => [id, a[i]])), rail });
     return { p: apply(W[jaw].body, [0, 0, 30]), dir: qrot(W[jaw].body.q, [0, 0, 1]) };
   };
   const G = goals();
-  const off = Object.entries(G).map(([k, g]) => [k, Math.hypot(...at(POSE[k], g.jaw).p.map((v, i) => v - g.p[i]))]).filter(([, d]) => d > 0.1);
+  const off = Object.entries(G).map(([k, g]) => [k, Math.hypot(...at(POSE[k], g.jaw, g.rail).p.map((v, i) => v - g.p[i]))]).filter(([, d]) => d > 0.1);
   chk('lathe-line: all ' + Object.keys(G).length + ' controller poses land within 0.1 mm of their goals', off.length === 0, JSON.stringify(off));
   const wrongWay = Object.entries(G).filter(([k, g]) => {
-    const d = at(POSE[k], g.jaw).dir;
+    const d = at(POSE[k], g.jaw, g.rail).dir;
     return d[0] * g.dir[0] + d[1] * g.dir[1] + d[2] * g.dir[2] < 0.9999;
   }).map(([k]) => k);
   chk('lathe-line: every pose has its jaw reaching the way the goal asks', wrongWay.length === 0, wrongWay.join(' '));
   const tight = Object.keys(G).flatMap(k => ids.map((id, i) => [k + '.' + id, Math.min(POSE[k][i] - lim[id][0], lim[id][1] - POSE[k][i])]))
     .filter(([, m]) => m < 10);
   chk('lathe-line: no pose stands within 10 deg of a joint limit', tight.length === 0, JSON.stringify(tight));
+  // Nothing in the plant notices an arm drawn through a machine casting - a kinematic link does not
+  // collide with a fixed one - so the generator's own clash check is pinned here too.
+  {
+    const { clashes } = await import('../tools/gen_lathe_line.js');
+    const bad = Object.entries(G).flatMap(([k, g]) => clashes(sc, Object.fromEntries(ids.map((id, i) => [id, POSE[k][i]])), g.rail).map(b => k + ': ' + b));
+    chk('lathe-line: no pose puts the arm inside a lathe', bad.length === 0, bad.slice(0, 3).join(' | '));
+  }
 }
 
 // ---------------------------------------------------------------- conveyor side members

@@ -16,28 +16,18 @@
       "members": ["rail", "j1", "j2", "j3", "j4", "j5", "j6", "jawA", "jawB"],
       "stepTag": "ST1_STEP"
     },
-    {
-      "id": "ST2",
-      "name": "TCC-2000 #1 (OP10)",
-      "members": ["chuck1", "door1"],
-      "stepTag": "ST2_STEP"
-    },
-    {
-      "id": "ST3",
-      "name": "TCC-2000 #2 (OP20)",
-      "members": ["chuck2", "door2"],
-      "stepTag": "ST3_STEP"
-    },
+    { "id": "ST2", "name": "TCC-2000 #1", "members": ["chuck1", "door1"], "stepTag": "ST2_STEP" },
+    { "id": "ST3", "name": "TCC-2000 #2", "members": ["chuck2", "door2"], "stepTag": "ST3_STEP" },
     {
       "id": "ST4",
-      "name": "Station 1 + feed",
-      "members": ["cv", "emIn", "lift1", "pin1", "stop1", "eye1"],
+      "name": "Infeed",
+      "members": ["cvIn", "emIn", "liftIN", "pinIN", "stopIN", "eyeIN"],
       "stepTag": "ST4_STEP"
     },
     {
       "id": "ST5",
-      "name": "Station 2 + discharge",
-      "members": ["lift2", "pin2", "stop2", "eye2", "rmOut"],
+      "name": "Outfeed",
+      "members": ["cvOut", "liftOUT", "pinOUT", "stopOUT", "eyeOUT", "rmOut"],
       "stepTag": "ST5_STEP"
     }
   ],
@@ -53,39 +43,39 @@
       "id": "beam",
       "type": "frame",
       "label": "TRAVERSE BEAM",
-      "at": [0, -150, 2342],
-      "params": { "size": [5550, 220, 260], "style": "solid", "color": "#c8ccd0" }
+      "at": [-485, -430, 2192],
+      "params": { "size": [4010, 220, 260], "style": "solid", "color": "#c8ccd0" }
     },
     {
       "id": "colL",
       "type": "frame",
       "label": "BEAM COLUMN",
-      "at": [-2700, -150, 0],
-      "params": { "size": [160, 160, 2342], "style": "solid", "color": "#b8bdc2" }
+      "at": [-2390, -430, 0],
+      "params": { "size": [160, 160, 2192], "style": "solid", "color": "#b8bdc2" }
     },
     {
       "id": "colR",
       "type": "frame",
       "label": "BEAM COLUMN",
-      "at": [2700, -150, 0],
-      "params": { "size": [160, 160, 2342], "style": "solid", "color": "#b8bdc2" }
+      "at": [1420, -430, 0],
+      "params": { "size": [160, 160, 2192], "style": "solid", "color": "#b8bdc2" }
     },
     {
       "id": "rail",
       "type": "joint",
       "label": "TRAVERSE AXIS",
       "station": "ST1",
-      "at": [0, -150, 2246],
+      "at": [0, -430, 2096],
       "rot": [180, 0, 0],
       "params": {
         "kind": "prismatic",
         "axis": "x",
         "len": 0,
-        "min": -1300,
-        "max": 1300,
-        "home": -980,
-        "vmax": 1000,
-        "acc": 2500,
+        "min": -1890,
+        "max": 920,
+        "home": -1690,
+        "vmax": 1200,
+        "acc": 3000,
         "width": 160,
         "jogPct": 10
       },
@@ -121,6 +111,10 @@
         "acc": 427.5,
         "width": 150,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j1.stl",
+        "meshScale": 1,
+        "meshAt": [0, 0, 0],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -155,6 +149,10 @@
         "acc": 378.75,
         "width": 130,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j2.stl",
+        "meshScale": 1,
+        "meshAt": [-35, 0, 0],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -189,6 +187,10 @@
         "acc": 454.5,
         "width": 110,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j3.stl",
+        "meshScale": 1,
+        "meshAt": [0, 0, -445],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -223,6 +225,10 @@
         "acc": 568.13,
         "width": 90,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j4.stl",
+        "meshScale": 1,
+        "meshAt": [0, 0, -20],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -257,6 +263,10 @@
         "acc": 568.13,
         "width": 80,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j5.stl",
+        "meshScale": 1,
+        "meshAt": [0, 0, 0],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -291,6 +301,10 @@
         "acc": 909,
         "width": 70,
         "color": "#f1efe8",
+        "mesh": "/assets/robots/vs087/j6.stl",
+        "meshScale": 1,
+        "meshAt": [-80, 0, 0],
+        "meshRot": [90, 0, 90],
         "jogPct": 5
       },
       "io": {
@@ -357,26 +371,36 @@
       "id": "partTpl",
       "type": "workpiece",
       "label": "CASTING (template)",
-      "at": [0, -1500, 0],
+      "at": [0, -2600, 0],
       "params": { "kind": "cyl", "size": [50, 50, 70], "color": "#7b4a2c", "material": "steel" }
     },
     {
-      "id": "cv",
+      "id": "cvIn",
       "type": "conveyor",
-      "label": "LINE CONVEYOR",
+      "label": "INFEED CONVEYOR",
       "station": "ST4",
-      "at": [0, -220, 0],
-      "params": { "length": 4400, "width": 90, "height": 820, "speed": 250, "guides": 30 },
-      "io": { "run": "CV_RUN", "ovr": "OVR" }
+      "at": [-350, -380, 0],
+      "params": { "length": 3600, "width": 90, "height": 820, "speed": 250, "guides": 30 },
+      "io": { "run": "CVIN_RUN", "ovr": "OVR" }
+    },
+    {
+      "id": "cvOut",
+      "type": "conveyor",
+      "label": "OUTFEED CONVEYOR",
+      "station": "ST5",
+      "at": [-350, -760, 0],
+      "rot": [0, 0, 180],
+      "params": { "length": 3600, "width": 90, "height": 820, "speed": 250, "guides": 30 },
+      "io": { "run": "CVOUT_RUN", "ovr": "OVR" }
     },
     {
       "id": "emIn",
       "type": "emitter",
-      "label": "PART FEED",
+      "label": "CASTING FEED",
       "station": "ST4",
-      "parent": "cv",
-      "socket": "top",
-      "at": [-2050, 0, 5],
+      "parent": "cvIn",
+      "socket": "start",
+      "at": [150, 0, 5],
       "params": { "template": "partTpl", "mode": "tag" },
       "io": { "emit": "EM_IN_EMIT", "count": "EM_IN_CNT" }
     },
@@ -384,87 +408,211 @@
       "id": "rmOut",
       "type": "remover",
       "label": "NEXT PROCESS",
-      "parent": "cv",
+      "parent": "cvOut",
       "socket": "end",
-      "at": [220, 0, -700],
-      "params": { "size": [300, 300, 500] },
+      "at": [500, 0, -700],
+      "params": { "size": [1200, 400, 700] },
       "io": { "count": "RM_OUT_CNT" }
+    },
+    {
+      "id": "liftIN",
+      "type": "cylinder",
+      "label": "IN PIN LIFT",
+      "station": "ST4",
+      "at": [-1750, -380, 570],
+      "params": {
+        "bore": 32,
+        "stroke": 150,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "extWord": "UP",
+        "retWord": "DOWN"
+      },
+      "io": {
+        "solExt": "SOL_IN_UP",
+        "solRet": "SOL_IN_DN",
+        "sw.ret": "AS_IN_DN",
+        "sw.ext": "AS_IN_UP"
+      }
+    },
+    {
+      "id": "pinIN",
+      "type": "nest",
+      "label": "IN PIN",
+      "station": "ST4",
+      "parent": "liftIN",
+      "socket": "rodEnd",
+      "at": [0, 0, 6],
+      "params": { "size": [54, 54, 40], "wall": 4 },
+      "io": { "clamp": "IN_CLAMP", "present": "PX_IN" }
+    },
+    {
+      "id": "stopIN",
+      "type": "cylinder",
+      "label": "IN STOPPER",
+      "station": "ST4",
+      "at": [-1718, -380, 682],
+      "params": {
+        "bore": 16,
+        "stroke": 40,
+        "valve": "5/2-single",
+        "extendMs": 120,
+        "retractMs": 120,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "head": "plate",
+        "headSize": [12, 70, 25]
+      },
+      "io": { "solExt": "SOL_IN_STOP", "sw.ret": "AS_IN_STOP_DN", "sw.ext": "AS_IN_STOP_UP" }
+    },
+    {
+      "id": "eyeIN",
+      "type": "photoEye",
+      "label": "IN PART BEAM",
+      "station": "ST4",
+      "at": [-1750, -465, 850],
+      "rot": [0, 0, 90],
+      "params": { "range": 170, "offDelayMs": 150 },
+      "io": { "out": "PE_IN" }
+    },
+    {
+      "id": "liftOUT",
+      "type": "cylinder",
+      "label": "OUT PIN LIFT",
+      "station": "ST5",
+      "at": [-1750, -760, 570],
+      "params": {
+        "bore": 32,
+        "stroke": 150,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "extWord": "UP",
+        "retWord": "DOWN"
+      },
+      "io": {
+        "solExt": "SOL_OUT_UP",
+        "solRet": "SOL_OUT_DN",
+        "sw.ret": "AS_OUT_DN",
+        "sw.ext": "AS_OUT_UP"
+      }
+    },
+    {
+      "id": "pinOUT",
+      "type": "nest",
+      "label": "OUT PIN",
+      "station": "ST5",
+      "parent": "liftOUT",
+      "socket": "rodEnd",
+      "at": [0, 0, 6],
+      "params": { "size": [54, 54, 40], "wall": 4 },
+      "io": { "clamp": "OUT_CLAMP", "present": "PX_OUT" }
+    },
+    {
+      "id": "stopOUT",
+      "type": "cylinder",
+      "label": "OUT STOPPER",
+      "station": "ST5",
+      "at": [-1782, -760, 682],
+      "params": {
+        "bore": 16,
+        "stroke": 40,
+        "valve": "5/2-single",
+        "extendMs": 120,
+        "retractMs": 120,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "head": "plate",
+        "headSize": [12, 70, 25]
+      },
+      "io": { "solExt": "SOL_OUT_STOP", "sw.ret": "AS_OUT_STOP_DN", "sw.ext": "AS_OUT_STOP_UP" }
+    },
+    {
+      "id": "eyeOUT",
+      "type": "photoEye",
+      "label": "OUT PART BEAM",
+      "station": "ST5",
+      "at": [-1750, -845, 850],
+      "rot": [0, 0, 90],
+      "params": { "range": 170, "offDelayMs": 150 },
+      "io": { "out": "PE_OUT" }
     },
     {
       "id": "bed1",
       "type": "frame",
       "label": "TCC-2000 #1 BED",
-      "at": [-800, 700, 0],
-      "params": { "size": [1450, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+      "at": [-700, 700, 0],
+      "params": { "size": [1450, 1400, 820], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "tower1",
       "type": "frame",
-      "label": "TCC-2000 #1 NC SIDE",
-      "at": [-412.5, 700, 850],
-      "params": { "size": [675, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #1 TOWER",
+      "at": [-307.5, 700, 820],
+      "params": { "size": [665, 1400, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "back1",
       "type": "frame",
-      "label": "TCC-2000 #1 HEADSTOCK SIDE",
-      "at": [-1137.5, 975, 850],
-      "params": { "size": [775, 850, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #1 BACK",
+      "at": [-1032.5, 910, 820],
+      "params": { "size": [785, 980, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "wall1",
       "type": "frame",
-      "label": "TCC-2000 #1 LEFT WALL",
-      "at": [-1475, 275, 850],
-      "params": { "size": [100, 550, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #1 WALL",
+      "at": [-1382.5, 210, 820],
+      "params": { "size": [85, 420, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "hood1",
       "type": "frame",
-      "label": "TCC-2000 #1 DOOR HOOD",
-      "at": [-1087.5, 275, 1300],
-      "params": { "size": [675, 550, 400], "style": "solid", "color": "#2c3034" }
+      "label": "TCC-2000 #1 HOOD",
+      "at": [-990, 210, 1480],
+      "params": { "size": [700, 420, 220], "style": "solid", "color": "#2c3034" }
     },
     {
       "id": "head1",
       "type": "frame",
-      "label": "TCC-2000 #1 SPINDLE",
-      "at": [-1362.5, 300, 950],
-      "params": { "size": [125, 260, 260], "style": "solid", "color": "#6b7178" }
+      "label": "TCC-2000 #1 HEAD",
+      "at": [-1275, 200, 990],
+      "params": { "size": [130, 260, 260], "style": "solid", "color": "#6b7178" }
     },
     {
       "id": "jaws1",
       "type": "frame",
-      "label": "TCC-2000 #1 CHUCK",
-      "at": [-1263, 300, 975],
+      "label": "TCC-2000 #1 JAWS",
+      "at": [-1173, 200, 1015],
       "params": { "size": [74, 210, 210], "style": "solid", "color": "#3a3f45" }
     },
     {
       "id": "nc1",
       "type": "frame",
       "label": "TCC-2000 #1 NC PANEL",
-      "at": [-345, -40, 950],
+      "at": [-235, -40, 920],
       "params": { "size": [310, 80, 600], "style": "solid", "color": "#2c3034" }
     },
     {
       "id": "lampG1",
       "type": "frame",
       "label": "TCC-2000 #1 LAMP GREEN",
-      "at": [-140, 1335, 1700],
+      "at": [-40, 1335, 1700],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#27b045" }
     },
     {
       "id": "lampY1",
       "type": "frame",
       "label": "TCC-2000 #1 LAMP AMBER",
-      "at": [-140, 1335, 1760],
+      "at": [-40, 1335, 1760],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#ff9a1f" }
     },
     {
       "id": "lampR1",
       "type": "frame",
       "label": "TCC-2000 #1 LAMP RED",
-      "at": [-140, 1335, 1820],
+      "at": [-40, 1335, 1820],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#e0322c" }
     },
     {
@@ -472,7 +620,7 @@
       "type": "nest",
       "label": "TCC-2000 #1 CHUCK",
       "station": "ST2",
-      "at": [-1220, 300, 1080],
+      "at": [-1130, 200, 1120],
       "rot": [0, 90, 0],
       "params": { "size": [56, 56, 40], "wall": 8 },
       "io": { "clamp": "M1_CHUCK", "present": "M1_PART" }
@@ -482,13 +630,14 @@
       "type": "cylinder",
       "label": "TCC-2000 #1 DOOR CYL",
       "station": "ST2",
-      "at": [-710, -40, 250],
+      "at": [-1460, -60, 1570],
+      "rot": [0, 90, 0],
       "params": {
-        "bore": 20,
-        "stroke": 470,
+        "bore": 25,
+        "stroke": 760,
         "valve": "5/2-single",
-        "extendMs": 900,
-        "retractMs": 900,
+        "extendMs": 1200,
+        "retractMs": 1200,
         "extWord": "OPEN",
         "retWord": "CLOSE"
       },
@@ -500,146 +649,85 @@
       "label": "TCC-2000 #1 DOOR",
       "parent": "door1",
       "socket": "rodEnd",
-      "at": [-377.5, 12, 53],
-      "params": { "size": [715, 12, 470] }
-    },
-    {
-      "id": "lift1",
-      "type": "cylinder",
-      "label": "STATION 1 PIN LIFT",
-      "station": "ST4",
-      "at": [-950, -220, 570],
-      "params": {
-        "bore": 32,
-        "stroke": 150,
-        "valve": "5/2-double",
-        "extendMs": 450,
-        "retractMs": 450,
-        "extWord": "UP",
-        "retWord": "DOWN"
-      },
-      "io": {
-        "solExt": "SOL_S1_UP",
-        "solRet": "SOL_S1_DN",
-        "sw.ret": "AS_S1_DN",
-        "sw.ext": "AS_S1_UP"
-      }
-    },
-    {
-      "id": "pin1",
-      "type": "nest",
-      "label": "STATION 1 PIN",
-      "station": "ST4",
-      "parent": "lift1",
-      "socket": "rodEnd",
-      "at": [0, 0, 6],
-      "params": { "size": [54, 54, 40], "wall": 4 },
-      "io": { "clamp": "S1_CLAMP", "present": "PX_S1" }
-    },
-    {
-      "id": "stop1",
-      "type": "cylinder",
-      "label": "STATION 1 STOPPER",
-      "station": "ST4",
-      "at": [-918, -220, 682],
-      "params": {
-        "bore": 16,
-        "stroke": 40,
-        "valve": "5/2-single",
-        "extendMs": 120,
-        "retractMs": 120,
-        "extWord": "UP",
-        "retWord": "DOWN",
-        "head": "plate",
-        "headSize": [12, 70, 25]
-      },
-      "io": { "solExt": "SOL_S1_STOP", "sw.ret": "AS_S1_STOP_DN", "sw.ext": "AS_S1_STOP_UP" }
-    },
-    {
-      "id": "eye1",
-      "type": "photoEye",
-      "label": "STATION 1 PART BEAM",
-      "station": "ST4",
-      "at": [-950, -305, 850],
-      "rot": [0, 0, 90],
-      "params": { "range": 170, "offDelayMs": 150 },
-      "io": { "out": "PE_S1" }
+      "at": [-680, 20, -732],
+      "rot": [0, -90, 0],
+      "params": { "size": [740, 14, 680] }
     },
     {
       "id": "bed2",
       "type": "frame",
       "label": "TCC-2000 #2 BED",
-      "at": [800, 700, 0],
-      "params": { "size": [1450, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+      "at": [900, 700, 0],
+      "params": { "size": [1450, 1400, 820], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "tower2",
       "type": "frame",
-      "label": "TCC-2000 #2 NC SIDE",
-      "at": [1187.5, 700, 850],
-      "params": { "size": [675, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #2 TOWER",
+      "at": [1292.5, 700, 820],
+      "params": { "size": [665, 1400, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "back2",
       "type": "frame",
-      "label": "TCC-2000 #2 HEADSTOCK SIDE",
-      "at": [462.5, 975, 850],
-      "params": { "size": [775, 850, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #2 BACK",
+      "at": [567.5, 910, 820],
+      "params": { "size": [785, 980, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "wall2",
       "type": "frame",
-      "label": "TCC-2000 #2 LEFT WALL",
-      "at": [125, 275, 850],
-      "params": { "size": [100, 550, 850], "style": "solid", "color": "#d8d3c4" }
+      "label": "TCC-2000 #2 WALL",
+      "at": [217.5, 210, 820],
+      "params": { "size": [85, 420, 880], "style": "solid", "color": "#d8d3c4" }
     },
     {
       "id": "hood2",
       "type": "frame",
-      "label": "TCC-2000 #2 DOOR HOOD",
-      "at": [512.5, 275, 1300],
-      "params": { "size": [675, 550, 400], "style": "solid", "color": "#2c3034" }
+      "label": "TCC-2000 #2 HOOD",
+      "at": [610, 210, 1480],
+      "params": { "size": [700, 420, 220], "style": "solid", "color": "#2c3034" }
     },
     {
       "id": "head2",
       "type": "frame",
-      "label": "TCC-2000 #2 SPINDLE",
-      "at": [237.5, 300, 950],
-      "params": { "size": [125, 260, 260], "style": "solid", "color": "#6b7178" }
+      "label": "TCC-2000 #2 HEAD",
+      "at": [325, 200, 990],
+      "params": { "size": [130, 260, 260], "style": "solid", "color": "#6b7178" }
     },
     {
       "id": "jaws2",
       "type": "frame",
-      "label": "TCC-2000 #2 CHUCK",
-      "at": [337, 300, 975],
+      "label": "TCC-2000 #2 JAWS",
+      "at": [427, 200, 1015],
       "params": { "size": [74, 210, 210], "style": "solid", "color": "#3a3f45" }
     },
     {
       "id": "nc2",
       "type": "frame",
       "label": "TCC-2000 #2 NC PANEL",
-      "at": [1255, -40, 950],
+      "at": [1365, -40, 920],
       "params": { "size": [310, 80, 600], "style": "solid", "color": "#2c3034" }
     },
     {
       "id": "lampG2",
       "type": "frame",
       "label": "TCC-2000 #2 LAMP GREEN",
-      "at": [1460, 1335, 1700],
+      "at": [1560, 1335, 1700],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#27b045" }
     },
     {
       "id": "lampY2",
       "type": "frame",
       "label": "TCC-2000 #2 LAMP AMBER",
-      "at": [1460, 1335, 1760],
+      "at": [1560, 1335, 1760],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#ff9a1f" }
     },
     {
       "id": "lampR2",
       "type": "frame",
       "label": "TCC-2000 #2 LAMP RED",
-      "at": [1460, 1335, 1820],
+      "at": [1560, 1335, 1820],
       "params": { "size": [50, 50, 60], "style": "solid", "color": "#e0322c" }
     },
     {
@@ -647,7 +735,7 @@
       "type": "nest",
       "label": "TCC-2000 #2 CHUCK",
       "station": "ST3",
-      "at": [380, 300, 1080],
+      "at": [470, 200, 1120],
       "rot": [0, 90, 0],
       "params": { "size": [56, 56, 40], "wall": 8 },
       "io": { "clamp": "M2_CHUCK", "present": "M2_PART" }
@@ -657,13 +745,14 @@
       "type": "cylinder",
       "label": "TCC-2000 #2 DOOR CYL",
       "station": "ST3",
-      "at": [890, -40, 250],
+      "at": [140, -60, 1570],
+      "rot": [0, 90, 0],
       "params": {
-        "bore": 20,
-        "stroke": 470,
+        "bore": 25,
+        "stroke": 760,
         "valve": "5/2-single",
-        "extendMs": 900,
-        "retractMs": 900,
+        "extendMs": 1200,
+        "retractMs": 1200,
         "extWord": "OPEN",
         "retWord": "CLOSE"
       },
@@ -675,70 +764,9 @@
       "label": "TCC-2000 #2 DOOR",
       "parent": "door2",
       "socket": "rodEnd",
-      "at": [-377.5, 12, 53],
-      "params": { "size": [715, 12, 470] }
-    },
-    {
-      "id": "lift2",
-      "type": "cylinder",
-      "label": "STATION 2 PIN LIFT",
-      "station": "ST5",
-      "at": [650, -220, 570],
-      "params": {
-        "bore": 32,
-        "stroke": 150,
-        "valve": "5/2-double",
-        "extendMs": 450,
-        "retractMs": 450,
-        "extWord": "UP",
-        "retWord": "DOWN"
-      },
-      "io": {
-        "solExt": "SOL_S2_UP",
-        "solRet": "SOL_S2_DN",
-        "sw.ret": "AS_S2_DN",
-        "sw.ext": "AS_S2_UP"
-      }
-    },
-    {
-      "id": "pin2",
-      "type": "nest",
-      "label": "STATION 2 PIN",
-      "station": "ST5",
-      "parent": "lift2",
-      "socket": "rodEnd",
-      "at": [0, 0, 6],
-      "params": { "size": [54, 54, 40], "wall": 4 },
-      "io": { "clamp": "S2_CLAMP", "present": "PX_S2" }
-    },
-    {
-      "id": "stop2",
-      "type": "cylinder",
-      "label": "STATION 2 STOPPER",
-      "station": "ST5",
-      "at": [682, -220, 682],
-      "params": {
-        "bore": 16,
-        "stroke": 40,
-        "valve": "5/2-single",
-        "extendMs": 120,
-        "retractMs": 120,
-        "extWord": "UP",
-        "retWord": "DOWN",
-        "head": "plate",
-        "headSize": [12, 70, 25]
-      },
-      "io": { "solExt": "SOL_S2_STOP", "sw.ret": "AS_S2_STOP_DN", "sw.ext": "AS_S2_STOP_UP" }
-    },
-    {
-      "id": "eye2",
-      "type": "photoEye",
-      "label": "STATION 2 PART BEAM",
-      "station": "ST5",
-      "at": [650, -305, 850],
-      "rot": [0, 0, 90],
-      "params": { "range": 170, "offDelayMs": 150 },
-      "io": { "out": "PE_S2" }
+      "at": [-680, 20, -732],
+      "rot": [0, -90, 0],
+      "params": { "size": [740, 14, 680] }
     },
     { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
     {
@@ -917,18 +945,18 @@
       "io": { "pb": "IND_DOOR2", "lamp": "SOL_M2_DOOR" }
     },
     {
-      "id": "pbIndL1",
+      "id": "pbIndLI",
       "type": "pushbutton",
-      "label": "PIN LIFT #1",
+      "label": "INFEED PIN LIFT",
       "params": { "kind": "momentary", "color": "blue", "lamp": true },
-      "io": { "pb": "IND_LIFT1", "lamp": "SOL_S1_UP" }
+      "io": { "pb": "IND_LIFT_IN", "lamp": "SOL_IN_UP" }
     },
     {
-      "id": "pbIndL2",
+      "id": "pbIndLO",
       "type": "pushbutton",
-      "label": "PIN LIFT #2",
+      "label": "OUTFEED PIN LIFT",
       "params": { "kind": "momentary", "color": "blue", "lamp": true },
-      "io": { "pb": "IND_LIFT2", "lamp": "SOL_S2_UP" }
+      "io": { "pb": "IND_LIFT_OUT", "lamp": "SOL_OUT_UP" }
     }
   ]
 }

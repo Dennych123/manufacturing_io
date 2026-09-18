@@ -142,9 +142,13 @@ function build(sc) {
     const d = defs.get(c.id);
     if (d.t.group === 'operator') continue;                     // drawn in the HTML operator panel, not in 3D
     for (const l of d.links) { const g = new THREE.Group(); scene3.add(g); links.push({ id: c.id, link: l.name, g }); byKey.set(c.id + '/' + l.name, g); }
+    // `draw: false` is a collider the viewer must not draw: the link has a real shell instead, and
+    // drawing both puts a grey box through the middle of the robot. It IS what gets drawn when the
+    // shell is missing, though - a maker's CAD is often not ours to ship, so a scene that names one
+    // must still draw as boxes for anyone who has not got it.
+    const hidden = new Map();
+    for (const s of d.shapes) if (s.draw === false) (hidden.get(s.link) || hidden.set(s.link, []).get(s.link)).push(s);
     for (const s of d.shapes) {
-      // `draw: false` is a collider the viewer must not draw: the link has a real shell instead,
-      // and drawing both puts a grey box through the middle of the robot.
       if (s.draw === false) continue;
       if (s.kind === 'mesh') {
         // The asset loads asynchronously, so the link gets an empty group now and the shell when
@@ -157,7 +161,12 @@ function build(sc) {
         g.scale.set(k, k, k);
         byKey.get(c.id + '/' + s.link).add(g);
         meshAsset(s.asset).then(proto => {
-          if (!proto) return;
+          if (!proto) {
+            // The shell did not load: draw the primitives it was standing in for, so the link is
+            // still there. An invisible arm is the one failure a viewer must never show quietly.
+            for (const f of hidden.get(s.link) || []) byKey.get(c.id + '/' + s.link).add(shapeMesh(f, false));
+            return;
+          }
           const m = proto.clone(true);
           // A scene's own colour wins over the model's, so a robot can be painted the maker's
           // yellow or white without editing the mesh. Without a colour, a COLLADA keeps the

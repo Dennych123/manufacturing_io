@@ -293,6 +293,20 @@ in the code but break things silently** when violated. Most were paid for once i
   that plane — for a rail-mounted robot, the rail's own plane. An envelope map that pins J1 says
   every reachable point is directly under the rail, which is true and useless. Reaching sideways
   is J1's job, and the envelope has to be measured with it free.
+- **A maker's per-axis CAD lands exactly, and the way to find out how is the ASSEMBLY file.**
+  DENSO ships the VS-087 as six STEP parts plus an assembly. Each part file is its assembly solid
+  translated by a fixed offset, and the assembly stands the robot with its J1 axis along +Y - so the
+  maker's frame maps to this repo's by the cyclic permutation (x, y, z) -> (z, x, y), which is
+  rot [90, 0, 90]. With that, every joint bore in the assembly lands on this chain's joint origins
+  to the millimetre (J2 at 30, 0, 395 and J3 at 30, 0, 840), which is also the check that the
+  kinematics and the CAD are the same robot. Read the bores with FreeCAD (a cylindrical face's axis
+  and centre) instead of eyeballing the shells into place.
+- **A shell is a picture, so give it a triangle budget and keep it out of git when it is not ours.**
+  The VS-087's STEP tessellates to 132k triangles for one arm; decimated to 4k a link it is 24k for
+  the whole robot and the silhouette at cell scale is the same (tools/step_to_stl.py). Vendor CAD
+  from a member area is not redistributable: `assets/robots/vs087/` is gitignored, and the viewer
+  now draws the PRIMITIVES when a shell does not load - an invisible arm is the one failure a
+  viewer must never show quietly.
 - **A retro-reflective sensor cannot see a matt BLACK part, and that is a sorting signal.**
   `seesDark: false` on a part sensor makes it blind to a part whose colour luminance is under
   `DARK` (0.2). It is how Festo's MPS sorting station tells black from red with no colour camera:

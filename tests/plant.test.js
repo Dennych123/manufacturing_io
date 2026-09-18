@@ -1081,12 +1081,12 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
     q.run(100);
     steps.add(q.io.ST1_STEP);
     // the moment a jaw reports a grip, the pin or the chuck it took from is still holding on
-    if ((q.io.ST1_STEP === 15 && !q.io.AS_A_OPEN && q.io.S1_CLAMP !== false) ||
+    if ((q.io.ST1_STEP === 15 && !q.io.AS_A_OPEN && q.io.IN_CLAMP !== false) ||
         (q.io.ST1_STEP === 34 && !q.io.AS_B_OPEN && q.io.M1_CHUCK !== false)) clampedTake++;
   }
   const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
   chk('lathe-line: the cell keeps completing cycles', q.io.CYCLE_CNT >= 6 && q.io.ST1_STEP < 900, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
-  chk('lathe-line: parts go through both machines and leave off the end of the belt', q.io.RM_OUT_CNT >= 1 && q.io.ST5_STEP > 0,
+  chk('lathe-line: castings come in on one conveyor and finished parts leave on the other', q.io.RM_OUT_CNT >= 1 && q.io.ST5_STEP > 0,
     'discharged ' + q.io.RM_OUT_CNT + ' of ' + q.io.EM_IN_CNT + ' fed');
   chk('lathe-line: every part is accounted for and none was dropped', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
     pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
@@ -1096,7 +1096,7 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   const handover = q.events.filter(e => e.k === 'part' && (e.ev === 'hold' || e.ev === 'release'))
     .reduce((/** @type {any} */ acc, e) => {
       const prev = acc.last[e.uid];
-      if (e.ev === 'hold' && prev && prev.startsWith('pin') && e.by.startsWith('jaw')) acc.n++;
+      if (e.ev === 'hold' && prev && (prev.startsWith('pin') || prev.startsWith('chuck')) && e.by.startsWith('jaw')) acc.n++;
       acc.last[e.uid] = e.ev === 'hold' ? e.by : null;
       return acc;
     }, { n: 0, last: {} }).n;
