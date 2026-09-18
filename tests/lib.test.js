@@ -324,6 +324,37 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
   chk('robot-pitch: home is above everything with the cups down', tcp(POSE.home).p[2] > 550 && tcp(POSE.home).down[2] < -0.9999, fmt(tcp(POSE.home).p));
 }
 
+// Every pose the lathe-line controller commands lands the jaw it names on the chuck or on the
+// station pin, against the scene's own kinematics. The table is generated from these same goals
+// (tools/gen_lathe_line.js); this is what says the scene and the table have not drifted apart -
+// moving the conveyor 50 mm in the generator and forgetting to re-run it is otherwise silent.
+{
+  const sc = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'lathe-line.json'), 'utf8'));
+  const { POSE } = await import('../scenes/lathe-line.ctl.js');
+  const { goals } = await import('../tools/gen_lathe_line.js');
+  const ids = ['j1', 'j2', 'j3', 'j4', 'j5', 'j6'];
+  const lim = Object.fromEntries(ids.map(id => {
+    const p = sc.components.find((/** @type {any} */ c) => c.id === id).params;
+    return [id, [p.min, p.max]];
+  }));
+  /** The jaw's catch-zone centre and the direction it reaches, for a pose. */
+  const at = (/** @type {number[]} */ a, /** @type {string} */ jaw) => {
+    const W = worldPoses(sc, Object.fromEntries(ids.map((id, i) => [id, a[i]])));
+    return { p: apply(W[jaw].body, [0, 0, 30]), dir: qrot(W[jaw].body.q, [0, 0, 1]) };
+  };
+  const G = goals();
+  const off = Object.entries(G).map(([k, g]) => [k, Math.hypot(...at(POSE[k], g.jaw).p.map((v, i) => v - g.p[i]))]).filter(([, d]) => d > 0.1);
+  chk('lathe-line: all ' + Object.keys(G).length + ' controller poses land within 0.1 mm of their goals', off.length === 0, JSON.stringify(off));
+  const wrongWay = Object.entries(G).filter(([k, g]) => {
+    const d = at(POSE[k], g.jaw).dir;
+    return d[0] * g.dir[0] + d[1] * g.dir[1] + d[2] * g.dir[2] < 0.9999;
+  }).map(([k]) => k);
+  chk('lathe-line: every pose has its jaw reaching the way the goal asks', wrongWay.length === 0, wrongWay.join(' '));
+  const tight = Object.keys(G).flatMap(k => ids.map((id, i) => [k + '.' + id, Math.min(POSE[k][i] - lim[id][0], lim[id][1] - POSE[k][i])]))
+    .filter(([, m]) => m < 10);
+  chk('lathe-line: no pose stands within 10 deg of a joint limit', tight.length === 0, JSON.stringify(tight));
+}
+
 // ---------------------------------------------------------------- conveyor side members
 // Nothing solid beside the belt may reach the belt surface. Measured on sort-by-material: with
 // the side members flush with the belt, steel #43 slid belt -> rail top -> off the rail edge and

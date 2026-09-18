@@ -280,6 +280,48 @@ in the code but break things silently** when violated. Most were paid for once i
   13 poses within 0.05 mm, ≥ 30° from every limit. The IK had its update sign wrong once and
   walked the arm 1191 mm the other way until the limits stopped it; the test that says
   "unreachable is reported, not pretended" is from that.
+- **An IK that stops short with every joint far from its limit is a BOUNDARY, not a bug.**
+  Measured on the hanging VS-060: five of six poses failed by 2–126 mm with 73–80° of margin to
+  every limit, and the residual was bit-identical (126.10 mm) from both seeds, at 400 and at 2000
+  iterations, with damping loosened and the step cap doubled — position-only, with no orientation
+  demanded at all. A local minimum moves when you reseed it; a sphere does not. The tool-down
+  reach from the J1 origin is **918 mm** (swept over the real chain, not summed from the link
+  lengths), and the chuck was 1026 mm away. Before touching the solver, compute the distance from
+  the first joint to the target and compare it with a SWEPT reach.
+- **A sweep that holds J1 measures a slice, not an envelope.** On the VS-060 (and most 6-axis
+  arms) J2, J3 and J5 all turn about the same axis, so with J1 at zero the tool moves only in
+  that plane — for a rail-mounted robot, the rail's own plane. An envelope map that pins J1 says
+  every reachable point is directly under the rail, which is true and useless. Reaching sideways
+  is J1's job, and the envelope has to be measured with it free.
+- **A GRIPPER may take a part a nest is still holding; a chuck that opens first drops it.**
+  `inZone()` in `server/plant.js` lets a gripper's fingers close on a part held by a `nest`, and the
+  nest gives it up on that step (its `present` drops at once, which is the point - the machine has
+  to notice). That is the hand-over every tending robot lives on: grip, THEN open the chuck. With
+  the old rule - holders take FREE parts only - the sequence had to unclamp first, and a horizontal
+  chuck then drops the part before the fingers are anywhere near it. Nothing else changes: a holder
+  still never takes a part another GRIPPER has.
+- **A nest on a cylinder's rod end must sit clear of the rod-end block.** Every rod carries a 12 mm
+  steel block at its end, and a nest mounted flat on the `rodEnd` socket puts its 6 mm floor
+  straight through it. Measured on `lathe-line`: the part stood on the 19 mm block instead of the
+  62 mm floor, slid off it, sank 11 mm and toppled - and then rode the whole line lying down, which
+  no sensor in the scene reports. Mount the nest `pad` (6 mm) above the socket.
+- **A pop-up stop goes DOWN before the pin that lifted the part comes down.** Measured on the same
+  scene: with the stop still up, the part came off the pin onto the 30 mm stop head instead of the
+  belt, stood on its rim and fell over. The release order is stop down, then pin down, then wait
+  for the beam to clear before the stop comes back up.
+- **A station that both GIVES the robot a part and TAKES one back must be full when the robot
+  arrives.** The pin is the same pocket for both halves, so the only thing that guarantees it is
+  free for the finished part is that the robot took the raw one off it. Measured on `lathe-line`
+  twice: going to a machine because it had finished, with the pin still empty, put the robot at a
+  pin the station could not present empty (the next part stands at the stop directly over it) and
+  the visit hung until the watchdog; and letting the station raise a part during the visit put two
+  parts in one pocket, 40 mm apart, one of them off the end of the pin. A cut part waits in the
+  chuck instead, which is what the real cell does when the line runs dry.
+- **A beam a part crosses more than once needs an OFF-DELAY on the sensor, not a hold in the
+  plant.** The part crosses the station beam three times - in, up with the pin, down again - and a
+  part rocking as it lands off the pin flickers the ray for tens of milliseconds (measured: an 8 ms
+  and a 20 ms gap in three minutes), which the plant then reports as a stretched pulse. 150 ms of
+  off-delay is what the setting on a real beam is for.
 - **A pitch-change head is ONE dof with a `scale` per slot link.** Five cups on a camshaft:
   slot i sits at (i − c)·pitchMax and slides by (i − c)·(pitchMin − pitchMax)/camDeg per
   degree, and the cam link turns by the same dof, so the picture shows the shaft turning as

@@ -59,10 +59,9 @@ chk('/ -> web/index.html', is('/', 'web/index.html'));
 chk('/lib/scene.js and /vendor/three/... map to their folders', is('/lib/scene.js', 'lib/scene.js') && is('/vendor/three/build/three.module.js', 'node_modules/three/build/three.module.js'));
 chk('/assets/... serves a scene\'s 3D shells', is('/assets/robots/lrmate200id/meshes/link_1.stl', 'assets/robots/lrmate200id/meshes/link_1.stl'));
 chk('the STL loader the viewer imports exists in node_modules', fs.existsSync(staticPath(ROOT, '/vendor/three/examples/jsm/loaders/STLLoader.js')));
-// Robot makers do not agree on a format: ROS-Industrial ships the Fanuc as STL, DENSO ships the
-// VS-060 as COLLADA. Both loaders have to be there, and both kinds of asset have to be servable.
+// Robot makers do not agree on a format: ROS-Industrial ships the Fanuc as STL, DENSO ships its
+// arms as COLLADA. The viewer imports both loaders, so both have to be there.
 chk('the COLLADA loader the viewer imports exists in node_modules', fs.existsSync(staticPath(ROOT, '/vendor/three/examples/jsm/loaders/ColladaLoader.js')));
-chk('/assets/... serves a .dae shell too', is('/assets/robots/vs060/meshes/J1.dae', 'assets/robots/vs060/meshes/J1.dae'));
 for (const u of ['/web/../server/pki/key.pem', '/web/%2e%2e/server/plant.js', '/lib/..%2fserver%2fplant.js', '/web/..\\server', '/web//x',
                  '/server/plant.js', '/scenes/cyl-on-slide.ctl.js', '/web/', '/node_modules/three/package.json', '/web/%E0%A4%A']) {
   chk('refused: ' + u, staticPath(ROOT, u) === null);

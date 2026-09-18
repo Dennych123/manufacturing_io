@@ -161,6 +161,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const removers = comps.filter(r => r.t.flow === 'remover');
   const sensors = comps.filter(r => r.t.sense);
   const holders = comps.filter(r => r.t.hold).map(r => ({ r, link: '', prev: /** @type {any} */ (null) }));
+  /** Holders a gripper may take a part OUT of (a chuck, a locating pin), by id and as a list. */
+  const nestHolders = holders.filter(h => h.r.t.hold === 'nest');
+  const holderOf = new Map(holders.map(h => [h.r.id, h]));
   /** Metal parts (inductive proximity sees them). */
   const METAL = new Set(['steel', 'alu']);
   /** Handshake replies the PLC provably saw (schema `hold: false`): no minPulseMs hold. */
@@ -297,13 +300,20 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const t = pt.body.translation(), q = pt.body.rotation();
     return apply({ p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] }, pt.ctr);
   }
-  /** A free part (or this holder's own) whose centre is inside `z`, a box in the holder's frame. @param {any} r @param {any} F @param {any} z */
+  /**
+   * A part a gripper's fingers could close on: free, its own, or one a NEST is holding. The last
+   * is the hand-over a tending robot lives on - it grips the part in the chuck and the chuck opens
+   * afterwards, never the other way round: a chuck that lets go first drops the part. The nest
+   * gives it up in the holders loop below, and cannot take it back while another holder has it.
+   * @param {any} r @param {any} F @param {any} z
+   */
   function inZone(r, F, z) {
     const inv = invert(F);
     const mine = r.s.uid ? parts.get(r.s.uid) : null;
-    for (const pt of (mine ? [mine, ...free] : free)) {
+    const nested = nestHolders.map(h => (h.r.s.uid ? parts.get(h.r.s.uid) : null)).filter(Boolean);
+    for (const pt of (mine ? [mine, ...free, ...nested] : [...free, ...nested])) {
       if (pt.pin) continue;                                   // a part the viewer is holding is not there to be taken
-      if (pt.held && pt.held.id !== r.id) continue;
+      if (pt.held && pt.held.id !== r.id && defs.get(pt.held.id).t.hold !== 'nest') continue;
       const l = apply(inv, pt.cw);
       if (l.every((v, i) => Math.abs(v - z.at[i]) <= z.size[i] / 2)) return pt;
     }
@@ -655,6 +665,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
           // centre entered the pocket - measured 11.6 mm in the air, which then made a press
           // that stops at the nominal part height squeeze it and fling it off the table.
           pt.rel = r.t.snap ? pose([0, 0, 0]) : compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
+          // Taken out of a nest (see inZone): that holder loses it here and now, so its `present`
+          // drops on the same step - the machine must notice the part it thinks it has is gone.
+          if (pt.held && pt.held.id !== r.id) { const prev = holderOf.get(pt.held.id); if (prev) prev.r.s.uid = null; }
           pt.held = { id: r.id, link };
           pt.parked = false;
           free.delete(pt);

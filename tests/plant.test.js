@@ -1064,6 +1064,49 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   await q.close();
 }
 
+// ---------------------------------------------------------------- lathe-line (VS-087 + 2 lathes)
+// A hanging six-axis robot on a traverse, two lathes and ONE conveyor past their fronts, with a
+// pop-up stop and a pin lift at each machine. The discriminating measurements: parts go OP10 then
+// OP20 and leave off the end of the belt, and the jaw takes the part out of a chuck (or off a pin)
+// that is still CLAMPED - the hand-over a tending robot lives on. A chuck that opens first drops
+// the part on the floor of the machine.
+{
+  const ll = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'lathe-line.json'), 'utf8'));
+  const { create: createLL } = await import('../scenes/lathe-line.ctl.js');
+  const q = await createPlant(ll, { controller: createLL() });
+  q.run(200);
+  powerUp(q, 6000);
+  let clampedTake = 0, steps = new Set();
+  for (let i = 0; i < 1600; i++) {
+    q.run(100);
+    steps.add(q.io.ST1_STEP);
+    // the moment a jaw reports a grip, the pin or the chuck it took from is still holding on
+    if ((q.io.ST1_STEP === 15 && !q.io.AS_A_OPEN && q.io.S1_CLAMP !== false) ||
+        (q.io.ST1_STEP === 34 && !q.io.AS_B_OPEN && q.io.M1_CHUCK !== false)) clampedTake++;
+  }
+  const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  chk('lathe-line: the cell keeps completing cycles', q.io.CYCLE_CNT >= 6 && q.io.ST1_STEP < 900, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('lathe-line: parts go through both machines and leave off the end of the belt', q.io.RM_OUT_CNT >= 1 && q.io.ST5_STEP > 0,
+    'discharged ' + q.io.RM_OUT_CNT + ' of ' + q.io.EM_IN_CNT + ' fed');
+  chk('lathe-line: every part is accounted for and none was dropped', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' inside, ' + pev('lost') + ' lost');
+  chk('lathe-line: a jaw takes the part while the pin or the chuck still holds it (the hand-over)', clampedTake > 0, clampedTake + ' scans');
+  // hold events, part by part: a hand-over shows as one holder handing straight to the next with
+  // no release between, which is only possible because the jaw may take out of a nest.
+  const handover = q.events.filter(e => e.k === 'part' && (e.ev === 'hold' || e.ev === 'release'))
+    .reduce((/** @type {any} */ acc, e) => {
+      const prev = acc.last[e.uid];
+      if (e.ev === 'hold' && prev && prev.startsWith('pin') && e.by.startsWith('jaw')) acc.n++;
+      acc.last[e.uid] = e.ev === 'hold' ? e.by : null;
+      return acc;
+    }, { n: 0, last: {} }).n;
+  chk('lathe-line: the pin hands a part straight to the jaw, never letting go first', handover > 0, handover + ' hand-overs');
+  chk('lathe-line: the door, the stop and the lift raise no warnings', !q.events.some(e => e.k === 'warn'),
+    q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  chk('lathe-line: a step costs well under its 4 ms budget', q.stepUs === 0 || q.stepUs < 2000, q.stepUs + ' us');
+  await q.close();
+}
+
 // ---------------------------------------------------------------- what a part costs
 // A scene carries hundreds of parts only because most of them are HELD. Measured on this PC with
 // 200 identical plugs, loose on a running belt against sitting in nests with the clamp on:

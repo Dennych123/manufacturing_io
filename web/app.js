@@ -98,6 +98,13 @@ function geometry(s) {
 // (one BufferGeometry) and DENSO ships the VS-060 as COLLADA (a whole scene graph, with its own
 // materials). So this hands back an OBJECT3D either way, and the caller clones it - a cached
 // geometry cannot be added to two links at once, but a clone of a cached prototype can.
+//
+// A .dae is NOT rotated on the way in, even though these files say <up_axis>Y_UP</up_axis>. That
+// tag is metadata the URDF toolchain ignores: a URDF visual has rpy="0 0 0", so the vertex data
+// must already sit in the link frame, which is Z-up. Measured on the DENSO meshes - J2's upper
+// arm is 421 mm along Z, J1 is tallest in Z, base_link is a flat 171 x 160 x 30 plate - so the
+// data is Z-up and an "up-axis correction" here rotates them a second time. That is what an arm
+// scattered into loose pieces looks like.
 const stl = new STLLoader();
 const dae = new ColladaLoader();
 const meshGeo = new Map();
@@ -105,15 +112,7 @@ function meshAsset(asset) {
   let p = meshGeo.get(asset);
   if (!p) {
     p = (/\.dae$/i.test(asset)
-      ? dae.loadAsync(asset).then(c => {
-          // COLLADA carries its own up-axis. three applies it to the loaded scene, so the result
-          // is already Y-up-corrected into three's Y-up world - and this repo is Z-UP. One X+90
-          // puts a Y-up model on its feet; it is the same rule as a scene `rot`, applied once here
-          // rather than in every scene that names a .dae.
-          const o = c.scene;
-          o.rotateX(Math.PI / 2);
-          return o;
-        })
+      ? dae.loadAsync(asset).then(c => c.scene)
       : stl.loadAsync(asset).then(g => { g.computeVertexNormals(); return new THREE.Mesh(g); }))
       .catch(e => { console.warn('mesh ' + asset + ' did not load:', e.message); return null; });
     meshGeo.set(asset, p);

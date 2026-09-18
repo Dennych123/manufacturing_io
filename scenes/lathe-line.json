@@ -1,0 +1,934 @@
+{
+  "format": "mio-scene/1",
+  "name": "lathe-line",
+  "sim": { "dtMs": 4 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Robot",
+      "members": ["rail", "j1", "j2", "j3", "j4", "j5", "j6", "jawA", "jawB"],
+      "stepTag": "ST1_STEP"
+    },
+    {
+      "id": "ST2",
+      "name": "TCC-2000 #1 (OP10)",
+      "members": ["chuck1", "door1"],
+      "stepTag": "ST2_STEP"
+    },
+    {
+      "id": "ST3",
+      "name": "TCC-2000 #2 (OP20)",
+      "members": ["chuck2", "door2"],
+      "stepTag": "ST3_STEP"
+    },
+    {
+      "id": "ST4",
+      "name": "Station 1 + feed",
+      "members": ["cv", "emIn", "lift1", "pin1", "stop1", "eye1"],
+      "stepTag": "ST4_STEP"
+    },
+    {
+      "id": "ST5",
+      "name": "Station 2 + discharge",
+      "members": ["lift2", "pin2", "stop2", "eye2", "rmOut"],
+      "stepTag": "ST5_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "RM_OUT_CNT",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "beam",
+      "type": "frame",
+      "label": "TRAVERSE BEAM",
+      "at": [0, -150, 2342],
+      "params": { "size": [5550, 220, 260], "style": "solid", "color": "#c8ccd0" }
+    },
+    {
+      "id": "colL",
+      "type": "frame",
+      "label": "BEAM COLUMN",
+      "at": [-2700, -150, 0],
+      "params": { "size": [160, 160, 2342], "style": "solid", "color": "#b8bdc2" }
+    },
+    {
+      "id": "colR",
+      "type": "frame",
+      "label": "BEAM COLUMN",
+      "at": [2700, -150, 0],
+      "params": { "size": [160, 160, 2342], "style": "solid", "color": "#b8bdc2" }
+    },
+    {
+      "id": "rail",
+      "type": "joint",
+      "label": "TRAVERSE AXIS",
+      "station": "ST1",
+      "at": [0, -150, 2246],
+      "rot": [180, 0, 0],
+      "params": {
+        "kind": "prismatic",
+        "axis": "x",
+        "len": 0,
+        "min": -1300,
+        "max": 1300,
+        "home": -980,
+        "vmax": 1000,
+        "acc": 2500,
+        "width": 160,
+        "jogPct": 10
+      },
+      "io": {
+        "target": "RX_TGT",
+        "exec": "RX_EXEC",
+        "done": "RX_DONE",
+        "busy": "RX_BUSY",
+        "actPos": "RX_POS",
+        "inPos": "RX_INPOS",
+        "ovr": "OVR",
+        "jogP": "RX_JOG_P",
+        "jogN": "RX_JOG_N"
+      }
+    },
+    {
+      "id": "j1",
+      "type": "joint",
+      "label": "VS-087 J1",
+      "station": "ST1",
+      "parent": "rail",
+      "socket": "end",
+      "at": [0, 0, 96],
+      "params": {
+        "kind": "revolute",
+        "axis": "z",
+        "len": 0,
+        "to": [30, 0, 395],
+        "min": -170,
+        "max": 170,
+        "home": 0,
+        "vmax": 142.5,
+        "acc": 427.5,
+        "width": 150,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J1_TGT",
+        "exec": "J1_EXEC",
+        "done": "J1_DONE",
+        "busy": "J1_BUSY",
+        "actPos": "J1_POS",
+        "inPos": "J1_INPOS",
+        "ovr": "OVR",
+        "jogP": "J1_JOG_P",
+        "jogN": "J1_JOG_N"
+      }
+    },
+    {
+      "id": "j2",
+      "type": "joint",
+      "label": "VS-087 J2",
+      "station": "ST1",
+      "parent": "j1",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "y",
+        "len": 0,
+        "to": [0, 0, 445],
+        "min": -100,
+        "max": 135,
+        "home": 0,
+        "vmax": 126.25,
+        "acc": 378.75,
+        "width": 130,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J2_TGT",
+        "exec": "J2_EXEC",
+        "done": "J2_DONE",
+        "busy": "J2_BUSY",
+        "actPos": "J2_POS",
+        "inPos": "J2_INPOS",
+        "ovr": "OVR",
+        "jogP": "J2_JOG_P",
+        "jogN": "J2_JOG_N"
+      }
+    },
+    {
+      "id": "j3",
+      "type": "joint",
+      "label": "VS-087 J3",
+      "station": "ST1",
+      "parent": "j2",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "y",
+        "len": 0,
+        "to": [0, 0, 20],
+        "min": -136,
+        "max": 153,
+        "home": 0,
+        "vmax": 151.5,
+        "acc": 454.5,
+        "width": 110,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J3_TGT",
+        "exec": "J3_EXEC",
+        "done": "J3_DONE",
+        "busy": "J3_BUSY",
+        "actPos": "J3_POS",
+        "inPos": "J3_INPOS",
+        "ovr": "OVR",
+        "jogP": "J3_JOG_P",
+        "jogN": "J3_JOG_N"
+      }
+    },
+    {
+      "id": "j4",
+      "type": "joint",
+      "label": "VS-087 J4",
+      "station": "ST1",
+      "parent": "j3",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "x",
+        "len": 0,
+        "to": [430, 0, 0],
+        "min": -270,
+        "max": 270,
+        "home": 0,
+        "vmax": 189.38,
+        "acc": 568.13,
+        "width": 90,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J4_TGT",
+        "exec": "J4_EXEC",
+        "done": "J4_DONE",
+        "busy": "J4_BUSY",
+        "actPos": "J4_POS",
+        "inPos": "J4_INPOS",
+        "ovr": "OVR",
+        "jogP": "J4_JOG_P",
+        "jogN": "J4_JOG_N"
+      }
+    },
+    {
+      "id": "j5",
+      "type": "joint",
+      "label": "VS-087 J5",
+      "station": "ST1",
+      "parent": "j4",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "y",
+        "len": 0,
+        "to": [80, 0, 0],
+        "min": -120,
+        "max": 120,
+        "home": 0,
+        "vmax": 189.38,
+        "acc": 568.13,
+        "width": 80,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J5_TGT",
+        "exec": "J5_EXEC",
+        "done": "J5_DONE",
+        "busy": "J5_BUSY",
+        "actPos": "J5_POS",
+        "inPos": "J5_INPOS",
+        "ovr": "OVR",
+        "jogP": "J5_JOG_P",
+        "jogN": "J5_JOG_N"
+      }
+    },
+    {
+      "id": "j6",
+      "type": "joint",
+      "label": "VS-087 J6",
+      "station": "ST1",
+      "parent": "j5",
+      "socket": "end",
+      "at": [0, 0, 0],
+      "params": {
+        "kind": "revolute",
+        "axis": "x",
+        "len": 0,
+        "to": [0, 0, 0],
+        "min": -360,
+        "max": 360,
+        "home": 0,
+        "vmax": 303,
+        "acc": 909,
+        "width": 70,
+        "color": "#f1efe8",
+        "jogPct": 5
+      },
+      "io": {
+        "target": "J6_TGT",
+        "exec": "J6_EXEC",
+        "done": "J6_DONE",
+        "busy": "J6_BUSY",
+        "actPos": "J6_POS",
+        "inPos": "J6_INPOS",
+        "ovr": "OVR",
+        "jogP": "J6_JOG_P",
+        "jogN": "J6_JOG_N"
+      }
+    },
+    {
+      "id": "hand",
+      "type": "plate",
+      "label": "DOUBLE HAND BLOCK",
+      "parent": "j6",
+      "socket": "end",
+      "at": [0, 0, -45],
+      "rot": [0, 90, 0],
+      "params": { "size": [90, 70, 70] }
+    },
+    {
+      "id": "jawA",
+      "type": "gripper",
+      "label": "HAND A (raw)",
+      "station": "ST1",
+      "parent": "j6",
+      "socket": "end",
+      "at": [70, 0, 0],
+      "rot": [0, 90, 0],
+      "params": {
+        "span": 100,
+        "fingerLen": 50,
+        "fingerW": 10,
+        "closeMs": 300,
+        "openMs": 300,
+        "band": 1.5
+      },
+      "io": { "close": "GRIP_A", "open": "AS_A_OPEN", "closed": "AS_A_CLOSED" }
+    },
+    {
+      "id": "jawB",
+      "type": "gripper",
+      "label": "HAND B (finished)",
+      "station": "ST1",
+      "parent": "j6",
+      "socket": "end",
+      "at": [35, 0, 35],
+      "rot": [0, 0, 0],
+      "params": {
+        "span": 100,
+        "fingerLen": 50,
+        "fingerW": 10,
+        "closeMs": 300,
+        "openMs": 300,
+        "band": 1.5
+      },
+      "io": { "close": "GRIP_B", "open": "AS_B_OPEN", "closed": "AS_B_CLOSED" }
+    },
+    {
+      "id": "partTpl",
+      "type": "workpiece",
+      "label": "CASTING (template)",
+      "at": [0, -1500, 0],
+      "params": { "kind": "cyl", "size": [50, 50, 70], "color": "#7b4a2c", "material": "steel" }
+    },
+    {
+      "id": "cv",
+      "type": "conveyor",
+      "label": "LINE CONVEYOR",
+      "station": "ST4",
+      "at": [0, -220, 0],
+      "params": { "length": 4400, "width": 90, "height": 820, "speed": 250, "guides": 30 },
+      "io": { "run": "CV_RUN", "ovr": "OVR" }
+    },
+    {
+      "id": "emIn",
+      "type": "emitter",
+      "label": "PART FEED",
+      "station": "ST4",
+      "parent": "cv",
+      "socket": "top",
+      "at": [-2050, 0, 5],
+      "params": { "template": "partTpl", "mode": "tag" },
+      "io": { "emit": "EM_IN_EMIT", "count": "EM_IN_CNT" }
+    },
+    {
+      "id": "rmOut",
+      "type": "remover",
+      "label": "NEXT PROCESS",
+      "parent": "cv",
+      "socket": "end",
+      "at": [220, 0, -700],
+      "params": { "size": [300, 300, 500] },
+      "io": { "count": "RM_OUT_CNT" }
+    },
+    {
+      "id": "bed1",
+      "type": "frame",
+      "label": "TCC-2000 #1 BED",
+      "at": [-800, 700, 0],
+      "params": { "size": [1450, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "tower1",
+      "type": "frame",
+      "label": "TCC-2000 #1 NC SIDE",
+      "at": [-412.5, 700, 850],
+      "params": { "size": [675, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "back1",
+      "type": "frame",
+      "label": "TCC-2000 #1 HEADSTOCK SIDE",
+      "at": [-1137.5, 975, 850],
+      "params": { "size": [775, 850, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "wall1",
+      "type": "frame",
+      "label": "TCC-2000 #1 LEFT WALL",
+      "at": [-1475, 275, 850],
+      "params": { "size": [100, 550, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "hood1",
+      "type": "frame",
+      "label": "TCC-2000 #1 DOOR HOOD",
+      "at": [-1087.5, 275, 1300],
+      "params": { "size": [675, 550, 400], "style": "solid", "color": "#2c3034" }
+    },
+    {
+      "id": "head1",
+      "type": "frame",
+      "label": "TCC-2000 #1 SPINDLE",
+      "at": [-1362.5, 300, 950],
+      "params": { "size": [125, 260, 260], "style": "solid", "color": "#6b7178" }
+    },
+    {
+      "id": "jaws1",
+      "type": "frame",
+      "label": "TCC-2000 #1 CHUCK",
+      "at": [-1263, 300, 975],
+      "params": { "size": [74, 210, 210], "style": "solid", "color": "#3a3f45" }
+    },
+    {
+      "id": "nc1",
+      "type": "frame",
+      "label": "TCC-2000 #1 NC PANEL",
+      "at": [-345, -40, 950],
+      "params": { "size": [310, 80, 600], "style": "solid", "color": "#2c3034" }
+    },
+    {
+      "id": "lampG1",
+      "type": "frame",
+      "label": "TCC-2000 #1 LAMP GREEN",
+      "at": [-140, 1335, 1700],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#27b045" }
+    },
+    {
+      "id": "lampY1",
+      "type": "frame",
+      "label": "TCC-2000 #1 LAMP AMBER",
+      "at": [-140, 1335, 1760],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#ff9a1f" }
+    },
+    {
+      "id": "lampR1",
+      "type": "frame",
+      "label": "TCC-2000 #1 LAMP RED",
+      "at": [-140, 1335, 1820],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#e0322c" }
+    },
+    {
+      "id": "chuck1",
+      "type": "nest",
+      "label": "TCC-2000 #1 CHUCK",
+      "station": "ST2",
+      "at": [-1220, 300, 1080],
+      "rot": [0, 90, 0],
+      "params": { "size": [56, 56, 40], "wall": 8 },
+      "io": { "clamp": "M1_CHUCK", "present": "M1_PART" }
+    },
+    {
+      "id": "door1",
+      "type": "cylinder",
+      "label": "TCC-2000 #1 DOOR CYL",
+      "station": "ST2",
+      "at": [-710, -40, 250],
+      "params": {
+        "bore": 20,
+        "stroke": 470,
+        "valve": "5/2-single",
+        "extendMs": 900,
+        "retractMs": 900,
+        "extWord": "OPEN",
+        "retWord": "CLOSE"
+      },
+      "io": { "solExt": "SOL_M1_DOOR", "sw.ret": "AS_M1_DOOR_CL", "sw.ext": "AS_M1_DOOR_OP" }
+    },
+    {
+      "id": "leaf1",
+      "type": "plate",
+      "label": "TCC-2000 #1 DOOR",
+      "parent": "door1",
+      "socket": "rodEnd",
+      "at": [-377.5, 12, 53],
+      "params": { "size": [715, 12, 470] }
+    },
+    {
+      "id": "lift1",
+      "type": "cylinder",
+      "label": "STATION 1 PIN LIFT",
+      "station": "ST4",
+      "at": [-950, -220, 570],
+      "params": {
+        "bore": 32,
+        "stroke": 150,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "extWord": "UP",
+        "retWord": "DOWN"
+      },
+      "io": {
+        "solExt": "SOL_S1_UP",
+        "solRet": "SOL_S1_DN",
+        "sw.ret": "AS_S1_DN",
+        "sw.ext": "AS_S1_UP"
+      }
+    },
+    {
+      "id": "pin1",
+      "type": "nest",
+      "label": "STATION 1 PIN",
+      "station": "ST4",
+      "parent": "lift1",
+      "socket": "rodEnd",
+      "at": [0, 0, 6],
+      "params": { "size": [54, 54, 40], "wall": 4 },
+      "io": { "clamp": "S1_CLAMP", "present": "PX_S1" }
+    },
+    {
+      "id": "stop1",
+      "type": "cylinder",
+      "label": "STATION 1 STOPPER",
+      "station": "ST4",
+      "at": [-918, -220, 682],
+      "params": {
+        "bore": 16,
+        "stroke": 40,
+        "valve": "5/2-single",
+        "extendMs": 120,
+        "retractMs": 120,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "head": "plate",
+        "headSize": [12, 70, 25]
+      },
+      "io": { "solExt": "SOL_S1_STOP", "sw.ret": "AS_S1_STOP_DN", "sw.ext": "AS_S1_STOP_UP" }
+    },
+    {
+      "id": "eye1",
+      "type": "photoEye",
+      "label": "STATION 1 PART BEAM",
+      "station": "ST4",
+      "at": [-950, -305, 850],
+      "rot": [0, 0, 90],
+      "params": { "range": 170, "offDelayMs": 150 },
+      "io": { "out": "PE_S1" }
+    },
+    {
+      "id": "bed2",
+      "type": "frame",
+      "label": "TCC-2000 #2 BED",
+      "at": [800, 700, 0],
+      "params": { "size": [1450, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "tower2",
+      "type": "frame",
+      "label": "TCC-2000 #2 NC SIDE",
+      "at": [1187.5, 700, 850],
+      "params": { "size": [675, 1400, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "back2",
+      "type": "frame",
+      "label": "TCC-2000 #2 HEADSTOCK SIDE",
+      "at": [462.5, 975, 850],
+      "params": { "size": [775, 850, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "wall2",
+      "type": "frame",
+      "label": "TCC-2000 #2 LEFT WALL",
+      "at": [125, 275, 850],
+      "params": { "size": [100, 550, 850], "style": "solid", "color": "#d8d3c4" }
+    },
+    {
+      "id": "hood2",
+      "type": "frame",
+      "label": "TCC-2000 #2 DOOR HOOD",
+      "at": [512.5, 275, 1300],
+      "params": { "size": [675, 550, 400], "style": "solid", "color": "#2c3034" }
+    },
+    {
+      "id": "head2",
+      "type": "frame",
+      "label": "TCC-2000 #2 SPINDLE",
+      "at": [237.5, 300, 950],
+      "params": { "size": [125, 260, 260], "style": "solid", "color": "#6b7178" }
+    },
+    {
+      "id": "jaws2",
+      "type": "frame",
+      "label": "TCC-2000 #2 CHUCK",
+      "at": [337, 300, 975],
+      "params": { "size": [74, 210, 210], "style": "solid", "color": "#3a3f45" }
+    },
+    {
+      "id": "nc2",
+      "type": "frame",
+      "label": "TCC-2000 #2 NC PANEL",
+      "at": [1255, -40, 950],
+      "params": { "size": [310, 80, 600], "style": "solid", "color": "#2c3034" }
+    },
+    {
+      "id": "lampG2",
+      "type": "frame",
+      "label": "TCC-2000 #2 LAMP GREEN",
+      "at": [1460, 1335, 1700],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#27b045" }
+    },
+    {
+      "id": "lampY2",
+      "type": "frame",
+      "label": "TCC-2000 #2 LAMP AMBER",
+      "at": [1460, 1335, 1760],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#ff9a1f" }
+    },
+    {
+      "id": "lampR2",
+      "type": "frame",
+      "label": "TCC-2000 #2 LAMP RED",
+      "at": [1460, 1335, 1820],
+      "params": { "size": [50, 50, 60], "style": "solid", "color": "#e0322c" }
+    },
+    {
+      "id": "chuck2",
+      "type": "nest",
+      "label": "TCC-2000 #2 CHUCK",
+      "station": "ST3",
+      "at": [380, 300, 1080],
+      "rot": [0, 90, 0],
+      "params": { "size": [56, 56, 40], "wall": 8 },
+      "io": { "clamp": "M2_CHUCK", "present": "M2_PART" }
+    },
+    {
+      "id": "door2",
+      "type": "cylinder",
+      "label": "TCC-2000 #2 DOOR CYL",
+      "station": "ST3",
+      "at": [890, -40, 250],
+      "params": {
+        "bore": 20,
+        "stroke": 470,
+        "valve": "5/2-single",
+        "extendMs": 900,
+        "retractMs": 900,
+        "extWord": "OPEN",
+        "retWord": "CLOSE"
+      },
+      "io": { "solExt": "SOL_M2_DOOR", "sw.ret": "AS_M2_DOOR_CL", "sw.ext": "AS_M2_DOOR_OP" }
+    },
+    {
+      "id": "leaf2",
+      "type": "plate",
+      "label": "TCC-2000 #2 DOOR",
+      "parent": "door2",
+      "socket": "rodEnd",
+      "at": [-377.5, 12, 53],
+      "params": { "size": [715, 12, 470] }
+    },
+    {
+      "id": "lift2",
+      "type": "cylinder",
+      "label": "STATION 2 PIN LIFT",
+      "station": "ST5",
+      "at": [650, -220, 570],
+      "params": {
+        "bore": 32,
+        "stroke": 150,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "extWord": "UP",
+        "retWord": "DOWN"
+      },
+      "io": {
+        "solExt": "SOL_S2_UP",
+        "solRet": "SOL_S2_DN",
+        "sw.ret": "AS_S2_DN",
+        "sw.ext": "AS_S2_UP"
+      }
+    },
+    {
+      "id": "pin2",
+      "type": "nest",
+      "label": "STATION 2 PIN",
+      "station": "ST5",
+      "parent": "lift2",
+      "socket": "rodEnd",
+      "at": [0, 0, 6],
+      "params": { "size": [54, 54, 40], "wall": 4 },
+      "io": { "clamp": "S2_CLAMP", "present": "PX_S2" }
+    },
+    {
+      "id": "stop2",
+      "type": "cylinder",
+      "label": "STATION 2 STOPPER",
+      "station": "ST5",
+      "at": [682, -220, 682],
+      "params": {
+        "bore": 16,
+        "stroke": 40,
+        "valve": "5/2-single",
+        "extendMs": 120,
+        "retractMs": 120,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "head": "plate",
+        "headSize": [12, 70, 25]
+      },
+      "io": { "solExt": "SOL_S2_STOP", "sw.ret": "AS_S2_STOP_DN", "sw.ext": "AS_S2_STOP_UP" }
+    },
+    {
+      "id": "eye2",
+      "type": "photoEye",
+      "label": "STATION 2 PART BEAM",
+      "station": "ST5",
+      "at": [650, -305, 850],
+      "rot": [0, 0, 90],
+      "params": { "range": 170, "offDelayMs": 150 },
+      "io": { "out": "PE_S2" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO RUNNING",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED OVERRIDE",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbJogRXP",
+      "type": "pushbutton",
+      "label": "JOG TRAVERSE +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_RX_P", "lamp": "RX_JOG_P" }
+    },
+    {
+      "id": "pbJogRXN",
+      "type": "pushbutton",
+      "label": "JOG TRAVERSE -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_RX_N", "lamp": "RX_JOG_N" }
+    },
+    {
+      "id": "pbJogJ1P",
+      "type": "pushbutton",
+      "label": "JOG J1 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J1_P", "lamp": "J1_JOG_P" }
+    },
+    {
+      "id": "pbJogJ1N",
+      "type": "pushbutton",
+      "label": "JOG J1 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J1_N", "lamp": "J1_JOG_N" }
+    },
+    {
+      "id": "pbJogJ2P",
+      "type": "pushbutton",
+      "label": "JOG J2 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J2_P", "lamp": "J2_JOG_P" }
+    },
+    {
+      "id": "pbJogJ2N",
+      "type": "pushbutton",
+      "label": "JOG J2 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J2_N", "lamp": "J2_JOG_N" }
+    },
+    {
+      "id": "pbJogJ3P",
+      "type": "pushbutton",
+      "label": "JOG J3 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J3_P", "lamp": "J3_JOG_P" }
+    },
+    {
+      "id": "pbJogJ3N",
+      "type": "pushbutton",
+      "label": "JOG J3 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J3_N", "lamp": "J3_JOG_N" }
+    },
+    {
+      "id": "pbJogJ4P",
+      "type": "pushbutton",
+      "label": "JOG J4 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J4_P", "lamp": "J4_JOG_P" }
+    },
+    {
+      "id": "pbJogJ4N",
+      "type": "pushbutton",
+      "label": "JOG J4 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J4_N", "lamp": "J4_JOG_N" }
+    },
+    {
+      "id": "pbJogJ5P",
+      "type": "pushbutton",
+      "label": "JOG J5 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J5_P", "lamp": "J5_JOG_P" }
+    },
+    {
+      "id": "pbJogJ5N",
+      "type": "pushbutton",
+      "label": "JOG J5 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J5_N", "lamp": "J5_JOG_N" }
+    },
+    {
+      "id": "pbJogJ6P",
+      "type": "pushbutton",
+      "label": "JOG J6 +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J6_P", "lamp": "J6_JOG_P" }
+    },
+    {
+      "id": "pbJogJ6N",
+      "type": "pushbutton",
+      "label": "JOG J6 -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_J6_N", "lamp": "J6_JOG_N" }
+    },
+    {
+      "id": "pbIndA",
+      "type": "pushbutton",
+      "label": "HAND A",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_A", "lamp": "GRIP_A" }
+    },
+    {
+      "id": "pbIndB",
+      "type": "pushbutton",
+      "label": "HAND B",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_B", "lamp": "GRIP_B" }
+    },
+    {
+      "id": "pbIndD1",
+      "type": "pushbutton",
+      "label": "DOOR #1",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DOOR1", "lamp": "SOL_M1_DOOR" }
+    },
+    {
+      "id": "pbIndD2",
+      "type": "pushbutton",
+      "label": "DOOR #2",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DOOR2", "lamp": "SOL_M2_DOOR" }
+    },
+    {
+      "id": "pbIndL1",
+      "type": "pushbutton",
+      "label": "PIN LIFT #1",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_LIFT1", "lamp": "SOL_S1_UP" }
+    },
+    {
+      "id": "pbIndL2",
+      "type": "pushbutton",
+      "label": "PIN LIFT #2",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_LIFT2", "lamp": "SOL_S2_UP" }
+    }
+  ]
+}
