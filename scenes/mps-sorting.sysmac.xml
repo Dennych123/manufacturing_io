@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:smcext="https://www.ia.omron.com/Smc"
+         xsi:schemaLocation="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd"
+         schemaVersion="1"
+         xmlns="www.iec.ch/public/TC65SC65BWG7TF10">
+  <FileHeader companyName="manufacturing_io" productName="tools/gen_sysmac.js" productVersion="1.0.0.0" />
+  <ContentHeader name="mps-sorting" creationDateTime="2026-01-01T00:00:00">
+    <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:DeviceInfo modelName="NX102" version="1.40" /></Data></AddData>
+  </ContentHeader>
+  <Types>
+    <GlobalNamespace>
+      <Program name="PRG_MPS_SORTING">
+        <ExternalVars>
+          <Variable name="BELT_FWD">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR">
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_BLACK">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_BLACK_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="EM_RED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_RED_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="EM_METAL">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_METAL_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="WP_AT_START">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="STOP_HOLD">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_STOP_FREE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_STOP_HOLD">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_DETECTED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_NOT_BLACK">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_METALLIC">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W1_EXT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_W1_IN">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W1_OUT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_1_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="W2_EXT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_W2_IN">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W2_OUT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_2_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="RM_3_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="CHUTE_FULL">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="SEL_AUTO">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_MASTER">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_ESTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_START">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_START">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_CSTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_HOME">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AUTO_RUN">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR_SET">
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_BELT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_STOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W1">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W2">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_BLACK">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_RED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_METAL">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="ST1_STEP">
+            <Type><TypeName>INT</TypeName></Type>
+          </Variable>
+          <Variable name="CYCLE_CNT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="MIO_HEARTBEAT">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+        </ExternalVars>
+        <Vars accessSpecifier="private">
+          <Variable name="START_EDGE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_START_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="STOP_REQ">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="SEL_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+            <InitialValue><SimpleValue value="TRUE" /></InitialValue>
+          </Variable>
+          <Variable name="SEL_CHANGED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="T_WD">
+            <Type><TypeName>TON</TypeName></Type>
+          </Variable>
+          <Variable name="T_READ">
+            <Type><TypeName>TON</TypeName></Type>
+          </Variable>
+          <Variable name="T_FEED">
+            <Type><TypeName>TON</TypeName></Type>
+          </Variable>
+          <Variable name="STEP_LAST">
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="KIND">
+            <Type><TypeName>UINT</TypeName></Type>
+          </Variable>
+          <Variable name="NEXT_FEED">
+            <Type><TypeName>UINT</TypeName></Type>
+          </Variable>
+          <Variable name="CLEAR">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RUNNING">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_BELT">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_STOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_W1">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MEM_W2">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_BELT_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_STOP_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W1_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W2_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_ACTIVE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="ESTOP">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="READY">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MASTER_ON">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="HOMED">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="MASTER_EDGE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="HOME_EDGE">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME_LAST">
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+        </Vars>
+        <MainBody>
+          <BodyContent xsi:type="ST">
+            <ST>// Generated by manufacturing_io tools/gen_sysmac.js from scenes/mps-sorting.st. Edit the .st, then regenerate.
+
+// Heartbeat: the plant says &quot;program not running or not assigned to a task&quot; when this stops.
+MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
+
+// mps-sorting: Festo Didactic's MPS Sorting station 8046325 (manual 8046391, 11/2015). The
+// sequence and the IO are the manual's: a 40 mm workpiece is laid on the belt, a fork light
+// barrier sees it, the belt runs it up to a stop, and three sensors at the stop say what it is -
+// a through-beam sees every workpiece, a retro-reflective one sees every one that is NOT matt
+// black, and an inductive one sees the metal. So black = seen but not by the retro one, red =
+// retro but not inductive, metallic = both. Red goes to the chute at the belt START (Weiche 1),
+// metallic to the one in the MIDDLE (Weiche 2), black runs off the belt END.
+// The same sequence runs without a PLC in mps-sorting.ctl.js - keep the two in step.
+//
+// ONE difference from the real machine, deliberate: Festo's Q3 is &quot;Stopper einfahren&quot; - the stop
+// is out by default and the output retracts it. Here the stop pops UP out of the belt
+// (STOP_HOLD, energised to hold), because in this simulator a stop a part passes UNDER holds it
+// from a positive distance (CLAUDE.md). It is the same signal inverted.
+//
+// KIND: 0 = black, 1 = red, 2 = metallic.
+
+START_EDGE := PB_START AND NOT PB_START_LAST;
+PB_START_LAST := PB_START;
+IF PB_CSTOP THEN
+	STOP_REQ := TRUE;
+END_IF;
+SEL_CHANGED := SEL_AUTO &lt;&gt; SEL_LAST;
+SEL_LAST := SEL_AUTO;
+
+ESTOP := PB_ESTOP;
+MASTER_EDGE := PB_MASTER AND NOT PB_MASTER_LAST;
+PB_MASTER_LAST := PB_MASTER;
+HOME_EDGE := PB_HOME AND NOT PB_HOME_LAST;
+PB_HOME_LAST := PB_HOME;
+IF ESTOP THEN
+	MASTER_ON := FALSE;
+	HOMED := FALSE;
+ELSIF MASTER_EDGE THEN
+	MASTER_ON := TRUE;
+END_IF;
+READY := MASTER_ON AND NOT ESTOP;
+
+// Everything laid on the belt has reached a bin: the invariant a discharge step waits for. A
+// count that &quot;has moved&quot; cannot say WHICH workpiece moved (CLAUDE.md).
+CLEAR := (EM_BLACK_CNT + EM_RED_CNT + EM_METAL_CNT) = (RM_1_CNT + RM_2_CNT + RM_3_CNT);
+
+CASE ST1_STEP OF
+	0:	// Ausgangsstellung: belt off, stop out, both gates in
+		BELT_FWD := FALSE;
+		W1_EXT := FALSE;
+		W2_EXT := FALSE;
+		EM_BLACK := FALSE;
+		EM_RED := FALSE;
+		EM_METAL := FALSE;
+		STOP_HOLD := TRUE;
+		IF START_EDGE AND SEL_AUTO AND READY AND HOMED THEN
+			STOP_REQ := FALSE;
+			ST1_STEP := 10;
+		END_IF;
+	10:	// the operator lays the next workpiece on the belt, one colour at a time
+		BELT_FWD := FALSE;
+		STOP_HOLD := TRUE;
+		EM_BLACK := NEXT_FEED = 0;
+		EM_RED := NEXT_FEED = 1;
+		EM_METAL := NEXT_FEED = 2;
+		IF T_FEED.Q THEN
+			NEXT_FEED := (NEXT_FEED + 1) MOD 3;
+			ST1_STEP := 15;
+		END_IF;
+	15:	// Startvoraussetzung: Werkstück am Bandanfang
+		EM_BLACK := FALSE;
+		EM_RED := FALSE;
+		EM_METAL := FALSE;
+		BELT_FWD := FALSE;
+		STOP_HOLD := TRUE;
+		IF WP_AT_START AND NOT CHUTE_FULL THEN
+			ST1_STEP := 20;
+		END_IF;
+	20:	// Bandmotor ein
+		BELT_FWD := TRUE;
+		STOP_HOLD := TRUE;
+		IF WP_DETECTED THEN
+			ST1_STEP := 30;
+		END_IF;
+	30:	// Farb-/Materialidentifikation, with the workpiece held against the stop
+		BELT_FWD := TRUE;
+		IF T_READ.Q THEN
+			IF WP_METALLIC THEN
+				KIND := 2;
+				ST1_STEP := 50;
+			ELSIF WP_NOT_BLACK THEN
+				KIND := 1;
+				ST1_STEP := 40;
+			ELSE
+				KIND := 0;
+				ST1_STEP := 60;
+			END_IF;
+		END_IF;
+	40:	// red: Weiche 1 ausfahren
+		BELT_FWD := TRUE;
+		W1_EXT := TRUE;
+		IF W1_OUT THEN
+			ST1_STEP := 41;
+		END_IF;
+	41:	// Sperre einfahren
+		BELT_FWD := TRUE;
+		STOP_HOLD := FALSE;
+		IF AS_STOP_FREE THEN
+			ST1_STEP := 42;
+		END_IF;
+	42:	// Werkstück ausgeschleust
+		BELT_FWD := TRUE;
+		IF CLEAR THEN
+			ST1_STEP := 43;
+		END_IF;
+	43:	// Weiche 1 einfahren
+		BELT_FWD := TRUE;
+		W1_EXT := FALSE;
+		IF AS_W1_IN THEN
+			ST1_STEP := 70;
+		END_IF;
+	50:	// metallic: Weiche 2 ausfahren
+		BELT_FWD := TRUE;
+		W2_EXT := TRUE;
+		IF W2_OUT THEN
+			ST1_STEP := 51;
+		END_IF;
+	51:
+		BELT_FWD := TRUE;
+		STOP_HOLD := FALSE;
+		IF AS_STOP_FREE THEN
+			ST1_STEP := 52;
+		END_IF;
+	52:
+		BELT_FWD := TRUE;
+		IF CLEAR THEN
+			ST1_STEP := 53;
+		END_IF;
+	53:
+		BELT_FWD := TRUE;
+		W2_EXT := FALSE;
+		IF AS_W2_IN THEN
+			ST1_STEP := 70;
+		END_IF;
+	60:	// black: let it go, it runs off the belt end onto the third chute
+		BELT_FWD := TRUE;
+		STOP_HOLD := FALSE;
+		IF AS_STOP_FREE THEN
+			ST1_STEP := 61;
+		END_IF;
+	61:
+		BELT_FWD := TRUE;
+		IF CLEAR THEN
+			ST1_STEP := 70;
+		END_IF;
+	70:	// Bandmotor aus, Sperre ausfahren
+		BELT_FWD := FALSE;
+		STOP_HOLD := TRUE;
+		IF AS_STOP_HOLD THEN
+			CYCLE_CNT := CYCLE_CNT + 1;
+			IF STOP_REQ THEN
+				ST1_STEP := 0;
+			ELSE
+				ST1_STEP := 10;
+			END_IF;
+		END_IF;
+	800:	// HOME is the station's Ausgangsstellung
+		BELT_FWD := FALSE;
+		W1_EXT := FALSE;
+		W2_EXT := FALSE;
+		EM_BLACK := FALSE;
+		EM_RED := FALSE;
+		EM_METAL := FALSE;
+		STOP_HOLD := TRUE;
+		IF AS_STOP_HOLD AND AS_W1_IN AND AS_W2_IN THEN
+			HOMED := TRUE;
+			ST1_STEP := 0;
+		END_IF;
+	900:	// stuck, or the selector was turned while running
+		BELT_FWD := FALSE;
+		W1_EXT := FALSE;
+		W2_EXT := FALSE;
+		EM_BLACK := FALSE;
+		EM_RED := FALSE;
+		EM_METAL := FALSE;
+		IF START_EDGE AND SEL_AUTO THEN
+			STOP_REQ := FALSE;
+			ST1_STEP := 0;
+		END_IF;
+	910:	// the master circuit is open: the stop KEEPS the workpiece it is holding
+		BELT_FWD := FALSE;
+		W1_EXT := FALSE;
+		W2_EXT := FALSE;
+		EM_BLACK := FALSE;
+		EM_RED := FALSE;
+		EM_METAL := FALSE;
+		IF READY THEN
+			ST1_STEP := 0;
+		END_IF;
+END_CASE;
+
+RUNNING := ST1_STEP &lt;&gt; 0 AND ST1_STEP &lt;&gt; 800 AND ST1_STEP &lt;&gt; 900 AND ST1_STEP &lt;&gt; 910;
+
+// TONs after the CASE: their Q is read by the NEXT scan.
+T_READ(In := ST1_STEP = 30, PT := T#400ms);
+T_FEED(In := ST1_STEP = 10, PT := T#600ms);
+
+// Watchdog: a running step that stops moving is a jam, not patience - a workpiece taken off the
+// belt by hand leaves step 20 waiting for a stop it will never reach. The TON is called BEFORE
+// STEP_LAST is updated, so a step change gives it one scan of In = FALSE and resets it.
+T_WD(In := ST1_STEP &lt;&gt; 0 AND ST1_STEP &lt;&gt; 900 AND ST1_STEP &lt;&gt; 910 AND ST1_STEP = STEP_LAST, PT := T#20s);
+STEP_LAST := ST1_STEP;
+IF T_WD.Q OR (SEL_CHANGED AND RUNNING) THEN
+	ST1_STEP := 900;
+	BELT_FWD := FALSE;
+	W1_EXT := FALSE;
+	W2_EXT := FALSE;
+	EM_BLACK := FALSE;
+	EM_RED := FALSE;
+	EM_METAL := FALSE;
+END_IF;
+
+IF ESTOP THEN
+	IF ST1_STEP &lt;&gt; 910 THEN
+		ST1_STEP := 910;
+	END_IF;
+	BELT_FWD := FALSE;
+	W1_EXT := FALSE;
+	W2_EXT := FALSE;
+	EM_BLACK := FALSE;
+	EM_RED := FALSE;
+	EM_METAL := FALSE;
+ELSIF HOME_EDGE AND READY AND ST1_STEP = 0 THEN
+	ST1_STEP := 800;
+END_IF;
+
+AUTO_RUN := ST1_STEP &lt;&gt; 0 AND ST1_STEP &lt;&gt; 800 AND ST1_STEP &lt;&gt; 900 AND ST1_STEP &lt;&gt; 910;
+IND_ACTIVE := NOT SEL_AUTO AND NOT AUTO_RUN AND READY AND ST1_STEP &lt;&gt; 800;
+IF IND_ACTIVE THEN
+	IF IND_BELT AND NOT IND_BELT_LAST THEN
+		MEM_BELT := NOT MEM_BELT;
+	END_IF;
+	IF IND_STOP AND NOT IND_STOP_LAST THEN
+		MEM_STOP := NOT MEM_STOP;
+	END_IF;
+	IF IND_W1 AND NOT IND_W1_LAST THEN
+		MEM_W1 := NOT MEM_W1;
+	END_IF;
+	IF IND_W2 AND NOT IND_W2_LAST THEN
+		MEM_W2 := NOT MEM_W2;
+	END_IF;
+	BELT_FWD := MEM_BELT;
+	STOP_HOLD := MEM_STOP;
+	W1_EXT := MEM_W1;
+	W2_EXT := MEM_W2;
+	EM_BLACK := IND_FEED_BLACK;
+	EM_RED := IND_FEED_RED;
+	EM_METAL := IND_FEED_METAL;
+ELSE
+	MEM_BELT := FALSE;
+	MEM_STOP := FALSE;
+	MEM_W1 := FALSE;
+	MEM_W2 := FALSE;
+END_IF;
+IND_BELT_LAST := IND_BELT;
+IND_STOP_LAST := IND_STOP;
+IND_W1_LAST := IND_W1;
+IND_W2_LAST := IND_W2;
+
+OVR := OVR_SET;
+PL_START := AUTO_RUN;
+PL_MASTER := MASTER_ON;
+PL_HOME := HOMED;</ST>
+          </BodyContent>
+        </MainBody>
+      </Program>
+    </GlobalNamespace>
+  </Types>
+  <Instances>
+    <Configuration name="mps-sorting">
+      <Resource name="MainResource" resourceTypeName="">
+        <GlobalVars>
+          <Variable name="BELT_FWD">
+            <Documentation xsi:type="SimpleText">ST1 MODUL BAND RUN</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR">
+            <Documentation xsi:type="SimpleText">ST1 MODUL BAND OVR</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_BLACK">
+            <Documentation xsi:type="SimpleText">ST1 FEED BLACK EMIT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_BLACK_CNT">
+            <Documentation xsi:type="SimpleText">ST1 FEED BLACK COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="EM_RED">
+            <Documentation xsi:type="SimpleText">ST1 FEED RED EMIT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_RED_CNT">
+            <Documentation xsi:type="SimpleText">ST1 FEED RED COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="EM_METAL">
+            <Documentation xsi:type="SimpleText">ST1 FEED METALLIC EMIT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="EM_METAL_CNT">
+            <Documentation xsi:type="SimpleText">ST1 FEED METALLIC COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="WP_AT_START">
+            <Documentation xsi:type="SimpleText">ST1 WORKPIECE AT BELT START EXIST</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="STOP_HOLD">
+            <Documentation xsi:type="SimpleText">ST1 SEPARATOR (STOP) HOLD</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_STOP_FREE">
+            <Documentation xsi:type="SimpleText">ST1 SEPARATOR (STOP) FREE</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_STOP_HOLD">
+            <Documentation xsi:type="SimpleText">ST1 SEPARATOR (STOP) HOLD</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_DETECTED">
+            <Documentation xsi:type="SimpleText">ST1 WORKPIECE DETECTED (through-beam) EXIST</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_NOT_BLACK">
+            <Documentation xsi:type="SimpleText">ST1 WORKPIECE NOT BLACK (retro-reflective) EXIST</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="WP_METALLIC">
+            <Documentation xsi:type="SimpleText">ST1 WORKPIECE METALLIC (inductive) EXIST</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W1_EXT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 1 (RED) OUT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_W1_IN">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 1 (RED) IN</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W1_OUT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 1 (RED) OUT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_1_CNT">
+            <Documentation xsi:type="SimpleText">BIN 1 (RED) COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="W2_EXT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 2 (METAL) OUT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AS_W2_IN">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 2 (METAL) IN</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="W2_OUT">
+            <Documentation xsi:type="SimpleText">ST1 EJECTOR 2 (METAL) OUT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="RM_2_CNT">
+            <Documentation xsi:type="SimpleText">BIN 2 (METAL) COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="RM_3_CNT">
+            <Documentation xsi:type="SimpleText">BIN 3 (BLACK) COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="CHUTE_FULL">
+            <Documentation xsi:type="SimpleText">ST1 CHUTE FULL EXIST</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="SEL_AUTO">
+            <Documentation xsi:type="SimpleText">AUTO / INDIVIDUAL AUTO</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_MASTER">
+            <Documentation xsi:type="SimpleText">MASTER ON PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_MASTER">
+            <Documentation xsi:type="SimpleText">MASTER ON LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_ESTOP">
+            <Documentation xsi:type="SimpleText">EMERGENCY STOP PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_START">
+            <Documentation xsi:type="SimpleText">START PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_START">
+            <Documentation xsi:type="SimpleText">START LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_CSTOP">
+            <Documentation xsi:type="SimpleText">CYCLE STOP PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PB_HOME">
+            <Documentation xsi:type="SimpleText">HOME POS PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="PL_HOME">
+            <Documentation xsi:type="SimpleText">HOME POS LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="AUTO_RUN">
+            <Documentation xsi:type="SimpleText">AUTO RUNNING LAMP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="OVR_SET">
+            <Documentation xsi:type="SimpleText">SPEED OVERRIDE OVR</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>LREAL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_BELT">
+            <Documentation xsi:type="SimpleText">BELT FORWARD PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_STOP">
+            <Documentation xsi:type="SimpleText">STOP HOLD PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W1">
+            <Documentation xsi:type="SimpleText">EJECTOR 1 PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_W2">
+            <Documentation xsi:type="SimpleText">EJECTOR 2 PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_BLACK">
+            <Documentation xsi:type="SimpleText">FEED BLACK PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_RED">
+            <Documentation xsi:type="SimpleText">FEED RED PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="IND_FEED_METAL">
+            <Documentation xsi:type="SimpleText">FEED METALLIC PB</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>BOOL</TypeName></Type>
+          </Variable>
+          <Variable name="ST1_STEP">
+            <Documentation xsi:type="SimpleText">ST1 STEP</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>INT</TypeName></Type>
+          </Variable>
+          <Variable name="CYCLE_CNT">
+            <Documentation xsi:type="SimpleText">CYCLE COUNT</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+          <Variable name="MIO_HEARTBEAT">
+            <Documentation xsi:type="SimpleText">+1 every scan: proves PRG_MIO_PROBE is assigned to a task and running</Documentation>
+            <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
+            <Type><TypeName>UDINT</TypeName></Type>
+          </Variable>
+        </GlobalVars>
+      </Resource>
+    </Configuration>
+  </Instances>
+</Project>

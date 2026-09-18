@@ -1,0 +1,421 @@
+{
+  "format": "mio-scene/1",
+  "name": "mps-sorting",
+  "sim": { "dtMs": 4 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Sorting station",
+      "members": ["cv", "stop", "ej1", "ej2", "peStart", "peDet", "peRetro", "pxInd", "peFull"],
+      "stepTag": "ST1_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "RM_3_CNT",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cv",
+      "type": "conveyor",
+      "label": "MODUL BAND",
+      "station": "ST1",
+      "at": [0, 0, 0],
+      "params": {
+        "length": 700,
+        "width": 60,
+        "height": 890,
+        "speed": 100,
+        "accelMs": 150,
+        "guides": 0
+      },
+      "io": { "run": "BELT_FWD", "ovr": "OVR" }
+    },
+    {
+      "id": "wpBlack",
+      "type": "workpiece",
+      "label": "WORKPIECE BLACK (template)",
+      "at": [0, -1500, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [40, 40, 25],
+        "color": "#1f1f1f",
+        "material": "plastic",
+        "friction": 0.35
+      }
+    },
+    {
+      "id": "emBlack",
+      "type": "emitter",
+      "label": "FEED BLACK",
+      "station": "ST1",
+      "parent": "cv",
+      "socket": "top",
+      "at": [-270, 0, 6],
+      "params": { "template": "wpBlack", "mode": "tag" },
+      "io": { "emit": "EM_BLACK", "count": "EM_BLACK_CNT" }
+    },
+    {
+      "id": "wpRed",
+      "type": "workpiece",
+      "label": "WORKPIECE RED (template)",
+      "at": [0, -1500, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [40, 40, 25],
+        "color": "#c0392b",
+        "material": "plastic",
+        "friction": 0.35
+      }
+    },
+    {
+      "id": "emRed",
+      "type": "emitter",
+      "label": "FEED RED",
+      "station": "ST1",
+      "parent": "cv",
+      "socket": "top",
+      "at": [-270, 0, 6],
+      "params": { "template": "wpRed", "mode": "tag" },
+      "io": { "emit": "EM_RED", "count": "EM_RED_CNT" }
+    },
+    {
+      "id": "wpMetal",
+      "type": "workpiece",
+      "label": "WORKPIECE METALLIC (template)",
+      "at": [0, -1500, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [40, 40, 25],
+        "color": "#c8cdd2",
+        "material": "alu",
+        "friction": 0.35
+      }
+    },
+    {
+      "id": "emMetal",
+      "type": "emitter",
+      "label": "FEED METALLIC",
+      "station": "ST1",
+      "parent": "cv",
+      "socket": "top",
+      "at": [-270, 0, 6],
+      "params": { "template": "wpMetal", "mode": "tag" },
+      "io": { "emit": "EM_METAL", "count": "EM_METAL_CNT" }
+    },
+    {
+      "id": "peStart",
+      "type": "photoEye",
+      "label": "WORKPIECE AT BELT START",
+      "station": "ST1",
+      "at": [-270, -90, 902],
+      "rot": [0, 0, 90],
+      "params": { "range": 180, "offDelayMs": 40 },
+      "io": { "out": "WP_AT_START" }
+    },
+    {
+      "id": "stop",
+      "type": "cylinder",
+      "label": "SEPARATOR (STOP)",
+      "station": "ST1",
+      "at": [-124, 0, 748],
+      "params": {
+        "bore": 10,
+        "stroke": 45,
+        "valve": "5/2-single",
+        "extendMs": 120,
+        "retractMs": 120,
+        "extWord": "HOLD",
+        "retWord": "FREE",
+        "head": "plate",
+        "headSize": [10, 44, 18]
+      },
+      "io": { "solExt": "STOP_HOLD", "sw.ret": "AS_STOP_FREE", "sw.ext": "AS_STOP_HOLD" }
+    },
+    {
+      "id": "peDet",
+      "type": "photoEye",
+      "label": "WORKPIECE DETECTED (through-beam)",
+      "station": "ST1",
+      "at": [-150, -90, 902],
+      "rot": [0, 0, 90],
+      "params": { "range": 180, "offDelayMs": 40 },
+      "io": { "out": "WP_DETECTED" }
+    },
+    {
+      "id": "peRetro",
+      "type": "photoEye",
+      "label": "WORKPIECE NOT BLACK (retro-reflective)",
+      "station": "ST1",
+      "at": [-150, -90, 908],
+      "rot": [0, 0, 90],
+      "params": { "range": 180, "offDelayMs": 40, "seesDark": false },
+      "io": { "out": "WP_NOT_BLACK" }
+    },
+    {
+      "id": "pxInd",
+      "type": "proximity",
+      "label": "WORKPIECE METALLIC (inductive)",
+      "station": "ST1",
+      "at": [-150, 38, 902],
+      "rot": [0, 0, -90],
+      "params": { "range": 30, "metalOnly": true, "offDelayMs": 40 },
+      "io": { "out": "WP_METALLIC" }
+    },
+    {
+      "id": "ej1",
+      "type": "cylinder",
+      "label": "EJECTOR 1 (RED)",
+      "station": "ST1",
+      "at": [203.65032431919389, 273.6503243191939, 902.5],
+      "rot": [90, 0, -45],
+      "params": {
+        "bore": 10,
+        "stroke": 160,
+        "valve": "5/2-single",
+        "extendMs": 250,
+        "retractMs": 250,
+        "extWord": "OUT",
+        "retWord": "IN",
+        "head": "plate",
+        "headSize": [110, 30, 10]
+      },
+      "io": { "solExt": "W1_EXT", "sw.ret": "AS_W1_IN", "sw.ext": "W1_OUT" }
+    },
+    {
+      "id": "chute1",
+      "type": "plate",
+      "label": "CHUTE 1 (RED)",
+      "at": [0, -205, 740],
+      "rot": [28, 0, 0],
+      "params": { "size": [260, 320, 8] }
+    },
+    {
+      "id": "cw1b",
+      "type": "plate",
+      "label": "CHUTE 1 WALL",
+      "at": [-126, -235, 725],
+      "rot": [28, 0, 0],
+      "params": { "size": [8, 260, 40] }
+    },
+    {
+      "id": "cw1a",
+      "type": "plate",
+      "label": "CHUTE 1 WALL",
+      "at": [126, -235, 725],
+      "rot": [28, 0, 0],
+      "params": { "size": [8, 260, 40] }
+    },
+    {
+      "id": "rm1",
+      "type": "remover",
+      "label": "BIN 1 (RED)",
+      "at": [40, -240, 590],
+      "params": { "size": [220, 400, 360] },
+      "io": { "count": "RM_1_CNT" }
+    },
+    {
+      "id": "ej2",
+      "type": "cylinder",
+      "label": "EJECTOR 2 (METAL)",
+      "station": "ST1",
+      "at": [443.6503243191939, 273.6503243191939, 902.5],
+      "rot": [90, 0, -45],
+      "params": {
+        "bore": 10,
+        "stroke": 160,
+        "valve": "5/2-single",
+        "extendMs": 250,
+        "retractMs": 250,
+        "extWord": "OUT",
+        "retWord": "IN",
+        "head": "plate",
+        "headSize": [110, 30, 10]
+      },
+      "io": { "solExt": "W2_EXT", "sw.ret": "AS_W2_IN", "sw.ext": "W2_OUT" }
+    },
+    {
+      "id": "chute2",
+      "type": "plate",
+      "label": "CHUTE 2 (METAL)",
+      "at": [240, -205, 740],
+      "rot": [28, 0, 0],
+      "params": { "size": [260, 320, 8] }
+    },
+    {
+      "id": "cw2b",
+      "type": "plate",
+      "label": "CHUTE 2 WALL",
+      "at": [114, -235, 725],
+      "rot": [28, 0, 0],
+      "params": { "size": [8, 260, 40] }
+    },
+    {
+      "id": "cw2a",
+      "type": "plate",
+      "label": "CHUTE 2 WALL",
+      "at": [366, -235, 725],
+      "rot": [28, 0, 0],
+      "params": { "size": [8, 260, 40] }
+    },
+    {
+      "id": "rm2",
+      "type": "remover",
+      "label": "BIN 2 (METAL)",
+      "at": [280, -240, 590],
+      "params": { "size": [220, 400, 360] },
+      "io": { "count": "RM_2_CNT" }
+    },
+    {
+      "id": "chute3",
+      "type": "plate",
+      "label": "CHUTE 3 (BLACK)",
+      "at": [445, 0, 757],
+      "rot": [0, 26, 0],
+      "params": { "size": [400, 100, 8] }
+    },
+    {
+      "id": "cw3b",
+      "type": "plate",
+      "label": "CHUTE 3 WALL",
+      "at": [485, -46, 738],
+      "rot": [0, 26, 0],
+      "params": { "size": [320, 8, 30] }
+    },
+    {
+      "id": "cw3a",
+      "type": "plate",
+      "label": "CHUTE 3 WALL",
+      "at": [485, 46, 738],
+      "rot": [0, 26, 0],
+      "params": { "size": [320, 8, 30] }
+    },
+    {
+      "id": "rm3",
+      "type": "remover",
+      "label": "BIN 3 (BLACK)",
+      "at": [570, 0, 590],
+      "params": { "size": [520, 220, 360] },
+      "io": { "count": "RM_3_CNT" }
+    },
+    {
+      "id": "peFull",
+      "type": "photoEye",
+      "label": "CHUTE FULL",
+      "station": "ST1",
+      "at": [-70, -330, 690],
+      "rot": [0, 0, 90],
+      "params": { "range": 120, "offDelayMs": 200 },
+      "io": { "out": "CHUTE_FULL" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO RUNNING",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED OVERRIDE",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbIndBelt",
+      "type": "pushbutton",
+      "label": "BELT FORWARD",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_BELT", "lamp": "BELT_FWD" }
+    },
+    {
+      "id": "pbIndStop",
+      "type": "pushbutton",
+      "label": "STOP HOLD",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STOP", "lamp": "STOP_HOLD" }
+    },
+    {
+      "id": "pbIndW1",
+      "type": "pushbutton",
+      "label": "EJECTOR 1",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_W1", "lamp": "W1_EXT" }
+    },
+    {
+      "id": "pbIndW2",
+      "type": "pushbutton",
+      "label": "EJECTOR 2",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_W2", "lamp": "W2_EXT" }
+    },
+    {
+      "id": "pbFeedBlack",
+      "type": "pushbutton",
+      "label": "FEED BLACK",
+      "params": { "kind": "momentary", "color": "black", "lamp": false },
+      "io": { "pb": "IND_FEED_BLACK" }
+    },
+    {
+      "id": "pbFeedRed",
+      "type": "pushbutton",
+      "label": "FEED RED",
+      "params": { "kind": "momentary", "color": "red", "lamp": false },
+      "io": { "pb": "IND_FEED_RED" }
+    },
+    {
+      "id": "pbFeedMetal",
+      "type": "pushbutton",
+      "label": "FEED METALLIC",
+      "params": { "kind": "momentary", "color": "white", "lamp": false },
+      "io": { "pb": "IND_FEED_METAL" }
+    }
+  ]
+}

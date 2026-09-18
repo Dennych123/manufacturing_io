@@ -16,7 +16,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { compile, worldPoses, tags as sceneTags, validate, stringify, partRoles } from '../lib/scene.js';
 import { qmul, qaxis, qeuler, qrot, pose, compose, invert, apply, rng, hash32 } from '../lib/math.js';
-import { DENSITY } from '../lib/components.js';
+import { DENSITY, luminance, DARK } from '../lib/components.js';
 
 // Collision groups, (memberships << 16) | filter. Machine and parts collide with everything;
 // part sensors cast with PART_RAYS so they see parts only, never the machine.
@@ -166,6 +166,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const holderOf = new Map(holders.map(h => [h.r.id, h]));
   /** Metal parts (inductive proximity sees them). */
   const METAL = new Set(['steel', 'alu']);
+  /** A part too dark to return light to a retro-reflective sensor (`seesDark: false`). */
+  const tooDark = (/** @type {any} */ pt) => luminance(defs.get(pt.tpl).p.color) < DARK;
   /** Handshake replies the PLC provably saw (schema `hold: false`): no minPulseMs hold. */
   const noHold = new Set(order.flatMap((/** @type {any} */ c) => Object.entries(c.io || {})
     .filter(([key]) => defs.get(c.id).io[key].hold === false).map(([, tag]) => tag)));
@@ -629,12 +631,20 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const F = W[r.id][defs.get(r.id).root], o = F.p, ax = qrot(F.q, [1, 0, 0]);
       let hit = false;
       if (r.t.sense === 'ray') {
-        hit = !!world.castRay(new R.Ray({ x: o[0] * SK, y: o[1] * SK, z: o[2] * SK }, { x: ax[0], y: ax[1], z: ax[2] }), r.p.range * SK, true, undefined, PART_RAYS);
+        // A sensor that cannot see a dark part skips those colliders, so the beam goes straight
+        // through a black workpiece the way a real retro-reflective one does. Rapier's filter
+        // predicate KEEPS a collider when it returns true (measured: written the other way round,
+        // the beam saw the black part and nothing else).
+        const keep = r.p.seesDark === false
+          ? (/** @type {any} */ col) => { const pt = colPart.get(col.handle); return !pt || !tooDark(pt); }
+          : undefined;
+        hit = !!world.castRay(new R.Ray({ x: o[0] * SK, y: o[1] * SK, z: o[2] * SK }, { x: ax[0], y: ax[1], z: ax[2] }),
+                              r.p.range * SK, true, undefined, PART_RAYS, undefined, undefined, keep);
       } else {
         const c = apply(F, [r.p.range / 2, 0, 0]);
         world.intersectionsWithShape({ x: c[0] * SK, y: c[1] * SK, z: c[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r.p.range / 2 * SK), (/** @type {any} */ col) => {
           const pt = colPart.get(col.handle);
-          if (pt && (!r.p.metalOnly || METAL.has(defs.get(pt.tpl).p.material))) { hit = true; return false; }
+          if (pt && (!r.p.metalOnly || METAL.has(defs.get(pt.tpl).p.material)) && !(r.p.seesDark === false && tooDark(pt))) { hit = true; return false; }
           return true;
         }, undefined, PART_RAYS);
       }

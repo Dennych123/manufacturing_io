@@ -1133,6 +1133,42 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   await q.close();
 }
 
+// ---------------------------------------------------------------- mps-sorting (Festo MPS)
+// Festo's MPS Sorting station: three sensors at one stop tell three workpieces apart, and each
+// goes to its own chute. The discriminating measurement is that the RETRO-REFLECTIVE sensor is
+// blind to the matt black workpiece while the through-beam sees it - that difference IS how the
+// real station tells black from red - and that each colour ends in its own bin.
+{
+  const ms = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'mps-sorting.json'), 'utf8'));
+  const { create: createMS } = await import('../scenes/mps-sorting.ctl.js');
+  const q = await createPlant(ms, { controller: createMS() });
+  q.run(200);
+  powerUp(q, 2000);
+  /** what the three sensors said while each colour stood at the stop */
+  const read = { black: null, red: null, metal: null };
+  for (let i = 0; i < 1500; i++) {
+    q.run(100);
+    if (q.io.ST1_STEP !== 30) continue;
+    const held = [...q.parts.values()][0];
+    if (!held) continue;
+    const k = held.tpl === 'wpBlack' ? 'black' : held.tpl === 'wpRed' ? 'red' : 'metal';
+    read[k] = [!!q.io.WP_DETECTED, !!q.io.WP_NOT_BLACK, !!q.io.WP_METALLIC];
+  }
+  const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  const bins = [q.io.RM_1_CNT, q.io.RM_2_CNT, q.io.RM_3_CNT];
+  chk('mps-sorting: the station keeps sorting', q.io.CYCLE_CNT >= 12 && q.io.ST1_STEP !== 900, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('mps-sorting: red to chute 1, metallic to chute 2, black off the end to chute 3',
+    bins.every(n => n >= 4) && Math.max(...bins) - Math.min(...bins) <= 1, 'bins ' + bins.join('/'));
+  chk('mps-sorting: the through-beam sees the BLACK workpiece and the retro-reflective one does not',
+    read.black && read.black[0] === true && read.black[1] === false && read.black[2] === false, JSON.stringify(read.black));
+  chk('mps-sorting: red reads as not-black and not metal', read.red && read.red[0] && read.red[1] && !read.red[2], JSON.stringify(read.red));
+  chk('mps-sorting: the metallic one reads on the inductive sensor too', read.metal && read.metal[0] && read.metal[2], JSON.stringify(read.metal));
+  chk('mps-sorting: every workpiece is accounted for and none was lost', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + pev('lost') + ' lost');
+  chk('mps-sorting: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  await q.close();
+}
+
 // ---------------------------------------------------------------- what a part costs
 // A scene carries hundreds of parts only because most of them are HELD. Measured on this PC with
 // 200 identical plugs, loose on a running belt against sitting in nests with the clamp on:

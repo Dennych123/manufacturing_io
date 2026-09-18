@@ -293,6 +293,26 @@ in the code but break things silently** when violated. Most were paid for once i
   that plane — for a rail-mounted robot, the rail's own plane. An envelope map that pins J1 says
   every reachable point is directly under the rail, which is true and useless. Reaching sideways
   is J1's job, and the envelope has to be measured with it free.
+- **A retro-reflective sensor cannot see a matt BLACK part, and that is a sorting signal.**
+  `seesDark: false` on a part sensor makes it blind to a part whose colour luminance is under
+  `DARK` (0.2). It is how Festo's MPS sorting station tells black from red with no colour camera:
+  a fork barrier sees every workpiece, the retro-reflective one only the ones that are not black,
+  the inductive one only the metal. Rapier's ray filter predicate KEEPS a collider when it returns
+  TRUE - written the other way round the beam saw the black part and nothing else (measured).
+- **An inductive switch reads a few mm from its FACE, and the model's ball is centred half a range
+  in front of it.** Mounted 34 mm off the belt edge with a 34 mm range it reached exactly TO the
+  edge and never touched the workpiece: every metallic part read as plastic and went to the wrong
+  chute, with no sensor fault anywhere. Mount it at the edge and give it a short range.
+- **A chute is a slide; the ZONE that counts a part off must start where the part leaves the
+  machine, not under the chute's low end.** Measured on `mps-sorting`: a workpiece that hopped a
+  chute wall was reported lost while the sorting itself was perfect. Nothing about a part that
+  rolls off a slide says it is still in the station.
+- **A deflected part must leave the belt into free air - the conveyor's own side member is a
+  ledge.** It is 30 mm wide and sits 12 mm below the belt: a part pushed sideways lands on it and
+  stops, because nothing drives a part there. Measured three ways on `mps-sorting` (chute lip
+  outboard of the member, level with it, and 6 mm under the belt edge - the last one caught the
+  rim of a 40 mm puck): the answer that works is the one the rest of this repo already uses, which
+  is to let the part fall clear and catch it in a zone.
 - **A part leaves a belt as a PROJECTILE, so a discharge zone starts at the belt end and is as
   long as the flight.** 0.38 s to fall 700 mm is 380 mm of flight off a 1 m/s take-away and 760 off
   a 2 m/s line. Measured on `carton-sorter` with the zones 600 mm long at the belt end: 61 of 68
