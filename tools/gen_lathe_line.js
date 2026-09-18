@@ -41,11 +41,18 @@ const WIN = { z0: 820, z1: 1480, x0: -640, x1: 60 };
 export const CHUCK = { dx: -430, y: 200, z: 1120 };
 /** The part: a turned casting standing on its end. */
 export const PART = { d: 50, h: 70 };
-/** The two conveyors: raw parts come in on one, finished parts leave on the other. */
-export const CVIN = { y: -380, top: 820, len: 3600, w: 90, speed: 250 };
-export const CVOUT = { y: -760, top: 820, len: 3600, w: 90, speed: 250 };
-/** Where the robot works the conveyors: both stations sit at the same end of the cell. */
-export const STX = -1750;
+/**
+ * The two conveyors are IN SERIES on ONE lane in front of the lathes, not side by side: raw
+ * castings come in from the RIGHT and finished parts leave to the LEFT. They are separate machines
+ * with a gap between them, and the robot works that gap - it lifts a casting off the end of the
+ * infeed and stands the finished part on the head of the outfeed. Neither carries a part from one
+ * lathe to the other: both lathes run the same operation.
+ */
+export const LANE = { y: -450, top: 820, w: 90, speed: 250 };
+export const CVIN = { ...LANE, x0: -300, x1: 2800 };
+export const CVOUT = { ...LANE, x0: -3000, x1: -600 };
+/** Where the robot works each conveyor: the infeed's last 200 mm, and the outfeed's first. */
+export const STX_IN = -200, STX_OUT = -700;
 /** Pin lift: the stop holds a part, the lift raises it LIFT mm to the robot. */
 export const PIN = { sink: 15, stroke: 150,
   // The nest sits PAD above the rod end. A cylinder's rod carries a 12 mm steel block at its end
@@ -59,8 +66,8 @@ const STOP = { sink: 10, stroke: 40, head: [12, 70, 25] };
 export const BEAM = { y: -430, j1z: 2000 };
 /** Where the carriage stands to work at a machine, relative to the machine centre. */
 export const RAIL_DX = -180;
-/** Where it stands to work the two conveyor stations. */
-export const RAIL_STN = STX + 60;
+/** Where it stands to work each conveyor station: straight over that station's pin. */
+export const RAIL_IN = STX_IN, RAIL_OUT = STX_OUT;
 const SK = { carriage: 96 };
 
 // DENSO VS-087, from DENSO's technical data sheet: arms 445 + 430 (875), reach 905 at point P,
@@ -129,20 +136,22 @@ export function buildScene() {
   const C = [];
   const add = (/** @type {any} */ c) => { C.push(c); return c; };
   const railZ = BEAM.j1z + SK.carriage;
-  const railMin = RAIL_STN - 200, railMax = MX[1] + RAIL_DX + 200;
+  const railMin = Math.min(RAIL_OUT, MX[0] + RAIL_DX) - 250, railMax = MX[1] + RAIL_DX + 250;
 
-  // ---- the traverse beam and its columns
-  const beamLen = railMax - railMin + 1200;
-  add({ id: 'beam', type: 'frame', label: 'TRAVERSE BEAM', at: [(railMin + railMax) / 2, BEAM.y, railZ + 96],
-        params: { size: [beamLen, 220, 260], style: 'solid', color: '#c8ccd0' } });
-  for (const [id, x] of [['colL', railMin - 500], ['colR', railMax + 500]]) {
+  // ---- the traverse beam and its columns. The columns stand BEYOND the ends of both belts:
+  // measured with one of them at the beam's own end, it stood in the lane and a casting travelling
+  // down the infeed stopped dead against it, 1.8 m short of the station, with nothing reporting it.
+  const colX = [CVOUT.x0 - 500, CVIN.x1 + 500];
+  add({ id: 'beam', type: 'frame', label: 'TRAVERSE BEAM', at: [(colX[0] + colX[1]) / 2, BEAM.y, railZ + 96],
+        params: { size: [colX[1] - colX[0] + 300, 220, 260], style: 'solid', color: '#c8ccd0' } });
+  for (const [id, x] of [['colL', colX[0]], ['colR', colX[1]]]) {
     add({ id, type: 'frame', label: 'BEAM COLUMN', at: [x, BEAM.y, 0], params: { size: [160, 160, railZ + 96], style: 'solid', color: '#b8bdc2' } });
   }
   const jog = (/** @type {string} */ p) => ({ ovr: 'OVR', jogP: p + '_JOG_P', jogN: p + '_JOG_N' });
   const axisIo = (/** @type {string} */ p) => ({ target: p + '_TGT', exec: p + '_EXEC', done: p + '_DONE', busy: p + '_BUSY', actPos: p + '_POS', inPos: p + '_INPOS', ...jog(p) });
   // Turned over about X: the carriage hangs under the rail and everything on it hangs too.
   add({ id: 'rail', type: 'joint', label: 'TRAVERSE AXIS', station: 'ST1', at: [0, BEAM.y, railZ], rot: [180, 0, 0],
-        params: { kind: 'prismatic', axis: 'x', len: 0, min: railMin, max: railMax, home: RAIL_STN, vmax: 1200, acc: 3000, width: 160, jogPct: 10 },
+        params: { kind: 'prismatic', axis: 'x', len: 0, min: railMin, max: railMax, home: RAIL_IN, vmax: 1200, acc: 3000, width: 160, jogPct: 10 },
         io: axisIo('RX') });
 
   // ---- the robot
@@ -167,11 +176,13 @@ export function buildScene() {
   // ---- the two conveyors. They are SEPARATE lines: raw castings arrive on one and finished parts
   // leave on the other. Neither carries a part from one lathe to the other - both lathes run the
   // same operation, in parallel, which is what doubles the cell's output.
-  add({ id: 'cvIn', type: 'conveyor', label: 'INFEED CONVEYOR', station: 'ST4', at: [STX + CVIN.len / 2 - 400, CVIN.y, 0],
-        params: { length: CVIN.len, width: CVIN.w, height: CVIN.top, speed: CVIN.speed, guides: 30 },
+  // Both belts carry toward -X: in from the right, out to the left. Turned about Z, so each one's
+  // `start` socket is at its +X end, which is the end a casting is laid on.
+  add({ id: 'cvIn', type: 'conveyor', label: 'INFEED CONVEYOR', station: 'ST4', at: [(CVIN.x0 + CVIN.x1) / 2, LANE.y, 0], rot: [0, 0, 180],
+        params: { length: CVIN.x1 - CVIN.x0, width: LANE.w, height: LANE.top, speed: LANE.speed, guides: 30 },
         io: { run: 'CVIN_RUN', ovr: 'OVR' } });
-  add({ id: 'cvOut', type: 'conveyor', label: 'OUTFEED CONVEYOR', station: 'ST5', at: [STX + CVOUT.len / 2 - 400, CVOUT.y, 0], rot: [0, 0, 180],
-        params: { length: CVOUT.len, width: CVOUT.w, height: CVOUT.top, speed: CVOUT.speed, guides: 30 },
+  add({ id: 'cvOut', type: 'conveyor', label: 'OUTFEED CONVEYOR', station: 'ST5', at: [(CVOUT.x0 + CVOUT.x1) / 2, LANE.y, 0], rot: [0, 0, 180],
+        params: { length: CVOUT.x1 - CVOUT.x0, width: LANE.w, height: LANE.top, speed: LANE.speed, guides: 30 },
         io: { run: 'CVOUT_RUN', ovr: 'OVR' } });
   // At the START of the infeed belt: a casting laid on the far end would run AWAY from the station.
   add({ id: 'emIn', type: 'emitter', label: 'CASTING FEED', station: 'ST4', parent: 'cvIn', socket: 'start', at: [150, 0, 5],
@@ -182,21 +193,22 @@ export function buildScene() {
         params: { size: [1200, 400, 700] }, io: { count: 'RM_OUT_CNT' } });
 
   // ---- the two stations on those conveyors, side by side at the loading end of the cell
-  for (const [S, CV] of /** @type {const} */ ([['IN', CVIN], ['OUT', CVOUT]])) {
-    const dir = S === 'IN' ? 1 : -1;                 // the outfeed runs the other way
+  for (const [S, sx] of /** @type {const} */ ([['IN', STX_IN], ['OUT', STX_OUT]])) {
+    const CV = LANE;
+    const dir = -1;                                  // both belts carry toward -X
     const liftFoot = CV.top - PIN.sink - (PIN.stroke + 32 + 20) - 27 - PIN.pad;
-    add({ id: 'lift' + S, type: 'cylinder', label: S + ' PIN LIFT', station: S === 'IN' ? 'ST4' : 'ST5', at: [STX, CV.y, liftFoot],
+    add({ id: 'lift' + S, type: 'cylinder', label: S + ' PIN LIFT', station: S === 'IN' ? 'ST4' : 'ST5', at: [sx, CV.y, liftFoot],
           params: { bore: 32, stroke: PIN.stroke, valve: '5/2-double', extendMs: 450, retractMs: 450, extWord: 'UP', retWord: 'DOWN' },
           io: { solExt: 'SOL_' + S + '_UP', solRet: 'SOL_' + S + '_DN', 'sw.ret': 'AS_' + S + '_DN', 'sw.ext': 'AS_' + S + '_UP' } });
     add({ id: 'pin' + S, type: 'nest', label: S + ' PIN', station: S === 'IN' ? 'ST4' : 'ST5', parent: 'lift' + S, socket: 'rodEnd', at: [0, 0, PIN.pad],
           params: { size: [PART.d + 4, PART.d + 4, 40], wall: 4 }, io: { clamp: S + '_CLAMP', present: 'PX_' + S } });
     const [, , hz] = STOP.head, sLb = STOP.stroke + 16 + 20;
     add({ id: 'stop' + S, type: 'cylinder', label: S + ' STOPPER', station: S === 'IN' ? 'ST4' : 'ST5',
-          at: [STX + dir * (PART.d / 2 + STOP.head[0] / 2 + 1), CV.y, CV.top - STOP.sink - hz - 27 - sLb],
+          at: [sx + dir * (PART.d / 2 + STOP.head[0] / 2 + 1), CV.y, CV.top - STOP.sink - hz - 27 - sLb],
           params: { bore: 16, stroke: STOP.stroke, valve: '5/2-single', extendMs: 120, retractMs: 120, extWord: 'UP', retWord: 'DOWN', head: 'plate', headSize: STOP.head },
           io: { solExt: 'SOL_' + S + '_STOP', 'sw.ret': 'AS_' + S + '_STOP_DN', 'sw.ext': 'AS_' + S + '_STOP_UP' } });
     add({ id: 'eye' + S, type: 'photoEye', label: S + ' PART BEAM', station: S === 'IN' ? 'ST4' : 'ST5',
-          at: [STX, CV.y - CV.w / 2 - 40, CV.top + 30], rot: [0, 0, 90],
+          at: [sx, CV.y - CV.w / 2 - 40, CV.top + 30], rot: [0, 0, 90],
           // 150 ms off-delay, as a real beam is set. The part crosses the ray again as the pin
           // takes it up and puts it back down, and a part rocking as it lands off the pin flickers
           // the ray for tens of milliseconds: measured, an 8 ms and a 20 ms gap in three minutes,
@@ -289,7 +301,7 @@ const tool = (/** @type {string} */ id) => ({ id, link: 'body', at: [0, 0, TCP],
  * solved with the carriage at the station.
  */
 export function goals() {
-  const mx = MX[0], pinZ = CVIN.top - PIN.sink + PIN.stroke + PART.h / 2;
+  const mx = MX[0], pinZ = LANE.top - PIN.sink + PIN.stroke + PART.h / 2;
   const xc = mx + CHUCK.dx + PART.h / 2;
   /** @type {Record<string, {jaw: string, rail: number, p: number[], dir: number[]}>} */
   const g = {};
@@ -301,11 +313,11 @@ export function goals() {
     g['chAt' + J] = { jaw, rail: mx + RAIL_DX, p: [xc, CHUCK.y, CHUCK.z], dir: [-1, 0, 0] };
   }
   // at the conveyors: hand A works the infeed pin, hand B the outfeed pin
-  g.inAt = { jaw: 'jawA', rail: RAIL_STN, p: [STX, CVIN.y, pinZ], dir: [0, 0, -1] };
-  g.inUp = { jaw: 'jawA', rail: RAIL_STN, p: [STX, CVIN.y, pinZ + 140], dir: [0, 0, -1] };
-  g.outAt = { jaw: 'jawB', rail: RAIL_STN, p: [STX, CVOUT.y, pinZ], dir: [0, 0, -1] };
-  g.outUp = { jaw: 'jawB', rail: RAIL_STN, p: [STX, CVOUT.y, pinZ + 140], dir: [0, 0, -1] };
-  g.home = { jaw: 'jawA', rail: RAIL_STN, p: [STX + 150, CVIN.y + 200, pinZ + 230], dir: [0, 0, -1] };
+  g.inAt = { jaw: 'jawA', rail: RAIL_IN, p: [STX_IN, LANE.y, pinZ], dir: [0, 0, -1] };
+  g.inUp = { jaw: 'jawA', rail: RAIL_IN, p: [STX_IN, LANE.y, pinZ + 140], dir: [0, 0, -1] };
+  g.outAt = { jaw: 'jawB', rail: RAIL_OUT, p: [STX_OUT, LANE.y, pinZ], dir: [0, 0, -1] };
+  g.outUp = { jaw: 'jawB', rail: RAIL_OUT, p: [STX_OUT, LANE.y, pinZ + 140], dir: [0, 0, -1] };
+  g.home = { jaw: 'jawA', rail: RAIL_IN, p: [STX_IN + 150, LANE.y + 200, pinZ + 230], dir: [0, 0, -1] };
   return g;
 }
 /** Solve order: the free ones first, then the poses that must stay in the same arm configuration.
@@ -421,7 +433,7 @@ function ctlBlock(poses) {
     'export const POSE = {' + rows.join(',\n').replace(/^ /, '') + '};',
     '/** Where the carriage stands: at each machine, and at the two conveyor stations. */',
     'export const RAIL = ' + JSON.stringify(MX.map(mx => mx + RAIL_DX)) + ';',
-    'export const RAIL_STN = ' + RAIL_STN + ';'].join('\n');
+    'export const RAIL_IN = ' + RAIL_IN + ', RAIL_OUT = ' + RAIL_OUT + ';'].join('\n');
 }
 
 /**
@@ -439,7 +451,8 @@ function stBlock(poses) {
   b.push('END_CASE;');
   b.push('CASE GO_RAIL OF');
   MX.forEach((mx, i) => b.push('\t' + (i + 1) + ':\tRX_TGT := ' + (mx + RAIL_DX).toFixed(2) + ';'));
-  b.push('\t3:\tRX_TGT := ' + RAIL_STN.toFixed(2) + ';');
+  b.push('\t3:\tRX_TGT := ' + RAIL_IN.toFixed(2) + ';');
+  b.push('\t4:\tRX_TGT := ' + RAIL_OUT.toFixed(2) + ';');
   b.push('END_CASE;');
   return b.join('\n');
 }

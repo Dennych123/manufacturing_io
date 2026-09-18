@@ -443,9 +443,9 @@ CASE ST1_STEP OF
 				ST1_STEP := 80;
 			END_IF;
 		END_IF;
-	70:	// over the outfeed pin, hand B leading
+	70:	// over the outfeed pin, hand B leading - the outfeed is a separate belt, further left
 		GO_POSE := 10;
-		GO_RAIL := 3;
+		GO_RAIL := 4;
 		RX_EXEC := TRUE;
 		J1_EXEC := TRUE;
 		J2_EXEC := TRUE;
@@ -777,45 +777,46 @@ CASE GO_POSE OF
 		J5_TGT := -54.59;
 		J6_TGT := 106.37;
 	7:	// inAt
-		J1_TGT := -140.14;
-		J2_TGT := -52.06;
-		J3_TGT := 32.70;
-		J4_TGT := 0.01;
-		J5_TGT := -70.64;
+		J1_TGT := 90.00;
+		J2_TGT := -59.86;
+		J3_TGT := 33.09;
+		J4_TGT := 0.00;
+		J5_TGT := -63.24;
 		J6_TGT := 0.00;
 	8:	// inUp
-		J1_TGT := -140.14;
-		J2_TGT := -58.18;
-		J3_TGT := 52.78;
-		J4_TGT := 0.01;
-		J5_TGT := -84.60;
+		J1_TGT := 90.00;
+		J2_TGT := -69.59;
+		J3_TGT := 53.30;
+		J4_TGT := 0.00;
+		J5_TGT := -73.72;
 		J6_TGT := 0.00;
 	9:	// outAt
-		J1_TGT := 88.04;
-		J2_TGT := -26.11;
-		J3_TGT := 8.32;
-		J4_TGT := 68.82;
-		J5_TGT := 41.64;
-		J6_TGT := -62.60;
+		J1_TGT := 90.00;
+		J2_TGT := -61.57;
+		J3_TGT := 12.46;
+		J4_TGT := 0.00;
+		J5_TGT := 49.13;
+		J6_TGT := 0.00;
 	10:	// outUp
-		J1_TGT := 92.76;
-		J2_TGT := -31.59;
-		J3_TGT := 30.13;
-		J4_TGT := 86.45;
-		J5_TGT := 22.56;
-		J6_TGT := -86.16;
+		J1_TGT := 90.00;
+		J2_TGT := -75.96;
+		J3_TGT := 34.06;
+		J4_TGT := 0.00;
+		J5_TGT := 41.91;
+		J6_TGT := 0.00;
 	11:	// home
-		J1_TGT := -70.21;
-		J2_TGT := 115.61;
-		J3_TGT := 134.43;
-		J4_TGT := 0.03;
-		J5_TGT := 19.96;
+		J1_TGT := -50.20;
+		J2_TGT := 112.90;
+		J3_TGT := 131.23;
+		J4_TGT := 0.02;
+		J5_TGT := 25.88;
 		J6_TGT := 0.00;
 END_CASE;
 CASE GO_RAIL OF
 	1:	RX_TGT := -880.00;
 	2:	RX_TGT := 720.00;
-	3:	RX_TGT := -1690.00;
+	3:	RX_TGT := -200.00;
+	4:	RX_TGT := -700.00;
 END_CASE;
 // END GENERATED
 

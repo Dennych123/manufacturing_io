@@ -36,14 +36,14 @@ export const POSE = {"chAtA":[-93.18,23.49,-31.11,-89.58,86.84,0],
  "chAtB":[-105.39,13.7,-7.75,-14.8,-50.19,110.08],
  "chOutB":[-90,10.24,-4.49,-0.02,-43.43,90.02],
  "doorB":[-103.29,-33.05,33.1,-9.66,-54.59,106.37],
- "inAt":[-140.14,-52.06,32.7,0.01,-70.64,0],
- "inUp":[-140.14,-58.18,52.78,0.01,-84.6,0],
- "outAt":[88.04,-26.11,8.32,68.82,41.64,-62.6],
- "outUp":[92.76,-31.59,30.13,86.45,22.56,-86.16],
- "home":[-70.21,115.61,134.43,0.03,19.96,0]};
+ "inAt":[90,-59.86,33.09,0,-63.24,0],
+ "inUp":[90,-69.59,53.3,0,-73.72,0],
+ "outAt":[90,-61.57,12.46,0,49.13,0],
+ "outUp":[90,-75.96,34.06,0,41.91,0],
+ "home":[-50.2,112.9,131.23,0.02,25.88,0]};
 /** Where the carriage stands: at each machine, and at the two conveyor stations. */
 export const RAIL = [-880,720];
-export const RAIL_STN = -1690;
+export const RAIL_IN = -200, RAIL_OUT = -700;
 // END GENERATED
 
 const AX = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6'];
@@ -134,7 +134,7 @@ export function create() {
           break;
 
         // ---- hand A takes a raw casting off the infeed pin
-        case 10: { const a = railTo(RAIL_STN), b = arm(POSE.inUp); if (a && b) io.ST1_STEP = 11; } break;
+        case 10: { const a = railTo(RAIL_IN), b = arm(POSE.inUp); if (a && b) io.ST1_STEP = 11; } break;
         case 11: if (drop()) io.ST1_STEP = 12; break;
         case 12:
           // The infeed station presents one casting at a time and holds it up until the robot has
@@ -196,7 +196,7 @@ export function create() {
         case 62: if (doorShut()) io.ST1_STEP = (hasFin ? 70 : 80); break;
 
         // ---- hand B stands the finished part on the outfeed pin
-        case 70: { const a = railTo(RAIL_STN), b = arm(POSE.outUp); if (a && b) io.ST1_STEP = 71; } break;
+        case 70: { const a = railTo(RAIL_OUT), b = arm(POSE.outUp); if (a && b) io.ST1_STEP = 71; } break;
         case 71: if (drop()) io.ST1_STEP = 72; break;
         case 72: if (io.ST5_STEP === 240 && !io.PX_OUT) io.ST1_STEP = 73; break;   // the pin is up and empty
         case 73: if (arm(POSE.outAt)) io.ST1_STEP = 74; break;
@@ -221,7 +221,7 @@ export function create() {
         case HOME:
           allOff();
           io.SOL_M1_DOOR = false; io.SOL_M2_DOOR = false;
-          if (arm(POSE.home) && railTo(RAIL_STN)) { drop(); homed = true; io.ST1_STEP = 0; }
+          if (arm(POSE.home) && railTo(RAIL_IN)) { drop(); homed = true; io.ST1_STEP = 0; }
           break;
         case ESTOP:
           // The master circuit is open: every drive stops where it is. The JAWS, the CHUCKS and the

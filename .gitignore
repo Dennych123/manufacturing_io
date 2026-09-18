@@ -13,3 +13,4 @@ assets/cad/
 # redistribute: tools/step_to_stl.py rebuilds these from the download, and every scene falls back
 # to its primitives when they are not there.
 assets/robots/vs087/
+tools/__pycache__/

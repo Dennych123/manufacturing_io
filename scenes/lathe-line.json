@@ -43,21 +43,21 @@
       "id": "beam",
       "type": "frame",
       "label": "TRAVERSE BEAM",
-      "at": [-485, -430, 2192],
-      "params": { "size": [4010, 220, 260], "style": "solid", "color": "#c8ccd0" }
+      "at": [-100, -430, 2192],
+      "params": { "size": [7100, 220, 260], "style": "solid", "color": "#c8ccd0" }
     },
     {
       "id": "colL",
       "type": "frame",
       "label": "BEAM COLUMN",
-      "at": [-2390, -430, 0],
+      "at": [-3500, -430, 0],
       "params": { "size": [160, 160, 2192], "style": "solid", "color": "#b8bdc2" }
     },
     {
       "id": "colR",
       "type": "frame",
       "label": "BEAM COLUMN",
-      "at": [1420, -430, 0],
+      "at": [3300, -430, 0],
       "params": { "size": [160, 160, 2192], "style": "solid", "color": "#b8bdc2" }
     },
     {
@@ -71,9 +71,9 @@
         "kind": "prismatic",
         "axis": "x",
         "len": 0,
-        "min": -1890,
-        "max": 920,
-        "home": -1690,
+        "min": -1130,
+        "max": 970,
+        "home": -200,
         "vmax": 1200,
         "acc": 3000,
         "width": 160,
@@ -379,8 +379,9 @@
       "type": "conveyor",
       "label": "INFEED CONVEYOR",
       "station": "ST4",
-      "at": [-350, -380, 0],
-      "params": { "length": 3600, "width": 90, "height": 820, "speed": 250, "guides": 30 },
+      "at": [1250, -450, 0],
+      "rot": [0, 0, 180],
+      "params": { "length": 3100, "width": 90, "height": 820, "speed": 250, "guides": 30 },
       "io": { "run": "CVIN_RUN", "ovr": "OVR" }
     },
     {
@@ -388,9 +389,9 @@
       "type": "conveyor",
       "label": "OUTFEED CONVEYOR",
       "station": "ST5",
-      "at": [-350, -760, 0],
+      "at": [-1800, -450, 0],
       "rot": [0, 0, 180],
-      "params": { "length": 3600, "width": 90, "height": 820, "speed": 250, "guides": 30 },
+      "params": { "length": 2400, "width": 90, "height": 820, "speed": 250, "guides": 30 },
       "io": { "run": "CVOUT_RUN", "ovr": "OVR" }
     },
     {
@@ -419,7 +420,7 @@
       "type": "cylinder",
       "label": "IN PIN LIFT",
       "station": "ST4",
-      "at": [-1750, -380, 570],
+      "at": [-200, -450, 570],
       "params": {
         "bore": 32,
         "stroke": 150,
@@ -452,7 +453,7 @@
       "type": "cylinder",
       "label": "IN STOPPER",
       "station": "ST4",
-      "at": [-1718, -380, 682],
+      "at": [-232, -450, 682],
       "params": {
         "bore": 16,
         "stroke": 40,
@@ -471,7 +472,7 @@
       "type": "photoEye",
       "label": "IN PART BEAM",
       "station": "ST4",
-      "at": [-1750, -465, 850],
+      "at": [-200, -535, 850],
       "rot": [0, 0, 90],
       "params": { "range": 170, "offDelayMs": 150 },
       "io": { "out": "PE_IN" }
@@ -481,7 +482,7 @@
       "type": "cylinder",
       "label": "OUT PIN LIFT",
       "station": "ST5",
-      "at": [-1750, -760, 570],
+      "at": [-700, -450, 570],
       "params": {
         "bore": 32,
         "stroke": 150,
@@ -514,7 +515,7 @@
       "type": "cylinder",
       "label": "OUT STOPPER",
       "station": "ST5",
-      "at": [-1782, -760, 682],
+      "at": [-732, -450, 682],
       "params": {
         "bore": 16,
         "stroke": 40,
@@ -533,7 +534,7 @@
       "type": "photoEye",
       "label": "OUT PART BEAM",
       "station": "ST5",
-      "at": [-1750, -845, 850],
+      "at": [-700, -535, 850],
       "rot": [0, 0, 90],
       "params": { "range": 170, "offDelayMs": 150 },
       "io": { "out": "PE_OUT" }
