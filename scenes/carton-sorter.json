@@ -1,0 +1,335 @@
+{
+  "format": "mio-scene/1",
+  "name": "carton-sorter",
+  "sim": { "dtMs": 4 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    { "id": "ST1", "name": "Line + feed", "members": ["cv", "emIn", "peIn"], "stepTag": "ST1_STEP" },
+    {
+      "id": "ST2",
+      "name": "Diverter A",
+      "members": ["armA", "spurA", "peA", "peUpA"],
+      "stepTag": "ST2_STEP"
+    },
+    {
+      "id": "ST3",
+      "name": "Diverter B",
+      "members": ["armB", "spurB", "peB", "peUpB"],
+      "stepTag": "ST3_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "RM_T_CNT",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "cv",
+      "type": "conveyor",
+      "label": "SORTER LINE",
+      "station": "ST1",
+      "at": [0, 0, 0],
+      "params": { "length": 14000, "width": 1524, "height": 500, "speed": 2000, "guides": 0 },
+      "io": { "run": "CV_RUN", "ovr": "OVR" }
+    },
+    {
+      "id": "boxTpl",
+      "type": "workpiece",
+      "label": "CARTON (template)",
+      "at": [0, -3000, 0],
+      "params": {
+        "kind": "box",
+        "size": [600, 400, 400],
+        "color": "#b98b5e",
+        "material": "carton",
+        "friction": 0.45
+      }
+    },
+    {
+      "id": "emIn",
+      "type": "emitter",
+      "label": "CARTON FEED",
+      "station": "ST1",
+      "parent": "cv",
+      "socket": "top",
+      "at": [-6300, 0, 10],
+      "params": { "template": "boxTpl", "mode": "interval", "intervalMs": 1333 },
+      "io": { "enable": "EM_EN", "count": "EM_CNT" }
+    },
+    {
+      "id": "peIn",
+      "type": "photoEye",
+      "label": "INFEED SCAN",
+      "station": "ST1",
+      "at": [-5500, -912, 700],
+      "rot": [0, 0, 90],
+      "params": { "range": 1824, "offDelayMs": 30 },
+      "io": { "out": "PE_IN" }
+    },
+    {
+      "id": "armA",
+      "type": "joint",
+      "label": "DIVERTER A",
+      "station": "ST2",
+      "at": [-3000, 862, 560],
+      "rot": [0, 0, -90],
+      "params": {
+        "kind": "revolute",
+        "axis": "z",
+        "len": 2127,
+        "min": -50,
+        "max": 50,
+        "home": 0,
+        "vmax": 160,
+        "acc": 640,
+        "width": 150,
+        "color": "#f2c21b"
+      },
+      "io": {
+        "target": "DVA_TGT",
+        "exec": "DVA_EXEC",
+        "done": "DVA_DONE",
+        "busy": "DVA_BUSY",
+        "actPos": "DVA_POS",
+        "inPos": "DVA_INPOS",
+        "ovr": "OVR",
+        "jogP": "DVA_JOG_P",
+        "jogN": "DVA_JOG_N"
+      }
+    },
+    {
+      "id": "peUpA",
+      "type": "photoEye",
+      "label": "DIVERTER A ARMING BEAM",
+      "station": "ST2",
+      "at": [-4200, -912, 700],
+      "rot": [0, 0, 90],
+      "params": { "range": 1824, "offDelayMs": 30 },
+      "io": { "out": "PE_UP_A" }
+    },
+    {
+      "id": "spurA",
+      "type": "conveyor",
+      "label": "TAKE-AWAY A",
+      "station": "ST2",
+      "at": [-1500, -2062, 0],
+      "rot": [0, 0, -90],
+      "params": { "length": 2600, "width": 1000, "height": 470, "speed": 1000, "guides": 0 },
+      "io": { "run": "SPA_RUN", "ovr": "OVR" }
+    },
+    {
+      "id": "peA",
+      "type": "photoEye",
+      "label": "TAKE-AWAY A SCAN",
+      "station": "ST2",
+      "at": [-1900, -1262, 670],
+      "params": { "range": 1300, "offDelayMs": 30 },
+      "io": { "out": "PE_A" }
+    },
+    {
+      "id": "rmA",
+      "type": "remover",
+      "label": "OUTFEED A",
+      "parent": "spurA",
+      "socket": "end",
+      "at": [700, 0, -900],
+      "params": { "size": [1600, 1600, 1000] },
+      "io": { "count": "RM_A_CNT" }
+    },
+    {
+      "id": "armB",
+      "type": "joint",
+      "label": "DIVERTER B",
+      "station": "ST3",
+      "at": [1000, -862, 560],
+      "rot": [0, 0, -90],
+      "params": {
+        "kind": "revolute",
+        "axis": "z",
+        "len": 2127,
+        "min": -50,
+        "max": 50,
+        "home": 0,
+        "vmax": 160,
+        "acc": 640,
+        "width": 150,
+        "color": "#f2c21b"
+      },
+      "io": {
+        "target": "DVB_TGT",
+        "exec": "DVB_EXEC",
+        "done": "DVB_DONE",
+        "busy": "DVB_BUSY",
+        "actPos": "DVB_POS",
+        "inPos": "DVB_INPOS",
+        "ovr": "OVR",
+        "jogP": "DVB_JOG_P",
+        "jogN": "DVB_JOG_N"
+      }
+    },
+    {
+      "id": "peUpB",
+      "type": "photoEye",
+      "label": "DIVERTER B ARMING BEAM",
+      "station": "ST3",
+      "at": [-200, -912, 700],
+      "rot": [0, 0, 90],
+      "params": { "range": 1824, "offDelayMs": 30 },
+      "io": { "out": "PE_UP_B" }
+    },
+    {
+      "id": "spurB",
+      "type": "conveyor",
+      "label": "TAKE-AWAY B",
+      "station": "ST3",
+      "at": [2500, 2062, 0],
+      "rot": [0, 0, 90],
+      "params": { "length": 2600, "width": 1000, "height": 470, "speed": 1000, "guides": 0 },
+      "io": { "run": "SPB_RUN", "ovr": "OVR" }
+    },
+    {
+      "id": "peB",
+      "type": "photoEye",
+      "label": "TAKE-AWAY B SCAN",
+      "station": "ST3",
+      "at": [2100, 1262, 670],
+      "params": { "range": 1300, "offDelayMs": 30 },
+      "io": { "out": "PE_B" }
+    },
+    {
+      "id": "rmB",
+      "type": "remover",
+      "label": "OUTFEED B",
+      "parent": "spurB",
+      "socket": "end",
+      "at": [700, 0, -900],
+      "params": { "size": [1600, 1600, 1000] },
+      "io": { "count": "RM_B_CNT" }
+    },
+    {
+      "id": "rmThru",
+      "type": "remover",
+      "label": "STRAIGHT THROUGH",
+      "parent": "cv",
+      "socket": "end",
+      "at": [1000, 0, -900],
+      "params": { "size": [2200, 2000, 1000] },
+      "io": { "count": "RM_T_CNT" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO RUNNING",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED OVERRIDE",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbIndCv",
+      "type": "pushbutton",
+      "label": "LINE BELT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_CV", "lamp": "CV_RUN" }
+    },
+    {
+      "id": "pbIndFeed",
+      "type": "pushbutton",
+      "label": "CARTON FEED",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": true },
+      "io": { "pb": "IND_FEED", "lamp": "EM_EN" }
+    },
+    {
+      "id": "pbJogDvAP",
+      "type": "pushbutton",
+      "label": "JOG DIVERTER A +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DVA_P", "lamp": "DVA_JOG_P" }
+    },
+    {
+      "id": "pbJogDvAN",
+      "type": "pushbutton",
+      "label": "JOG DIVERTER A -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DVA_N", "lamp": "DVA_JOG_N" }
+    },
+    {
+      "id": "pbIndSpA",
+      "type": "pushbutton",
+      "label": "TAKE-AWAY A",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SPA", "lamp": "SPA_RUN" }
+    },
+    {
+      "id": "pbJogDvBP",
+      "type": "pushbutton",
+      "label": "JOG DIVERTER B +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DVB_P", "lamp": "DVB_JOG_P" }
+    },
+    {
+      "id": "pbJogDvBN",
+      "type": "pushbutton",
+      "label": "JOG DIVERTER B -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DVB_N", "lamp": "DVB_JOG_N" }
+    },
+    {
+      "id": "pbIndSpB",
+      "type": "pushbutton",
+      "label": "TAKE-AWAY B",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SPB", "lamp": "SPB_RUN" }
+    }
+  ]
+}

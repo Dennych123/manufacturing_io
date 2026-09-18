@@ -1107,6 +1107,32 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   await q.close();
 }
 
+// ---------------------------------------------------------------- carton-sorter (OIP numbers)
+// A sortation line: two swing blades across a 1.524 m belt at 2 m/s, and a shift register that
+// remembers what each carton is for between the scanner and the blade. The discriminating
+// measurements: the blade deflects by DRIVING the carton along itself (the belt does the work,
+// nothing pushes), the three destinations come out even because the tracking is a queue and not a
+// timer, and nothing is lost off the ends - a carton leaves a 2 m/s belt as a projectile.
+{
+  const cs = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'carton-sorter.json'), 'utf8'));
+  const { create: createCS } = await import('../scenes/carton-sorter.ctl.js');
+  const q = await createPlant(cs, { controller: createCS() });
+  q.run(200);
+  powerUp(q, 3000);
+  for (let i = 0; i < 900; i++) q.run(100);
+  const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
+  const out = [q.io.RM_A_CNT, q.io.RM_B_CNT, q.io.RM_T_CNT];
+  chk('carton-sorter: cartons keep coming and keep being sorted', q.io.CYCLE_CNT >= 30 && q.io.ST1_STEP === 10,
+    'scanned ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('carton-sorter: all three destinations get their share, within one carton', Math.max(...out) - Math.min(...out) <= 1 && Math.min(...out) > 5,
+    'A ' + out[0] + ', B ' + out[1] + ', through ' + out[2]);
+  chk('carton-sorter: every carton is accounted for and none flew past a discharge', pev('spawn') === pev('remove') + q.parts.size && pev('lost') === 0,
+    pev('spawn') + ' in, ' + pev('remove') + ' out, ' + q.parts.size + ' on the line, ' + pev('lost') + ' lost');
+  chk('carton-sorter: no warnings', !q.events.some(e => e.k === 'warn'), q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  chk('carton-sorter: a step costs well under its 4 ms budget', q.stepUs === 0 || q.stepUs < 2000, q.stepUs + ' us');
+  await q.close();
+}
+
 // ---------------------------------------------------------------- what a part costs
 // A scene carries hundreds of parts only because most of them are HELD. Measured on this PC with
 // 200 identical plugs, loose on a running belt against sitting in nests with the clamp on:

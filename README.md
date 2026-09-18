@@ -91,6 +91,7 @@ Fourteen machines run with their own PLC programs, each in `scenes/<name>.{json,
 | `press-station` | feeder into a clamped nest, press with a dwell, unclamp, ejector pushes the part down a chute. No belt at all |
 | `palletizing` | a 10 x 10 pallet of spark plugs it loads itself, a five-up vacuum gantry on two servo axes, a rotary carrier of five-slot jigs, and an unload head feeding the next process. An empty pallet is replaced with a fresh one |
 | `robot-pitch` | a FANUC LR Mate 200iD (chain, limits and speeds from the ROS-Industrial xacro) with a cam-driven pitch-change head: five cups pick a row from a 5 x 5 pallet at 100 mm, the camshaft closes them to 60, the row goes into a jig and then to the bin |
+| `carton-sorter` | a sortation line on the Open Industry Project's own numbers (MIT): a 1.524 m belt at 2 m/s, cartons 600 x 400 x 400 at 10 kg fed 45 a minute, and two swing blades that lean across the belt so the belt itself drives each carton off onto a take-away. The PLC tracks destinations in a shift register, one queue per blade |
 | `lathe-line` | built from a video of a real cell: a DENSO VS-087 hangs from a traverse beam over two TAKISAWA TCC-2000 lathes (OP10 then OP20) with ONE conveyor along their fronts. A stopper pops out of the belt, a pin lift raises the part to the robot, and the 90-degree double hand swaps raw for finished through one door opening |
 
 | | |
@@ -99,8 +100,8 @@ Fourteen machines run with their own PLC programs, each in `scenes/<name>.{json,
 | **`stopper-pusher`** — one part is held at the pusher while the next rides up the belt | **`pick-place`** — a part sits clamped in the nest as the traverse comes back for it |
 | ![sort-by-height](docs/img/sort-by-height.png) | ![assembler](docs/img/assembler.png) |
 | **`sort-by-height`** — a tall part runs at the two beams, the pusher waiting by the chute | **`assembler`** — lids ride their bases on friction alone as the table carries them on |
-| ![lathe-line](docs/img/lathe-line.png) | |
-| **`lathe-line`** — the hanging arm takes a raw casting off the station pin, the next lathe waiting with its door shut | |
+| ![lathe-line](docs/img/lathe-line.png) | ![carton-sorter](docs/img/carton-sorter.png) |
+| **`lathe-line`** — the hanging arm takes a raw casting off the station pin, the next lathe waiting with its door shut | **`carton-sorter`** — a blade leans across the line and the belt walks the carton along it onto the take-away |
 
 The first six passed a 30-minute soak: cycles keep completing, parts balance, none are lost, no
 warnings, and the worst step was 69–441 µs against a 1000 µs budget.

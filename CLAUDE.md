@@ -293,6 +293,22 @@ in the code but break things silently** when violated. Most were paid for once i
   that plane — for a rail-mounted robot, the rail's own plane. An envelope map that pins J1 says
   every reachable point is directly under the rail, which is true and useless. Reaching sideways
   is J1's job, and the envelope has to be measured with it free.
+- **A part leaves a belt as a PROJECTILE, so a discharge zone starts at the belt end and is as
+  long as the flight.** 0.38 s to fall 700 mm is 380 mm of flight off a 1 m/s take-away and 760 off
+  a 2 m/s line. Measured on `carton-sorter` with the zones 600 mm long at the belt end: 61 of 68
+  cartons flew clean over them and were reported lost, with the sorter itself working perfectly.
+- **A diverter does not push: it STANDS IN THE PATH at an angle and the belt does the work.**
+  A blade 2127 mm long at 45 degrees sweeps 1504 mm across, which is a 1.524 m belt's full width;
+  the carton meets it, slides along it and leaves over the side onto a take-away. Measured on
+  `carton-sorter`: 18 cartons deflected in 29 s with none lost and no warnings. This is the
+  exception to "nothing solid may stand ahead of a part's path" - what seizes a part is a face
+  SQUARE to its travel; a face at 45 degrees gives it somewhere to go.
+- **Sorter tracking is a SHIFT REGISTER, not a timer.** Each blade owns a FIFO of the destinations
+  of the cartons between it and the scanner upstream; a beam edge at the blade pops the queue, and
+  a carton that is not for this blade is pushed onto the next blade's. A timer from the scanner
+  would sort the wrong box the first time the line jams, a hand takes a carton off, or the speed
+  override is turned down - all three of which this simulator lets a viewer do. `carton-sorter`
+  splits 21/21/21 over 63 cartons because the queue moves only when a beam says one went past.
 - **A GRIPPER may take a part a nest is still holding; a chuck that opens first drops it.**
   `inZone()` in `server/plant.js` lets a gripper's fingers close on a part held by a `nest`, and the
   nest gives it up on that step (its `present` drops at once, which is the point - the machine has
