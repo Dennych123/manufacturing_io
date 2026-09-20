@@ -114,6 +114,50 @@ chk('viewer: the status shows both clocks and the cycle time', /function hms\(/.
   && /wall ' \+ hms\(Date\.now\(\) - pageAt\)/.test(app) && /pl\.cycleMs/.test(app) && /pl\.avgMs/.test(app));
 chk('viewer: a latching mushroom shows its own state, not a lamp', /kind === 'alternate'/.test(app) && /'latched'/.test(app));
 
+// Walking in (web/pov.js) and the hall it walks in (web/workshop.js). Both are the VIEWER's
+// alone: the plant never hears about either, and every rule here is one that fails quietly.
+{
+  const povjs = read('web/pov.js'), shop = read('web/workshop.js');
+  chk('viewer: the walk-in camera is written here - PointerLockControls is Y-up only and tips a Z-up horizon over',
+    !/from\s+'three\/addons\/controls\/PointerLockControls/.test(povjs + app));
+  chk('viewer: the walk is a CAMERA - pov.js reaches no tag, no DOF and no server',
+    !/fetch\(|sendBeacon|worldPoses|lib\/scene/.test(povjs.replace(/\/\/.*$/gm, '')));
+  chk('viewer: pressing and grabbing from the walk go through the same press/hold the orbit camera uses',
+    /if \(pov\.active\) return pickNdc\(0, 0, list\)/.test(app) && /dragFromCrosshair/.test(app));
+  chk('viewer: the walk gives the orbit camera back exactly as it found it',
+    /saved\.p\.copy\(camera\.position\)/.test(povjs) && /camera\.position\.copy\(saved\.p\)/.test(povjs) && /controls\.enabled = true/.test(povjs));
+  chk('viewer: while walking, OrbitControls is off - two cameras on one camera shake the picture',
+    /if \(pov\.active\) \{ pov\.update\(dt\); dragFromCrosshair\(now\); \} else controls\.update\(\);/.test(app)
+    && /controls\.enabled = !pov\.active/.test(app));
+  chk('viewer: a jump is latched on the key EDGE, so a tap between two frames is not lost', /jumpWanted = true/.test(povjs) && /jumpWanted && onGround/.test(povjs));
+  chk('viewer: a ghost zone is drawn, not walked into', /userData\.ghost = !!s\.ghost/.test(app) && /!h\.object\.userData\.ghost/.test(povjs));
+  chk('viewer: the step a walk takes is tested by probing DOWN where the foot lands (rays alone miss a belt deck)',
+    /function free\(x, y, d\)/.test(povjs) && /STEP_UP/.test(povjs));
+  chk('viewer: editing and walking are not both on at once', /if \(!editor\.active\) pov\.toggle\(\)/.test(app) && /addEventListener\('click', \(\) => pov\.exit\(\)\)/.test(app));
+  chk('workshop: it is scenery - nothing in lib/ or server/ knows it exists',
+    !fs.readdirSync(path.join(ROOT, 'lib')).concat(fs.readdirSync(path.join(ROOT, 'server')))
+      .some(f => f.endsWith('.js') && /workshop/.test(read(fs.existsSync(path.join(ROOT, 'lib', f)) ? 'lib/' + f : 'server/' + f))));
+  chk('workshop: it imports three and nothing else - no scene, no tag, no server',
+    /^import \* as THREE from 'three';$/m.test(shop) && [...shop.matchAll(/^import .*$/gm)].length === 1
+    && !/fetch\(|lib\/scene|colliderDesc/.test(shop));
+  chk('workshop: it is sized to the machine, and it replaces the grid rather than standing on it',
+    /workshop\.fit\(box\)/.test(app) && /grid\.visible = floor\.visible = !on/.test(app));
+  chk('viewer: no innerHTML in the new viewer files either', !/innerHTML/.test(povjs + shop));
+}
+
+// Every panel hides, and a hidden panel can be brought back: a page with no controls at all is
+// the one way this feature breaks for good.
+{
+  const targets = [...html.matchAll(/data-hide="([\w-]+)"/g)].map(m => m[1]);
+  chk('viewer: every hide button names an element that exists', targets.length >= 3 && targets.every(id => html.includes('id="' + id + '"')), targets.join(' '));
+  chk('viewer: the whole side panel hides and comes back', /id="panel-hide"/.test(html) && /id="panel-show"/.test(html)
+    && /\$\('panel-show'\)\.hidden = on/.test(app) && /\$\('panel-show'\)\.onclick = \(\) => setPanel\(true\)/.test(app));
+  chk('viewer: aside[hidden] really is hidden (display:flex would beat the attribute)', /aside\[hidden\] \{ display: none; \}/.test(html));
+  chk('viewer: F walks in and H hides the panel, and the hint says so',
+    /k === 'f'\) pov\.toggle\(\)/.test(app) && /k === 'h'\) setPanel\(aside\.hidden\)/.test(app) && /F: walk in/.test(html) && /H: hide the panel/.test(html));
+  chk('viewer: the editor hides the IO table, and its heading follows it', /MutationObserver\(\(\) => \{ \$\('io-head'\)\.hidden = editor\.active; \}\)/.test(app));
+}
+
 // POST: local only unless --lan-control, and the browser Origin must match the Host
 const req = (ra, origin, host = '127.0.0.1:7660') => ({ socket: { remoteAddress: ra }, headers: { host, ...(origin ? { origin } : {}) } });
 chk('POST from this PC without Origin (curl)', postAllowed(req('127.0.0.1')));

@@ -362,6 +362,34 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
     const bad = Object.entries(G).flatMap(([k, g]) => clashes(sc, Object.fromEntries(ids.map((id, i) => [id, POSE[k][i]])), g.rail).map(b => k + ': ' + b));
     chk('lathe-line: no pose puts the arm inside a lathe', bad.length === 0, bad.slice(0, 3).join(' | '));
   }
+  // The maker numbers the part FILES from the base: c001 is the base casting, which does not turn
+  // with J1, and cN is the link driven by joint N-1. Read out of the assembly, each solid carries
+  // the bores of the two joints it spans - c002 the J1 and J2 bores, c003 the J2 and J3 bores,
+  // c004 the J3 bore and the J4 axis. Hanging jN.stl on joint N dressed every link in the casting
+  // of the joint below it: the arm bent in the right places and the metal did not, which is what
+  // jogging J2, J3 or J4 showed. The shells are not in git, so this pins the NUMBERS: each part
+  // file is its assembly solid translated by `d` (part bbox against assembly bbox, in the maker's
+  // frame), so the offset is R * d minus that link's own origin in the chain.
+  {
+    const D = { j1: [0, 0, 0], j2: [0, 395, -5], j3: [0, 395, 30], j4: [0, 840, 30], j5: [0, 860, 460], j6: [0, 860, 460] };
+    const R = qeuler([90, 0, 90]);
+    const of = (/** @type {string} */ id) => sc.components.find((/** @type {any} */ c) => c.id === id);
+    // the chain's own joint origins, walked from the scene rather than typed a second time
+    const org = {}; let o = [0, 0, 0];
+    for (const id of ids) { org[id] = o; const t = of(id).params.to; o = o.map((v, i) => v + t[i]); }
+    const wrong = ids.map((id, i) => {
+      const p = of(id).params;
+      if (i === 5) return p.mesh ? id + ': J6 is the flange, the maker ships no part for it' : '';
+      const file = ids[i + 1];
+      if (p.mesh !== '/assets/robots/vs087/' + file + '.stl') return id + ': dressed in ' + p.mesh;
+      const want = qrot(R, D[file]).map((v, k) => v - org[id][k]);
+      return near(p.meshAt, want, 1e-6) ? '' : id + ': at ' + fmt(p.meshAt) + ' want ' + fmt(want);
+    }).filter(Boolean);
+    chk('lathe-line: every VS-087 link wears the casting whose bores are its own joints', wrong.length === 0, wrong.join(' | '));
+    const base = sc.components.find((/** @type {any} */ c) => c.type === 'shell' && /j1\.stl$/.test(c.params.asset));
+    chk('lathe-line: the base casting rides the carriage and does not turn with J1',
+        !!base && base.parent === 'rail' && near(base.rot, [90, 0, 90]), JSON.stringify(base && [base.parent, base.rot]));
+  }
 }
 
 // ---------------------------------------------------------------- conveyor side members

@@ -41,6 +41,14 @@ node server/main.js --scene a-to-b                  # the same scene against the
   it. Drag to move it — out of a gripper, off a belt, back into a nest. A part taken out of a
   holder makes that holder's switch go false, so the machine runs its cycle with an empty gripper
   and has to notice. Forcing a tag lies to the PLC; this breaks the material flow instead.
+- **Walk into the cell.** Press *Walk in* (or F) and you are standing on the shop floor at eye
+  height: WASD to walk, the mouse to look, Shift to run, C to crouch, Space to jump, R back to the
+  door, Esc out. The crosshair presses the machine's buttons and picks parts up exactly as the
+  mouse does from outside - it is a camera, not a body: nothing about the plant changes. The
+  machine stands in an SPM builder's workshop, sized to it, with the racking, benches, drums and
+  overhead crane that tell you how big everything actually is (*Workshop* switches back to the
+  bare grid). Every panel hides on its own, and *Hide panel* (H) gives the whole window to the
+  machine.
 - **The PLC is the real thing.** Sysmac tags drive the actuators, the plant computes the sensors
   and writes them back. `tools/gen_sysmac.js` writes the ST and the XML for a scene; `tools/smc2.js`
   imports it into a `.smc2` project, task assignment included.

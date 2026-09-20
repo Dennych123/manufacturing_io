@@ -165,6 +165,55 @@ try {
       await sleep(800);
       chk('releasing the mouse lets the part go', pinned() === 0, pinned() + ' still pinned');
     }
+
+    // ------------------------------------------------------------ walking in (web/pov.js)
+    // The walk is a CAMERA: it must stop at the machine (or it is a fly-through, and a
+    // fly-through tells you nothing about whether a cell can be worked in), and it must give the
+    // orbit camera and the panel back exactly as they were.
+    const key = (type, code, k, vk) => cmd('Input.dispatchKeyEvent', { type, code, key: k, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk });
+    const view = async () => JSON.parse(await ev('JSON.stringify(mioView())'));
+    const el = id => `document.getElementById(${JSON.stringify(id)})`;
+    const before = await view();
+    await ev(el('pov-btn') + '.click()');
+    await sleep(400);
+    const walk0 = await view();
+    chk('Walk in stands a person in the hall, eye at head height, panel out of the way',
+      walk0.pov && Math.abs(walk0.eye[2] - 1650) < 30 && !walk0.panel && await ev(el('cross') + '.hidden === false'),
+      JSON.stringify(walk0));
+    await key('keyDown', 'KeyW', 'w', 87);
+    await sleep(2000);                                        // 2 s at 1500 mm/s = 3000 mm of walking
+    await key('keyUp', 'KeyW', 'w', 87);
+    await sleep(200);
+    const walk1 = await view();
+    const gone = walk1.eye[1] - walk0.eye[1];
+    chk('walking forward walks, and the machine stops it instead of being walked through',
+      gone > 800 && walk1.eye[1] < 0, gone.toFixed(0) + ' mm, ended at y ' + walk1.eye[1].toFixed(0));
+    await key('keyDown', 'Space', ' ', 32);
+    await sleep(150);
+    await key('keyUp', 'Space', ' ', 32);
+    const air = await view();
+    await sleep(1200);
+    const down = await view();
+    await sleep(400);
+    const still = await view();
+    // It comes down somewhere solid, which is not always the height it left from: measured on
+    // a-to-b it landed on a 176 mm machine foot. What must hold is that it went up and that it
+    // is resting again, not that it is back on the same square.
+    chk('Space jumps and gravity brings it back down onto something solid',
+      air.eye[2] > walk1.eye[2] + 50 && Math.abs(still.eye[2] - down.eye[2]) < 1,
+      'apex ' + air.eye[2].toFixed(0) + ', resting at ' + down.eye[2].toFixed(0));
+    await ev(el('pov-btn') + '.click()');
+    await sleep(300);
+    const after = await view();
+    chk('leaving the walk gives the orbit camera and the panel back unchanged',
+      !after.pov && after.panel && after.eye.every((v, i) => Math.abs(v - before.eye[i]) < 1), JSON.stringify(after));
+    await ev(el('panel-hide') + '.click()');
+    chk('the whole side panel hides, and the way back is a button over the view',
+      await waitFor(`document.querySelector('aside').hidden && !${el('panel-show')}.hidden`));
+    await ev(el('panel-show') + '.click()');
+    chk('and it comes back', await waitFor(`!document.querySelector('aside').hidden && ${el('panel-show')}.hidden`));
+    const sections = await ev(`[...document.querySelectorAll('[data-hide]')].map(b => { b.click(); return b.dataset.hide + '=' + document.getElementById(b.dataset.hide).hidden; }).join(' ')`);
+    chk('every section hides on its own', /status=true/.test(sections) && /io-wrap=true/.test(sections) && /warns=true/.test(sections), sections);
   } finally { await ab.close(); }
 
   chk('no page errors', errors.length === 0, errors.join('\n  '));

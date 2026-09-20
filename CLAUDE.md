@@ -208,6 +208,58 @@ in the code but break things silently** when violated. Most were paid for once i
 - **A pin cannot come down between parts that TOUCH**, so a stop-and-go escapement only works
   where the parts arrive with a gap. `buffer-queue` therefore meters ONE part into the line at a
   time, and its HOLD pin always lands on free belt.
+- **A pop-up stop can HOLD a pile; it can never meter one out of it. That takes a blade from the
+  SIDE.** To release the front part a stop must come down, and it then has to come back up
+  through whatever is standing over it. Measured on `lathe-line` with castings piled at the
+  infeed: the stop came up under the next casting and threw it forward at 458-684 mm/s against a
+  250 mm/s belt, over the stop in front of it and on into the station. A holder with a pocket
+  does not work either - its floor is flush with the belt and a casting running onto that edge
+  trips over it (measured: upright at x 2656, 6 degrees at 2616, flat on its side by 2586, which
+  is the blurobot nest rule met head-on). What works is Denny's: a knife blade that comes in from
+  the SIDE at the seam between two castings (`head: 'knife'` on a cylinder - a flat blade with a
+  ROUND nose, which is what lets it wedge in between two parts that touch and come out again with
+  one pressing on it). The gap between two touching 50 mm castings is 20 mm wide at 20 mm off the
+  lane centre, which is where the blade goes in. The cycle is: blade IN at the seam, stop DOWN,
+  the front casting leaves, stop UP on free belt (the pile is 50 mm back, held by the blade),
+  blade OUT and the pile walks forward exactly one casting. Measured on a hand-built pile of
+  five: metered out one at a time, none tipped, none lost, and the cell holds one casting at the
+  lift, one at the hold and one at the queue stop.
+- **A stop blade must reach ABOVE the part's centre of mass.** A 25 mm head stands 15 mm above the
+  belt; a 70 mm casting whose centre of mass is at 35 mm runs into that and tips forward over it
+  instead of stopping. Measured: castings leaning on the blade at z 845, then climbing it. A 60 mm
+  blade (50 mm above the belt) stops the same casting square and upright, and the stroke has to
+  clear it - retracted, the head must be BELOW the belt, so stroke > head + sink.
+- **A station must be EMPTY before the escapement sends it the next part.** Measured on
+  `lathe-line` with the interlock missing: the lift station pulled a casting up behind the one it
+  was already holding, the feeder ran at one casting every 4.6 s against a 13 s cycle, and the
+  surplus piled up at the queue stop where nothing could separate it. The same step must also
+  check the lift came up WITH its casting (`PX_IN`): an empty pin otherwise reads as "the robot
+  already took it" and the station runs straight on to fetch another.
+- **A LIFT pin is the same rule seen from above, so an accumulating queue may not reach the
+  station.** Measured on `lathe-line`, which fed castings free-running and let them queue against
+  the station stop: while the pin was up with the robot at it the belt went on driving the queue,
+  the next casting crept until it overlapped the pin's own column by 12 mm, and the pin flicked it
+  off the line as it came down - 2 of 26 castings thrown to y -802 and -757 mm and lost out of the
+  world in 200 s, with the cell otherwise running its 16 cycles. Narrowing the pin (54 -> 36 mm)
+  and switching the belt off for the lift are both margins, and a margin is what the geometry
+  keeps eating: the cure is a HOLD stop 250 mm upstream and one casting at a time, which leaves
+  332 mm between the pin and the nearest other part, measured over 24 cycles with none lost.
+  **Re-arm that hold when the released part reaches the STATION beam, not when the hold's own beam
+  clears**: the hold beam stands where a waiting part rests against the pin, so it clears with the
+  part still over the pin and 120 ms of stroke at 250 mm/s leaves 5 mm. A beam the part is nowhere
+  near has no margin to get wrong. The outfeed runs the same escapement the other way round, one
+  finished part at a time, so nothing can ever back up under that pin either.
+- **A scene generator's output is only as good as its freshness, and a stale scene faults
+  silently.** The committed `lathe-line.json` had the infeed stopper 92 mm on the WRONG SIDE of
+  the lift pin (a hand edit, or a generator changed and not re-run): every casting stopped short
+  of the station, the beam never saw one, and the cell went to the watchdog with 0 cycles and no
+  message about a conveyor at all. `node tools/gen_lathe_line.js --check` says so in one line;
+  run it before believing a scene misbehaves.
+- **The internal controller and its `.st` twin diverge in what they DEFAULT, not only in what they
+  step.** `tests/ctl.test.js` compares the step numbers, and those matched, while the ST cleared
+  `CVIN_RUN` at the top of every scan and the `.ctl.js` left it latched from the last step that
+  set it: the twin ran the belt through the whole lift and the real PLC did not. An output a step
+  relies on being FALSE must be written FALSE by somebody on both sides.
 - **A nest only takes a part whose CENTRE is inside the pocket depth** (`candidate` in
   `server/plant.js`). Measured while building `press-station`: a 40 mm part over an 18 mm pocket
   was never taken, and nothing said why. The pocket must be at least half the part's height.
@@ -301,6 +353,17 @@ in the code but break things silently** when violated. Most were paid for once i
   to the millimetre (J2 at 30, 0, 395 and J3 at 30, 0, 840), which is also the check that the
   kinematics and the CAD are the same robot. Read the bores with FreeCAD (a cylindrical face's axis
   and centre) instead of eyeballing the shells into place.
+- **The maker numbers the part FILES from the BASE, so cN is the link driven by joint N-1, and a
+  shell hung on the joint it is NAMED for is right at home and wrong everywhere else.** Every part
+  file is placed by the same formula - R * d minus the link's own origin - so with the files shifted
+  one down the chain the arm still assembled perfectly at all-zero, and only a jog showed it: a 45
+  degree jog moved the worst casting 205 mm (J2), 412 mm (J3) and 100 mm (J4) from where it belongs,
+  while the axes themselves were exactly right. What says which link a solid is is its BORES: read
+  out of the VS-087 assembly, c001 carries the J1 bore alone (the base, which does not turn with
+  J1 and rides the carriage as a `shell` of its own), c002 the J1 and J2 bores, c003 the J2 and J3
+  bores, c004 the J3 bore and the J4 axis, c005 the J4 axis; the flange has no part of its own and
+  the hub primitive draws it. `tests/lib.test.js` pins the mapping and every offset, from the
+  measured assembly translations, so the shells are checked without the CAD being in git.
 - **A shell is a picture, so give it a triangle budget and keep it out of git when it is not ours.**
   The VS-087's STEP tessellates to 132k triangles for one arm; decimated to 4k a link it is 24k for
   the whole robot and the silhouette at cell scale is the same (tools/step_to_stl.py). Vendor CAD
@@ -454,6 +517,12 @@ often than it is looked at.
   again before AUTO will run.
 - **CYCLE STOP finishes the cycle**, it does not stop the machine where it stands. That is what
   the red button on a cell does, and it is why the machine comes back to a known state.
+- **A feeder button needs its belt.** `lathe-line`'s panel has FEED A CASTING (one press, one
+  casting: the emitter is in `tag` mode and answers the rising EDGE, so holding the button does
+  not pour parts). On its own it looks broken from the second press: the first casting is still
+  standing under the feeder, which refuses to drop onto it, so the belt gets a button too. In
+  INDIVIDUAL both escapements stay ARMED, because nothing else drives the line there and a
+  casting let loose runs off the end of the infeed belt, where no discharge zone catches it.
 - **INDIVIDUAL is the other half of the selector.** Each actuator has its own button; the button
   is MOMENTARY and the PLC keeps the toggle memory, cleared when INDIVIDUAL ends, so nothing stays
   latched into AUTO. Servos are JOGGED rather than sent to positions (see the jog rule). Turning
@@ -558,6 +627,39 @@ often than it is looked at.
   STOP, the line stopped feeding, and 1380 clicks over 62 s then found nothing left to grab. The
   browser test asks the page where a part is (`window.mioPartScreen`, read-only, used by nothing
   else) and clicks that point.
+- **You can WALK INTO the cell** (`web/pov.js`, the Walk in button or F): WASD, mouse look, Shift
+  to run, C to crouch, Space to jump, R back to the door, Esc out. It is a CAMERA and nothing
+  else - no body in Rapier, no tag, no DOF - and a click from in there goes through the same
+  `/api/press` and `/api/hold` the orbit camera uses, so a run replays identically either way.
+  Standing in a cell is the only way to read a guard's height or whether an operator can reach a
+  nest, which is exactly what an orbit camera two metres up and outside never shows.
+- **`PointerLockControls` is Y-UP ONLY, so the walk camera is written here.** The addon builds the
+  camera orientation through a `YXZ` rotation and its own `moveForward()` says "assumes camera.up
+  is y-up"; in this Z-up repo it tips the horizon over on the first mouse move. Yaw about world Z,
+  pitch clamped short of the pole, and `lookAt()` with `DEFAULT_UP = +Z` is the whole of it.
+- **A walk is blocked by probing DOWN where the foot lands, not by rays pointing forward.**
+  Measured on `a-to-b` with forward rays at 300, 900 and 1500 mm: the belt deck sits at 800 with
+  thin legs under it, so every ray passed over or under the conveyor and six seconds of walking
+  covered 8660 mm of a possible 9000 - straight through the machine. With the step test (refuse
+  the step when the surface where the foot lands is more than `STEP_UP` above the one you are on)
+  the same walk stops at y -133, hard against the conveyor, and a run at the hall wall stops at
+  -7513 of a wall at -8000. Forward rays stay only for what has no top under your eye: a wall, a
+  column. A ghost zone (a remover box) is NOT walked into - it is drawn see-through because it is
+  not there. `tests/browser.test.js` pins the walk, the stop and the jump.
+- **A jump is latched on the key EDGE.** Measured headless at about 8 fps: a 120 ms tap of Space
+  fell entirely between two frames and nothing happened, because the key was up again by the time
+  a frame asked whether it was down.
+- **The machine stands in a WORKSHOP** (`web/workshop.js`): an SPM builder's hall, sized to the
+  scene's bounding box, with the dado, the racking, the benches and the crane that say how big
+  everything is. It is SCENERY - nothing in `lib/` or `server/` knows it exists, it builds no
+  collider and owns no tag - and the only thing the viewer asks it for besides a picture is what
+  the walk may not walk through. It replaces the grid rather than standing on it.
+- **Every panel hides, and a hidden panel must have a way back.** The status block, the operator
+  panel, the signals table and the warnings each hide on their own, and the whole side panel hides
+  with `Hide panel` or H - walking in hides it and puts it back exactly as it was. `aside` is a
+  flex box, so `[hidden]` alone does nothing to it and needs `aside[hidden] { display: none }`;
+  and the way back is a button floating over the view, because a page whose only controls were in
+  the panel has none at all once the panel is gone.
 
 ## Repo hygiene
 

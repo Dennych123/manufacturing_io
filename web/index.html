@@ -27,6 +27,18 @@
   #view { flex: 1; min-width: 0; position: relative; background: var(--view); }
   #view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   #hint { position: absolute; left: 10px; bottom: 8px; color: var(--muted); font-size: 12px; pointer-events: none; }
+  /* Walk-in view: a crosshair says what a click will press, and the key card says how to get out.
+     Both are pointer-transparent - the canvas under them is what is being clicked. */
+  #cross { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; pointer-events: none; }
+  #cross::before, #cross::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
+  #cross::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  #cross::after { left: 0; top: 8px; width: 18px; height: 2px; }
+  #pov-hud { position: absolute; left: 10px; top: 10px; padding: 6px 10px; border-radius: 4px; font: 12px ui-monospace, Consolas, monospace;
+             background: rgba(0,0,0,.55); color: #fff; pointer-events: none; white-space: pre; }
+  /* The whole side panel hides, so the machine can have the window to itself. This button is the
+     way back: without it a hidden panel is a page with no controls at all. */
+  #panel-show { position: absolute; right: 10px; top: 10px; }
+  aside[hidden] { display: none; }
   aside { width: 450px; max-width: 48vw; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   aside > * { padding: 8px 12px; }
   header { display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); }
@@ -57,6 +69,7 @@
   h3 { margin: 0; font-size: 12px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--line); }
   .warn-head { display: flex; align-items: center; gap: 8px; }
   .warn-head button { padding: 1px 8px; font-size: 11px; }
+  header button { padding: 1px 8px; font-size: 11px; }
   #warns { list-style: none; margin: 0; max-height: 22vh; overflow: auto; font: 12px ui-monospace, Consolas, monospace; color: var(--warn); }
   #warns li { padding: 1px 0; }
   button.right { margin-left: auto; }
@@ -102,9 +115,14 @@
 <body>
 <div id="banner" hidden>INTERNAL CONTROLLER - not a PLC</div>
 <main>
-  <div id="view"><div id="hint">drag: orbit · right-drag: pan · wheel: zoom · hold a part to jam it · the buttons are in the operator panel</div></div>
+  <div id="view">
+    <div id="hint">drag: orbit · right-drag: pan · wheel: zoom · hold a part to jam it · F: walk in · H: hide the panel</div>
+    <div id="cross" hidden></div>
+    <div id="pov-hud" hidden></div>
+    <button id="panel-show" hidden title="show the side panel (H)">panel</button>
+  </div>
   <aside>
-    <header><b id="scene-name">…</b><span id="conn">connecting…</span></header>
+    <header><b id="scene-name">…</b><span id="conn">connecting…</span><button data-hide="status" title="hide the status block">hide</button></header>
     <div id="status"></div>
     <div id="hb" hidden></div>
     <div class="cmds">
@@ -114,7 +132,7 @@
         <option value="4">4x</option><option value="3">3x</option><option value="2">2x</option>
         <option value="1" selected>1x</option><option value="0.5">1/2x</option><option value="0.25">1/4x</option><option value="0.1">1/10x</option>
       </select>
-            <button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button><button id="edit-btn" class="right">Edit</button>
+            <button data-op="run">Run</button><button data-op="stop">Stop</button><button data-op="reset">Reset</button><button id="pov-btn" title="walk into the cell (F)">Walk in</button><button id="shop-btn" title="the workshop around the machine">Workshop</button><button id="panel-hide" title="hide the whole side panel (H)">Hide panel</button><button id="edit-btn" class="right">Edit</button>
     </div>
     <section id="oppanel" hidden>
       <div class="op-head"><h3>operator panel</h3><button id="op-hide" class="right">hide</button></div>
@@ -130,10 +148,11 @@
       <ul id="ed-errs"></ul>
       <datalist id="ed-tags"></datalist>
     </section>
-    <div class="tablewrap">
+    <h3 id="io-head" class="warn-head">signals<button class="right" data-hide="io-wrap">hide</button></h3>
+    <div class="tablewrap" id="io-wrap">
       <table id="io"><thead><tr><th></th><th>tag</th><th>source</th><th>value</th><th>force</th></tr></thead><tbody></tbody></table>
     </div>
-    <h3 class="warn-head">warnings<button id="warn-clear" class="right">clear</button></h3>
+    <h3 class="warn-head">warnings<button data-hide="warns">hide</button><button id="warn-clear" class="right">clear</button></h3>
     <ul id="warns"></ul>
   </aside>
 </main>

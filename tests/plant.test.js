@@ -1077,12 +1077,25 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   q.run(200);
   powerUp(q, 6000);
   let clampedTake = 0, steps = new Set();
+  // The escapement: while the lift pin is up with the robot at it (240) and while it comes back
+  // down (270), nothing else may be standing at the pin. Measured with the castings queueing
+  // against the station stop instead - the belt drove the queue on while the pin was up, the next
+  // casting ended up overlapping the pin's own column by 12 mm, and the pin flicked it off the
+  // line as it came down: 2 of 26 castings thrown to y -802 and -757 mm and lost.
+  let nearIn = Infinity, onPin = null;
   for (let i = 0; i < 1600; i++) {
     q.run(100);
     steps.add(q.io.ST1_STEP);
     // the moment a jaw reports a grip, the pin or the chuck it took from is still holding on
     if ((q.io.ST1_STEP === 15 && !q.io.AS_A_OPEN && q.io.IN_CLAMP !== false) ||
         (q.io.ST1_STEP === 34 && !q.io.AS_B_OPEN && q.io.M1_CHUCK !== false)) clampedTake++;
+    for (const [uid, pt] of q.parts) if (pt.held?.id === 'pinIN') onPin = uid;
+    if (q.io.ST4_STEP === 240 || q.io.ST4_STEP === 270) {
+      for (const [uid, pt] of q.parts) {
+        if (uid === onPin) continue;                        // the one the pin is carrying
+        nearIn = Math.min(nearIn, Math.abs(pt.body.translation().x / SK - 2100));
+      }
+    }
   }
   const pev = (/** @type {string} */ ev) => q.events.filter(e => e.k === 'part' && e.ev === ev).length;
   chk('lathe-line: the cell keeps completing cycles', q.io.CYCLE_CNT >= 6 && q.io.ST1_STEP < 900, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
@@ -1104,6 +1117,83 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   chk('lathe-line: the door, the stop and the lift raise no warnings', !q.events.some(e => e.k === 'warn'),
     q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
   chk('lathe-line: a step costs well under its 4 ms budget', q.stepUs === 0 || q.stepUs < 2000, q.stepUs + ' us');
+  // 250 mm of hold gap, so anything under about 100 mm means a casting has crept up to the pin.
+  chk('lathe-line: the escapement keeps the next casting clear of the lift pin', nearIn > 100,
+    'nearest other part while the pin was up or coming down: ' + (nearIn === Infinity ? 'none' : nearIn.toFixed(0) + ' mm'));
+  await q.close();
+}
+
+// The feeder's own button: one press, one casting, and only on INDIVIDUAL. A feeder that pours
+// while the button is held, or that answers in AUTO as well, puts two castings in one lane.
+{
+  const ll = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'lathe-line.json'), 'utf8'));
+  const { create: createLL } = await import('../scenes/lathe-line.ctl.js');
+  const q = await createPlant(ll, { controller: createLL() });
+  q.run(200);
+  const tap = (/** @type {string} */ id, /** @type {string} */ key = 'pb') => { q.press(id, key, true); q.run(150); q.press(id, key, false); q.run(300); };
+  tap('pbMaster');
+  tap('pbIndFeed');
+  chk('lathe-line: the FEED button does nothing on AUTO (the station calls for castings there)', q.io.EM_IN_CNT === 0, q.io.EM_IN_CNT + ' fed');
+  tap('sel', 'sel');                                        // to INDIVIDUAL
+  tap('pbIndCvIn');                                         // the belt, or the first casting blocks the feeder
+  chk('lathe-line: the belt button runs the infeed by hand', q.io.CVIN_RUN === true);
+  for (let i = 0; i < 3; i++) { tap('pbIndFeed'); q.run(3000); }
+  chk('lathe-line: one press, one casting', q.io.EM_IN_CNT === 3, q.io.EM_IN_CNT + ' fed');
+  q.press('pbIndFeed', 'pb', true);
+  q.run(4000);
+  q.press('pbIndFeed', 'pb', false);
+  chk('lathe-line: holding the button does not pour castings onto the belt', q.io.EM_IN_CNT === 4, q.io.EM_IN_CNT + ' fed');
+  // Hand-fed castings must not run off the end of the belt: the stops stay armed in INDIVIDUAL,
+  // and there is no discharge at the infeed end to catch anything that got past them.
+  q.run(12000);
+  const xs = [...q.parts.values()].map(p => p.body.translation().x / SK);
+  chk('lathe-line: they all stand at the queue stop, none off the end of the belt',
+    q.parts.size === 4 && xs.every(x => x > 2300), q.parts.size + ' parts at ' + xs.map(x => x.toFixed(0)).sort().join(' '));
+  await q.close();
+}
+
+// A PILE of castings, nose to tail at the queue stop - hand-fed, or a line that ran ahead of the
+// cell. A pop-up stop can hold a pile but can never meter one out of it: to let the front casting
+// go it has to come down, and it then comes back up under whatever is standing over it, which
+// throws that casting into the air. The knife blade goes in from the SIDE, at the seam between
+// the front casting and the next, so the pile walks forward exactly one casting per pass.
+{
+  const ll = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'lathe-line.json'), 'utf8'));
+  const { create: createLL } = await import('../scenes/lathe-line.ctl.js');
+  const q = await createPlant(ll, { controller: createLL() });
+  q.run(200);
+  const tap = (/** @type {string} */ id, /** @type {string} */ key = 'pb') => { q.press(id, key, true); q.run(150); q.press(id, key, false); q.run(250); };
+  const tilt = (/** @type {any} */ p) => { const r = p.body.rotation(); return Math.acos(Math.max(-1, Math.min(1, 1 - 2 * (r.x * r.x + r.y * r.y)))) * 180 / Math.PI; };
+  tap('pbMaster');
+  tap('sel', 'sel');                                        // INDIVIDUAL: build the pile by hand
+  tap('pbIndCvIn');
+  for (let i = 0; i < 4; i++) { tap('pbIndFeed'); q.run(2200); }
+  q.run(9000);
+  const pile = [...q.parts.values()].map(p => p.body.translation().x / SK).sort((a, b) => a - b);
+  chk('lathe-line: four hand-fed castings queue nose to tail, all standing up',
+    pile.length === 4 && pile[3] - pile[0] < 220 && [...q.parts.values()].every(p => tilt(p) < 10),
+    pile.map(x => x.toFixed(0)).join(' ') + ', worst tilt ' + Math.max(...[...q.parts.values()].map(tilt)).toFixed(0) + ' deg');
+  tap('sel', 'sel');                                        // back to AUTO
+  tap('pbHome');
+  q.run(7000);
+  tap('pbStart');
+  let worstTilt = 0;
+  for (let i = 0; i < 900; i++) {
+    q.run(100);
+    for (const p of q.parts.values()) {
+      // Parts ON the line only. A part that has left the end of the outfeed belt is a projectile
+      // on its way into the discharge and tumbles as it falls - measured at 50 degrees at
+      // x -2616, which is the belt end, and is exactly what leaving a belt looks like.
+      const t3 = p.body.translation();
+      if (p.held || t3.x / SK < -2500 || t3.z / SK < 815) continue;
+      worstTilt = Math.max(worstTilt, tilt(p));
+    }
+  }
+  const lost = q.events.filter(e => e.k === 'part' && e.ev === 'lost').length;
+  chk('lathe-line: the cell runs the pile off one casting at a time', q.io.CYCLE_CNT >= 4 && q.io.ST1_STEP < 900,
+    'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('lathe-line: nothing is thrown out of the pile and nothing on the line is tipped over',
+    lost === 0 && worstTilt < 20, lost + ' lost, worst tilt on the line ' + worstTilt.toFixed(0) + ' deg');
   await q.close();
 }
 

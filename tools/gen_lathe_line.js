@@ -21,9 +21,12 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { stringify, validate, worldPoses } from '../lib/scene.js';
 import { solveIk } from '../lib/ik.js';
-import { apply } from '../lib/math.js';
+import { apply, compose, invert, pose } from '../lib/math.js';
+import { TYPES, withDefaults } from '../lib/components.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+/** Everything that moves WITH the arm: it cannot clash with itself here. */
+const ARM_IDS = new Set(['rail', 'rbase', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'hand', 'jawA', 'jawB']);
 const NAME = 'lathe-line';
 
 // ---------------------------------------------------------------------------- geometry (mm)
@@ -47,12 +50,24 @@ export const PART = { d: 50, h: 70 };
  * with a gap between them, and the robot works that gap - it lifts a casting off the end of the
  * infeed and stands the finished part on the head of the outfeed. Neither carries a part from one
  * lathe to the other: both lathes run the same operation.
+ *
+ * The gap stands CLEAR OF BOTH MACHINES, past the upstream end of the cell. The arm dives at the
+ * pin from above with its elbow back over the machines, and swept along the lane (`clashes()` at
+ * 100 mm) the only clear bands are x <= -1500, the 150 mm slot between the two lathes, and
+ * x >= +1700 - which is exactly the two machines' own spans, -1425..25 and 175..1625. With the
+ * stations where they used to be, at -200 and -700, the arm stood 85 mm inside machine 1's NC
+ * panel and clipped its tower: the plant cannot notice that (a kinematic link does not collide
+ * with a fixed one) and the picture simply lied. Denny saw it in the 3D view.
  */
-export const LANE = { y: -450, top: 820, w: 90, speed: 250 };
-export const CVIN = { ...LANE, x0: -300, x1: 2800 };
-export const CVOUT = { ...LANE, x0: -3000, x1: -600 };
-/** Where the robot works each conveyor: the infeed's last 200 mm, and the outfeed's first. */
-export const STX_IN = -200, STX_OUT = -700;
+// The lane is as wide as the casting, not as wide as a belt: 50 mm parts in a 90 mm lane do not
+// queue, they ZIG-ZAG - measured, they packed at a 29 mm pitch alternating +-20 mm off centre, so
+// the part behind the front one sat over the lift pin and went up with it. The guides are 30 mm
+// and the casting is 70, so it stands taller than them and nothing drops between them (CLAUDE.md).
+export const LANE = { y: -450, top: 820, w: 60, speed: 250 };
+export const CVIN = { ...LANE, x0: 2000, x1: 3600 };
+export const CVOUT = { ...LANE, x0: -2600, x1: 1850 };
+/** Where the robot works each conveyor: the infeed's last 100 mm, and the outfeed's first. */
+export const STX_IN = 2100, STX_OUT = 1750;
 /** Pin lift: the stop holds a part, the lift raises it LIFT mm to the robot. */
 export const PIN = { sink: 15, stroke: 150,
   // The nest sits PAD above the rod end. A cylinder's rod carries a 12 mm steel block at its end
@@ -60,8 +75,51 @@ export const PIN = { sink: 15, stroke: 150,
   // straight through that block: measured, the part then stood on the 19 mm block instead of the
   // 62 mm floor, slid off it, sank 11 mm and toppled - and rode the rest of the line lying down.
   pad: 6 };
-/** Stopper: pops up from under the belt just downstream of the pin. */
-const STOP = { sink: 10, stroke: 40, head: [12, 70, 25] };
+/**
+ * Stopper: pops up from under the belt just downstream of the pin.
+ *
+ * The blade is TALLER than half the casting, and that is the whole of it. Measured with a 25 mm
+ * head, which stands 15 mm above the belt: a casting running into it at 250 mm/s is pushed at
+ * 7 mm while its centre of mass is at 35, so the stop tips it forward instead of stopping it -
+ * castings ended up leaning on the blade at z 845, climbed over it at 458-684 mm/s (against a
+ * 250 mm/s belt) and sailed through the next stop as well. A 60 mm blade stands 50 mm above the
+ * belt, above the casting's centre of mass, and stops it square.
+ *
+ * The stroke has to clear the blade: retracted, the head must be BELOW the belt or it is a
+ * permanent obstruction, so stroke > head + sink.
+ */
+const STOP = { sink: 10, stroke: 80, head: [12, 70, 60] };
+/**
+ * The escapement. A second pop-up stop stands HOLD.gap from each station - upstream on the
+ * infeed, downstream on the outfeed - and the line runs stop-and-go through it: one casting at a
+ * time, never a queue at the station.
+ *
+ * Measured with the castings queueing against the station stop instead (200 s of cell): the belt
+ * drives the queue while the pin is UP, so the next casting creeps until it overlaps the pin's
+ * own column by 12 mm, and the pin flicks it off the line as it comes down - 2 castings of 26
+ * thrown to y -802 and -757 mm and lost off the world, with the cell otherwise running. Narrowing
+ * the pin and stopping the belt only move the margin around; what removes it is that nothing
+ * stands within a part's length of the pin at all (CLAUDE.md: a pin cannot come down between
+ * parts that touch, so the parts have to arrive with a gap).
+ *
+ * `gap` is what that costs in time: 250 mm at 250 mm/s is 1 s of travel, inside the robot's own
+ * cycle. The hold beam stands where a waiting casting rests against the pin, at part radius plus
+ * half the head.
+ */
+const HOLD = { gap: 250 };
+/**
+ * The infeed's third stop, one casting further back: the QUEUE stop. It is what the line queues
+ * against, so the cell carries two castings in hand - one at the hold, ready to go, and one at
+ * the queue behind it - instead of one.
+ *
+ * `pitch` is pin centre to pin centre, and it has to be more than a casting: a casting resting
+ * against the hold reaches 2406, and the queue pin's own head is 12 wide, so 85 mm leaves 23 mm
+ * of free belt for the queue pin to come up in. THAT is the whole design rule for a cascade of
+ * stops - each pin holds exactly ONE casting and every pin comes up on free belt. Two castings
+ * touching at one pin can never be separated again (CLAUDE.md), so the stops pass castings hand
+ * to hand instead of letting them pile up.
+ */
+const QUE = { pitch: 130 };
 /** The traverse: J1's mounting face hangs at this height, the beam over the aisle. */
 export const BEAM = { y: -430, j1z: 2000 };
 /** Where the carriage stands to work at a machine, relative to the machine centre. */
@@ -93,19 +151,35 @@ const VS087 = [
 // its J1 axis along +Y, so their frame maps to this one by the cyclic permutation (x, y, z) ->
 // (z, x, y), which is rot [90, 0, 90]; every joint bore in the assembly then lands exactly on this
 // chain's joint origins (J2 at 30, 0, 395 and J3 at 30, 0, 840, to the millimetre - which is the
-// check that the kinematics here and the maker's CAD are the same robot). Each per-axis part file
-// is its assembly solid translated by `d`, so the shell offset is R * d minus the link's own origin.
+// check that the kinematics here and the maker's CAD are the same robot).
+//
+// The maker numbers the part FILES FROM THE BASE, so c001 is the base casting that does not move
+// and cN is the link driven by joint N-1. Read out of the assembly, each solid carries the bores of
+// the two joints it spans: c001 the J1 bore alone, c002 the J1 and J2 bores, c003 the J2 and J3
+// bores, c004 the J3 bore and the J4 axis, c005 the J4 axis. Hanging jN.stl on joint N therefore
+// dressed every link in the casting of the joint BELOW it, and J2, J3 and J4 swung a shell whose
+// own bore was somewhere else - the arm bent in the right places and the metal did not.
+//
+// Each part file is its assembly solid translated by `d`, also read out of the assembly (part bbox
+// against assembly bbox, in the maker's frame):
+//   c001 (0, 0, 0)  c002 (0, 395, -5)  c003 (0, 395, 30)  c004 (0, 840, 30)  c005/c006 (0, 860, 460)
+// so the shell offset below is R * d minus the link's own origin, R being that same rot.
+const SHELL_ROT = [90, 0, 90];
 const SHELL = {
-  j1: { at: [0, 0, 0], rot: [90, 0, 90] },
-  j2: { at: [-35, 0, 0], rot: [90, 0, 90] },
-  j3: { at: [0, 0, -445], rot: [90, 0, 90] },
-  j4: { at: [0, 0, -20], rot: [90, 0, 90] },
-  j5: { at: [0, 0, 0], rot: [90, 0, 90] },
-  j6: { at: [-80, 0, 0], rot: [90, 0, 90] },
+  j1: { file: 'j2', at: [-5, 0, 395] },
+  j2: { file: 'j3', at: [0, 0, 0] },
+  j3: { file: 'j4', at: [0, 0, 0] },
+  j4: { file: 'j5', at: [430, 0, 0] },
+  j5: { file: 'j6', at: [0, 0, 0] },
+  // J6 is the flange itself: the maker ships no seventh part, so the hub primitive draws it.
 };
 const SHELL_DIR = '/assets/robots/vs087/';
-/** The cycle does not run the arm at its catalogue maximum; neither does the cell in the video. */
-const SPEED = 0.5;
+/** The cycle does not run the arm at its catalogue maximum; neither does the cell in the video.
+ * At 0.5, and with the traverse at 1.2 m/s, the cell ran a 16.3 s cycle against a 13 s target: the
+ * two long rail hauls (infeed to machine, machine to outfeed) were 2.7 s each and the arm's own
+ * moves about 5 s of the rest. An 8 s cut on two machines in parallel is never the limit here, the
+ * ROBOT is, so the cycle time is bought in the traverse and the arm and nowhere else. */
+const SPEED = 0.68;
 
 /** The double hand: jaw A along the flange axis, jaw B at 90 degrees to it. */
 const JAW = { span: 100, fingerLen: 50, fingerW: 10 };
@@ -136,7 +210,7 @@ export function buildScene() {
   const C = [];
   const add = (/** @type {any} */ c) => { C.push(c); return c; };
   const railZ = BEAM.j1z + SK.carriage;
-  const railMin = Math.min(RAIL_OUT, MX[0] + RAIL_DX) - 250, railMax = MX[1] + RAIL_DX + 250;
+  const railMin = Math.min(RAIL_OUT, MX[0] + RAIL_DX) - 250, railMax = Math.max(RAIL_IN, MX[1] + RAIL_DX) + 250;
 
   // ---- the traverse beam and its columns. The columns stand BEYOND the ends of both belts:
   // measured with one of them at the beam's own end, it stood in the lane and a casting travelling
@@ -151,16 +225,20 @@ export function buildScene() {
   const axisIo = (/** @type {string} */ p) => ({ target: p + '_TGT', exec: p + '_EXEC', done: p + '_DONE', busy: p + '_BUSY', actPos: p + '_POS', inPos: p + '_INPOS', ...jog(p) });
   // Turned over about X: the carriage hangs under the rail and everything on it hangs too.
   add({ id: 'rail', type: 'joint', label: 'TRAVERSE AXIS', station: 'ST1', at: [0, BEAM.y, railZ], rot: [180, 0, 0],
-        params: { kind: 'prismatic', axis: 'x', len: 0, min: railMin, max: railMax, home: RAIL_IN, vmax: 1200, acc: 3000, width: 160, jogPct: 10 },
+        params: { kind: 'prismatic', axis: 'x', len: 0, min: railMin, max: railMax, home: RAIL_IN, vmax: 2000, acc: 5000, width: 160, jogPct: 10 },
         io: axisIo('RX') });
 
-  // ---- the robot
+  // ---- the robot. The base casting carries the J1 bearing and does NOT turn with it, so it rides
+  // the carriage as a shell of its own; hung on J1 it span with the shoulder.
+  add({ id: 'rbase', type: 'shell', label: 'VS-087 BASE', parent: 'rail', socket: 'end',
+        at: [0, 0, SK.carriage], rot: SHELL_ROT, params: { asset: SHELL_DIR + 'j1.stl', scale: 1, color: '#f1efe8' } });
   VS087.forEach((j, i) => {
+    const sh = SHELL[/** @type {keyof typeof SHELL} */ (j.id)];
     add({ id: j.id, type: 'joint', label: 'VS-087 J' + (i + 1), station: 'ST1', parent: i ? VS087[i - 1].id : 'rail', socket: 'end',
           at: i ? [0, 0, 0] : [0, 0, SK.carriage],
           params: { kind: 'revolute', axis: j.axis, len: 0, to: j.to, min: j.min, max: j.max, home: 0,
                     vmax: r2(j.v * SPEED), acc: r2(j.v * SPEED * 3), width: j.w, color: '#f1efe8', jogPct: 5,
-                    mesh: SHELL_DIR + j.id + '.stl', meshScale: 1, meshAt: SHELL[j.id].at, meshRot: SHELL[j.id].rot },
+                    ...(sh ? { mesh: SHELL_DIR + sh.file + '.stl', meshScale: 1, meshAt: sh.at, meshRot: SHELL_ROT } : {}) },
           io: axisIo('J' + (i + 1)) });
   });
   const jaw = { span: JAW.span, fingerLen: JAW.fingerLen, fingerW: JAW.fingerW, closeMs: 300, openMs: 300, band: 1.5 };
@@ -185,7 +263,12 @@ export function buildScene() {
         params: { length: CVOUT.x1 - CVOUT.x0, width: LANE.w, height: LANE.top, speed: LANE.speed, guides: 30 },
         io: { run: 'CVOUT_RUN', ovr: 'OVR' } });
   // At the START of the infeed belt: a casting laid on the far end would run AWAY from the station.
-  add({ id: 'emIn', type: 'emitter', label: 'CASTING FEED', station: 'ST4', parent: 'cvIn', socket: 'start', at: [150, 0, 5],
+  // Called for ONE AT A TIME (`tag` mode, the command held until the count moves), because a
+  // stop-and-go escapement only works where the parts arrive with a gap: a hold pin cannot come
+  // back up through a queue whose castings touch. The buffer is the hold pin, not the belt - one
+  // casting stands at the hold while the robot works the one at the station, which is what keeps
+  // the cell fed without ever putting a second casting beside the lift.
+  add({ id: 'emIn', type: 'emitter', label: 'CASTING FEED', station: 'ST6', parent: 'cvIn', socket: 'start', at: [150, 0, 5],
         params: { template: 'partTpl', mode: 'tag' }, io: { emit: 'EM_IN_EMIT', count: 'EM_IN_CNT' } });
   // Off the END into free air, caught by a zone: nothing solid stands in the part's path, and a
   // part leaves a belt as a projectile (CLAUDE.md).
@@ -200,13 +283,65 @@ export function buildScene() {
     add({ id: 'lift' + S, type: 'cylinder', label: S + ' PIN LIFT', station: S === 'IN' ? 'ST4' : 'ST5', at: [sx, CV.y, liftFoot],
           params: { bore: 32, stroke: PIN.stroke, valve: '5/2-double', extendMs: 450, retractMs: 450, extWord: 'UP', retWord: 'DOWN' },
           io: { solExt: 'SOL_' + S + '_UP', solRet: 'SOL_' + S + '_DN', 'sw.ret': 'AS_' + S + '_DN', 'sw.ext': 'AS_' + S + '_UP' } });
+    // Both pockets are the casting's own size plus a little. The infeed pin was cut to 36 mm
+    // while the castings still queued against the station stop, so that it reached under the
+    // front one without touching the next - a margin, and margins are what the escapement above
+    // replaces: with the hold pin metering, the nearest other casting is 250 mm away and the
+    // pocket can be the one that actually locates a part.
+    const pinW = PART.d + 4;
     add({ id: 'pin' + S, type: 'nest', label: S + ' PIN', station: S === 'IN' ? 'ST4' : 'ST5', parent: 'lift' + S, socket: 'rodEnd', at: [0, 0, PIN.pad],
-          params: { size: [PART.d + 4, PART.d + 4, 40], wall: 4 }, io: { clamp: S + '_CLAMP', present: 'PX_' + S } });
+          params: { size: [pinW, PART.d + 4, 40], wall: 4 }, io: { clamp: S + '_CLAMP', present: 'PX_' + S } });
     const [, , hz] = STOP.head, sLb = STOP.stroke + 16 + 20;
     add({ id: 'stop' + S, type: 'cylinder', label: S + ' STOPPER', station: S === 'IN' ? 'ST4' : 'ST5',
           at: [sx + dir * (PART.d / 2 + STOP.head[0] / 2 + 1), CV.y, CV.top - STOP.sink - hz - 27 - sLb],
           params: { bore: 16, stroke: STOP.stroke, valve: '5/2-single', extendMs: 120, retractMs: 120, extWord: 'UP', retWord: 'DOWN', head: 'plate', headSize: STOP.head },
           io: { solExt: 'SOL_' + S + '_STOP', 'sw.ret': 'AS_' + S + '_STOP_DN', 'sw.ext': 'AS_' + S + '_STOP_UP' } });
+    // The escapement pin and its beam. The infeed's stands UPSTREAM of the station (a casting
+    // waits there while the robot works the one on the lift); the outfeed's stands DOWNSTREAM
+    // (a finished part waits there until it is let go, so nothing ever backs up into the pin).
+    // Both belts carry toward -X, so "upstream" is +X either way.
+    const holdX = sx - (S === 'IN' ? dir : -dir) * HOLD.gap;
+    add({ id: 'hold' + S, type: 'cylinder', label: S + ' HOLD STOP', station: S === 'IN' ? 'ST4' : 'ST5',
+          at: [holdX, CV.y, CV.top - STOP.sink - hz - 27 - sLb],
+          params: { bore: 16, stroke: STOP.stroke, valve: '5/2-single', extendMs: 120, retractMs: 120, extWord: 'UP', retWord: 'DOWN', head: 'plate', headSize: STOP.head },
+          io: { solExt: 'SOL_' + S + '_HOLD', 'sw.ret': 'AS_' + S + '_HOLD_DN', 'sw.ext': 'AS_' + S + '_HOLD_UP' } });
+    add({ id: 'eyeHold' + S, type: 'photoEye', label: S + ' HOLD BEAM', station: S === 'IN' ? 'ST4' : 'ST5',
+          at: [holdX + PART.d / 2 + STOP.head[0] / 2, CV.y - CV.w / 2 - 40, CV.top + 30], rot: [0, 0, 90],
+          params: { range: CV.w + 80, offDelayMs: 150 }, io: { out: 'PE_' + S + '_HOLD' } });
+    // The infeed's queue stop, one casting behind the hold, with its own beam. The outfeed needs
+    // none: finished parts arrive one per robot cycle, which is a gap no line can better.
+    if (S === 'IN') {
+      const queX = holdX + QUE.pitch;
+      add({ id: 'queIN', type: 'cylinder', label: 'IN QUEUE STOP', station: 'ST6',
+            at: [queX, CV.y, CV.top - STOP.sink - hz - 27 - sLb],
+            params: { bore: 16, stroke: STOP.stroke, valve: '5/2-single', extendMs: 120, retractMs: 120, extWord: 'UP', retWord: 'DOWN', head: 'plate', headSize: STOP.head },
+            io: { solExt: 'SOL_IN_QUE', 'sw.ret': 'AS_IN_QUE_DN', 'sw.ext': 'AS_IN_QUE_UP' } });
+      add({ id: 'eyeQueIN', type: 'photoEye', label: 'IN QUEUE BEAM', station: 'ST6',
+            at: [queX + PART.d / 2 + STOP.head[0] / 2, CV.y - CV.w / 2 - 40, CV.top + 30], rot: [0, 0, 90],
+            params: { range: CV.w + 80, offDelayMs: 150 }, io: { out: 'PE_IN_QUE' } });
+      // The PILE BLADE: a knife escapement that comes in from the SIDE, between the casting
+      // standing at the queue stop and the one behind it.
+      //
+      // Why from the side, and why a knife. A pop-up stop can hold a pile but can never meter
+      // one out of it: to let the front casting go it must come down, and it then has to come
+      // back up through whatever is standing over it - measured, that throws the casting into
+      // the air and it sails over the next stop at 458-684 mm/s against a 250 mm/s belt. A
+      // holder with a pocket cannot do it either: its floor is flush with the belt and a casting
+      // running onto that edge trips over it (measured: upright at x 2656, 6 degrees at 2616,
+      // flat on its side by 2586). A blade that enters from the side touches neither the
+      // underside nor the path: the gap between two touching 50 mm castings is 20 mm wide at
+      // 20 mm off the lane centre, which is where the blade goes in, and the round nose wedges
+      // it in and lets it come out again with a casting pressing on it.
+      const bladeX = queX + STOP.head[0] / 2 + PART.d;   // the seam between casting 1 and casting 2
+      const bBore = 16, bStroke = 30, bReach = 40, bLb = bStroke + bBore + 20;
+      add({ id: 'knifeIN', type: 'cylinder', label: 'IN PILE BLADE', station: 'ST6',
+            // The rod points across the lane (+Y). Its tip stands 15 mm inside the near guide
+            // when it is in, and 15 mm outside it when it is out.
+            at: [bladeX, CV.y - CV.w / 2 - 15 - (bLb + 27 + bReach), CV.top + PART.h / 2], rot: [-90, 0, 0],
+            params: { bore: bBore, stroke: bStroke, valve: '5/2-single', extendMs: 120, retractMs: 120,
+                      extWord: 'IN', retWord: 'OUT', head: 'knife', headSize: [10, 45, bReach] },
+            io: { solExt: 'SOL_IN_BLADE', 'sw.ret': 'AS_IN_BLADE_OUT', 'sw.ext': 'AS_IN_BLADE_IN' } });
+    }
     add({ id: 'eye' + S, type: 'photoEye', label: S + ' PART BEAM', station: S === 'IN' ? 'ST4' : 'ST5',
           at: [sx, CV.y - CV.w / 2 - 40, CV.top + 30], rot: [0, 0, 90],
           // 150 ms off-delay, as a real beam is set. The part crosses the ray again as the pin
@@ -244,9 +379,15 @@ export function buildScene() {
           params: { bore, stroke, valve: '5/2-single', extendMs: 1200, retractMs: 1200, extWord: 'OPEN', retWord: 'CLOSE' },
           io: { solExt: 'SOL_' + M + '_DOOR', 'sw.ret': 'AS_' + M + '_DOOR_CL', 'sw.ext': 'AS_' + M + '_DOOR_OP' } });
     // rot [0,90,0] lays the cylinder along +X, so the rod end travels +X as it extends and the leaf
-    // that hangs from it clears the window to the right.
+    // that hangs from it clears the window to the right. The socket frame is the ROTATED one:
+    // its +Z is world +X and its +X is world -Z, so the leaf's offsets are written that way round.
+    // Written the other way round the leaf sat at z 2250 - 550 mm ABOVE the machine, up against the
+    // traverse beam - and 370 mm off in X, covering half the window. Nothing reports a door that is
+    // not over its opening: it is drawn, the cylinder's own switches still answer, and the sequence
+    // waits for them and runs. Denny saw it in the 3D view.
+    const cylZ = WIN.z1 + 90, winCz = (WIN.z0 + WIN.z1) / 2, winCx = mx + (WIN.x0 + WIN.x1) / 2;
     add({ id: 'leaf' + n, type: 'plate', label: 'TCC-2000 #' + n + ' DOOR', parent: 'door' + n, socket: 'rodEnd',
-          at: [-(WIN.z1 - WIN.z0 + 20), 20, mx + WIN.x0 - 20 - foot - (Lb + 27)], rot: [0, -90, 0],
+          at: [cylZ - winCz, 20, winCx - (foot + Lb + 27)], rot: [0, -90, 0],
           params: { size: [leafW, 14, WIN.z1 - WIN.z0 + 20] } });
   });
 
@@ -266,6 +407,27 @@ export function buildScene() {
   }
   pb('pbIndA', 'HAND A', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_A', lamp: 'GRIP_A' });
   pb('pbIndB', 'HAND B', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_B', lamp: 'GRIP_B' });
+  // One press, one casting: the feeder is in `tag` mode, so the emitter answers the button's
+  // RISING EDGE. It is an INDIVIDUAL button like every other one - in AUTO the station calls for
+  // castings itself, and two things feeding one lane is how a lane gets two castings at once.
+  // The belts get their own buttons beside it, because a casting dropped onto a belt that is not
+  // running stays under the feeder and blocks the next drop - the second press then does nothing
+  // and the button looks broken.
+  pb('pbIndFeed', 'FEED A CASTING', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_FEED', lamp: 'EM_IN_EMIT' });
+  pb('pbIndCvIn', 'INFEED BELT', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_CV_IN', lamp: 'CVIN_RUN' });
+  pb('pbIndCvOut', 'OUTFEED BELT', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_CV_OUT', lamp: 'CVOUT_RUN' });
+  // Every stop gets a button of its own. They were the only actuators on the machine without
+  // one, so the one thing an operator could not do by hand was let a casting past. The lamp is
+  // the solenoid, which is UP: each button DROPS its stop and the stops come back up by
+  // themselves when INDIVIDUAL ends.
+  for (const [id, label, tag, lamp] of [
+    ['pbIndStopIn', 'INFEED STOP', 'IND_STOP_IN', 'SOL_IN_STOP'],
+    ['pbIndHoldIn', 'INFEED HOLD', 'IND_HOLD_IN', 'SOL_IN_HOLD'],
+    ['pbIndQueIn', 'INFEED QUEUE STOP', 'IND_QUE_IN', 'SOL_IN_QUE'],
+    ['pbIndBlade', 'INFEED PILE BLADE', 'IND_BLADE_IN', 'SOL_IN_BLADE'],
+    ['pbIndStopOut', 'OUTFEED STOP', 'IND_STOP_OUT', 'SOL_OUT_STOP'],
+    ['pbIndHoldOut', 'OUTFEED HOLD', 'IND_HOLD_OUT', 'SOL_OUT_HOLD'],
+  ]) pb(id, label, { kind: 'momentary', color: 'blue', lamp: true }, { pb: tag, lamp });
   pb('pbIndD1', 'DOOR #1', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_DOOR1', lamp: 'SOL_M1_DOOR' });
   pb('pbIndD2', 'DOOR #2', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_DOOR2', lamp: 'SOL_M2_DOOR' });
   pb('pbIndLI', 'INFEED PIN LIFT', { kind: 'momentary', color: 'blue', lamp: true }, { pb: 'IND_LIFT_IN', lamp: 'SOL_IN_UP' });
@@ -278,8 +440,12 @@ export function buildScene() {
       { id: 'ST1', name: 'Robot', members: ['rail', ...VS087.map(j => j.id), 'jawA', 'jawB'], stepTag: 'ST1_STEP' },
       { id: 'ST2', name: 'TCC-2000 #1', members: ['chuck1', 'door1'], stepTag: 'ST2_STEP' },
       { id: 'ST3', name: 'TCC-2000 #2', members: ['chuck2', 'door2'], stepTag: 'ST3_STEP' },
-      { id: 'ST4', name: 'Infeed', members: ['cvIn', 'emIn', 'liftIN', 'pinIN', 'stopIN', 'eyeIN'], stepTag: 'ST4_STEP' },
-      { id: 'ST5', name: 'Outfeed', members: ['cvOut', 'liftOUT', 'pinOUT', 'stopOUT', 'eyeOUT', 'rmOut'], stepTag: 'ST5_STEP' },
+      { id: 'ST4', name: 'Infeed', members: ['cvIn', 'liftIN', 'pinIN', 'stopIN', 'eyeIN', 'holdIN', 'eyeHoldIN'], stepTag: 'ST4_STEP' },
+      { id: 'ST5', name: 'Outfeed', members: ['cvOut', 'liftOUT', 'pinOUT', 'stopOUT', 'eyeOUT', 'holdOUT', 'eyeHoldOUT', 'rmOut'], stepTag: 'ST5_STEP' },
+      // The escapement runs WHILE the lift is busy - that is the whole point of a buffer - so it
+      // is its own state machine meeting ST4 on one piece of shared state: a casting standing at
+      // the hold (CLAUDE.md: stations that can run at once are separate state machines).
+      { id: 'ST6', name: 'Infeed escapement', members: ['emIn', 'queIN', 'eyeQueIN', 'knifeIN'], stepTag: 'ST6_STEP' },
     ],
     cycle: { exitTag: 'RM_OUT_CNT', autoTag: 'AUTO_RUN', countTag: 'CYCLE_CNT', exclude: 1, avgN: 10 },
     components: C,
@@ -330,39 +496,62 @@ const CHAIN = [
 export const ORDER = CHAIN.map(([k]) => k);
 
 /**
- * Does any part of the arm stand inside a machine casting at this pose? The plant cannot tell:
- * every link is kinematic and a kinematic body does not collide with a fixed one. Sampled along
- * the links, in the machine's own frame, with a margin for the link's own thickness.
+ * Does any part of the arm stand inside anything solid at this pose? The plant cannot tell: every
+ * link is kinematic and a kinematic body does not collide with a fixed one. Sampled along the
+ * links, against EVERY colliding box the scene draws, with a margin for the link's own thickness.
+ *
+ * It used to test the lathes' own blocks only, and so said nothing about the arm standing 85 mm
+ * inside machine 1's NC PANEL at the infeed pin, or 30 mm inside its hood at the outfeed one -
+ * which is what the cell actually did, and what the eye caught in the 3D view. Anything the scene
+ * draws solid is now in the test, beam columns and door leaves included.
+ *
+ * What is left out is only what the tool is SUPPOSED to be inside: the nests (a chuck is a pocket
+ * the tool reaches into) and the `jaws` block that draws them, the belts, and the station cylinders
+ * it works over. The DOORS are taken OPEN, which is the state the arm meets - the sequence waits
+ * for the door's own switch before it goes in, and that interlock is the controller's test, not
+ * this one; what this has to answer is whether the open leaf is parked clear of the arm.
  * @param {any} scene @param {Record<string, number>} dof @param {number} rail
- * @returns {string[]} the blocks the arm is inside, worst first
+ * @returns {string[]} what the arm is inside, worst first
  */
+const CLASH_SKIP = new Set(['workpiece', 'emitter', 'remover', 'nest', 'conveyor', 'cylinder', 'photoEye']);
 export function clashes(scene, dof, rail) {
-  const W = worldPoses(scene, { ...dof, rail });
-  /** The arm's centre line: J2's hub, the elbow, the wrist and the tool tip. */
-  const pts = [];
+  /** @type {Record<string, number>} */
+  const doorsOpen = {};
+  for (const c of scene.components) if (/^door\d+$/.test(c.id)) doorsOpen[c.id] = c.params.stroke;
+  const W = worldPoses(scene, { ...doorsOpen, ...dof, rail });
+  /** The arm's centre line: J2's hub, the elbow, the wrist and both tool tips. */
   const chainPts = [W.j1.arm.p, W.j2.arm.p, W.j3.arm.p, W.j4.arm.p, W.j5.arm.p, W.j6.arm.p,
                     apply(W.jawA.body, [0, 0, TCP]), apply(W.jawB.body, [0, 0, TCP])];
+  const pts = [];
   for (let i = 0; i < chainPts.length - 1; i++) {
     const a = chainPts[i], b = chainPts[i + 1];
-    for (let s = 0; s <= 8; s++) pts.push(a.map((v, j) => v + (b[j] - v) * s / 8));
+    for (let s = 0; s <= 8; s++) pts.push(a.map((/** @type {number} */ v, /** @type {number} */ j) => v + (b[j] - v) * s / 8));
   }
   /** A link is a bar about 90 mm across, so its centre line may come no closer than this. */
   const M = 45;
+  /** @type {Array<[string, number]>} */
   const bad = [];
-  for (const mx of MX) {
-    for (const b of machineBlocks()) {
-      // The chuck is where the arm is SUPPOSED to be: the door opening is a hole in the front and
-      // the jaws are what the tool reaches into.
-      if (b.id === 'jaws') continue;
-      for (const p of pts) {
-        const lx = p[0] - mx;
-        const inside = lx > b.x[0] + M && lx < b.x[1] - M && p[1] > b.y[0] + M && p[1] < b.y[1] - M
-                     && p[2] > b.z[0] + M && p[2] < b.z[1] - M;
-        if (inside) { bad.push(b.id + '@' + Math.round(mx) + ' at ' + p.map(v => Math.round(v)).join(',')); break; }
+  for (const c of scene.components) {
+    if (ARM_IDS.has(c.id) || CLASH_SKIP.has(c.type) || /^jaws\d+$/.test(c.id)) continue;
+    const t = TYPES[c.type];
+    if (!t?.shapes || !Array.isArray(t.params) || t.group === 'operator') continue;
+    const p = withDefaults(t, c.params || {});
+    for (const sh of t.shapes(p)) {
+      if (sh.kind !== 'box' || sh.collide === false) continue;
+      const lp = W[c.id]?.[sh.link];
+      if (!lp) continue;
+      const inv = invert(compose(lp, pose(sh.at, sh.rot || [0, 0, 0])));
+      const h = sh.size.map((/** @type {number} */ v) => v / 2);
+      let worst = 0;
+      for (const q of pts) {
+        const l = apply(inv, q);
+        const d = [0, 1, 2].map(k => h[k] + M - Math.abs(l[k]));
+        if (d.every(v => v > 0)) worst = Math.max(worst, Math.min(...d));
       }
+      if (worst > 0) bad.push([c.id + '/' + sh.link + ' by ' + Math.round(worst) + ' mm', worst]);
     }
   }
-  return bad;
+  return bad.sort((a, b) => b[1] - a[1]).map(([m]) => m);
 }
 
 /**

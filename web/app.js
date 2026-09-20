@@ -10,6 +10,8 @@ import { compile, worldPoses, bindings, partRoles, params } from '/lib/scene.js'
 import { TYPES, COLORS } from '/lib/components.js';
 import { qeuler } from '/lib/math.js';
 import { createEditor } from '/web/editor.js';
+import { createPov } from '/web/pov.js';
+import { createWorkshop } from '/web/workshop.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);          // Z-up in mm, like the scene and the plant
 
@@ -42,6 +44,16 @@ scene3.add(grid);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.ShadowMaterial({ opacity: 0.18 }));
 floor.receiveShadow = true;
 scene3.add(floor);
+// The hall around the machine (web/workshop.js). It is scenery: the plant never hears about it,
+// and the only thing the viewer asks it for besides a picture is what the walk-in camera may not
+// walk through. With it on, the grid and the shadow-catcher plane are its floor's job instead.
+const workshop = createWorkshop(scene3);
+function setWorkshop(on) {
+  workshop.visible = on;
+  grid.visible = floor.visible = !on;
+  refreshSolids();
+  $('shop-btn').textContent = on ? 'Workshop' : 'Grid';
+}
 
 function applyTheme() {
   scene3.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--view').trim() || '#dfe3e7');
@@ -126,6 +138,7 @@ function shapeMesh(s, own) {
   mesh.position.set(s.at[0], s.at[1], s.at[2]);
   if (s.rot) mesh.quaternion.fromArray(qeuler(s.rot));      // the rot rule lives in lib/math.js only
   mesh.castShadow = mesh.receiveShadow = !s.ghost && !s.opacity;   // a see-through leaf casting a solid shadow reads as solid
+  mesh.userData.ghost = !!s.ghost;        // a zone is drawn, not there: the walk-in camera goes through it
   return mesh;
 }
 
@@ -197,14 +210,23 @@ function build(sc) {
   partsGroup.visible = !editorRef?.active;
   place(curDof);
   fitLight();
+  const box = sceneBox();
+  workshop.fit(box);                                               // the hall is sized to the machine
+  pov.spawnFrom(box);                                              // and the walk starts in front of it
+  refreshSolids();
   if (sc.name !== framed) { framed = sc.name; fitCamera(); }       // a new scene, not a rebuild after Save
 }
 
 let framed = null;
-/** Look at the machine: orbit target at its bounding-box centre, from the front-right, above. */
-function fitCamera() {
+/** The machine's bounding box: what the camera frames, the shadow camera covers and the hall is built around. */
+function sceneBox() {
   const box = new THREE.Box3();
   for (const l of model.links) box.expandByObject(l.g);
+  return box;
+}
+/** Look at the machine: orbit target at its bounding-box centre, from the front-right, above. */
+function fitCamera() {
+  const box = sceneBox();
   if (box.isEmpty()) return;
   const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() / 2;
   controls.target.copy(c);
@@ -287,8 +309,7 @@ function place(dof) {
 
 /** Shadow camera fitted to the machine's bounding box. */
 function fitLight() {
-  const box = new THREE.Box3();
-  for (const l of model.links) box.expandByObject(l.g);
+  const box = sceneBox();
   if (box.isEmpty()) return;
   const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() / 2 + 100;
   sun.target.position.copy(c);
@@ -362,14 +383,20 @@ function partsAt(t) {
   return frames[frames.length - 1].parts;
 }
 
+let lastFrame = performance.now();
 function loop() {
   requestAnimationFrame(loop);
+  const now = performance.now();
+  const dt = (now - lastFrame) / 1000;
+  lastFrame = now;
   if (model && offset != null) {
     const t = performance.now() * simScale + offset - RENDER_DELAY_MS * simScale;
     place(dofAt(t));
     if (!editorRef?.active) placeParts(partsAt(t));
   }
-  controls.update();
+  // Walking is the camera's own business: OrbitControls is off while it runs, or the two fight
+  // over the same camera and the picture shakes.
+  if (pov.active) { pov.update(dt); dragFromCrosshair(now); } else controls.update();
   renderer.render(scene3, camera);
 }
 requestAnimationFrame(loop);
@@ -588,11 +615,17 @@ fetch('/api/scenes').then(r => r.json()).then(names => {
 // The browser sends EDGES; the PLC enforces the conditions.
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let pressed = null;
-function pickAt(e, list) {
-  const r = renderer.domElement.getBoundingClientRect();
-  ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+function pickNdc(x, y, list) {
+  ndc.set(x, y);
   ray.setFromCamera(ndc, camera);
   return ray.intersectObjects(list, false)[0] || null;
+}
+function pickAt(e, list) {
+  // Under pointer lock the mouse has no position on the page at all - clientX stops moving - so
+  // the middle of the screen, which is where the crosshair is, is what a click means.
+  if (pov.active) return pickNdc(0, 0, list);
+  const r = renderer.domElement.getBoundingClientRect();
+  return pickNdc((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1, list);
 }
 let grabbed = null, lastDrag = 0;
 const dragPlane = new THREE.Plane(), dragAt = new THREE.Vector3(), camDir = new THREE.Vector3();
@@ -618,8 +651,17 @@ renderer.domElement.addEventListener('pointerdown', e => {
   controls.enabled = false;
   post('/api/hold', { uid: grabbed, down: true });
 }, true);
+/** While walking, a held part follows the crosshair: look somewhere else and it goes there. */
+function dragFromCrosshair(now) {
+  if (!grabbed || now - lastDrag < 40) return;
+  lastDrag = now;
+  ndc.set(0, 0);
+  ray.setFromCamera(ndc, camera);
+  if (!ray.ray.intersectPlane(dragPlane, dragAt)) return;
+  post('/api/hold', { uid: grabbed, down: true, at: [dragAt.x, dragAt.y, dragAt.z] });
+}
 renderer.domElement.addEventListener('pointermove', e => {
-  if (!grabbed) return;
+  if (!grabbed || pov.active) return;                           // walking drags from the crosshair instead
   const now = performance.now();
   if (now - lastDrag < 40) return;                              // the plant applies one edge per step
   lastDrag = now;
@@ -633,7 +675,67 @@ addEventListener('pointerup', () => {
   if (pressed) { post('/api/press', { ...pressed, down: false }); pressed = null; }
   else if (grabbed) { post('/api/hold', { uid: grabbed, down: false }); grabbed = null; }
   else return;
-  controls.enabled = true;
+  controls.enabled = !pov.active;          // while walking, the orbit camera stays off
+});
+
+// ------------------------------------------------------------------ walking in (web/pov.js)
+// Standing in the cell is how the height of a guard, the reach of an arm and the noise a layout
+// makes are read - none of which an orbit camera two metres up and outside ever shows. The camera
+// is the only thing that changes: every press and every grab goes through the same /api calls.
+let solidList = [];
+function refreshSolids() {
+  solidList = model ? model.links.map(l => l.g) : [];
+  if (workshop.visible) solidList = solidList.concat(workshop.solids);
+}
+const aside = document.querySelector('aside');
+let panelWas = true;
+const pov = createPov({
+  camera, dom: renderer.domElement, controls,
+  solids: () => solidList,
+  onChange: on => {
+    $('cross').hidden = $('pov-hud').hidden = !on;
+    $('hint').hidden = on;
+    $('pov-btn').textContent = on ? 'Leave' : 'Walk in';
+    // The panel comes back exactly as it was: walking in is not a way to lose your layout.
+    if (on) { panelWas = !aside.hidden; setPanel(false); } else setPanel(panelWas);
+  },
+});
+$('pov-hud').textContent = `WASD walk · mouse look · Shift run · C crouch · Space jump
+click: press a button, or grab a part and carry it · R back to the door · Esc out`;
+$('pov-btn').onclick = () => { if (!editor.active) pov.toggle(); };
+/**
+ * What the view is doing, for tests/browser.test.js: walking or orbiting, where the eye is, and
+ * whether the panel is up. Read-only, like window.mioPartScreen, and used by nothing else - a
+ * headless browser cannot ask a WebGL canvas any of this.
+ */
+window.mioView = () => ({ pov: pov.active, eye: camera.position.toArray(), panel: !aside.hidden, shop: workshop.visible, solids: solidList.length });
+$('shop-btn').onclick = () => setWorkshop(!workshop.visible);
+
+// ------------------------------------------------------------------ hiding the panels
+// Every section hides on its own, and the whole side panel hides with it. A hidden panel still
+// has to be reachable, so the way back is a button floating over the view (and H).
+function setPanel(on) {
+  aside.hidden = !on;
+  $('panel-show').hidden = on;
+  $('panel-hide').textContent = on ? 'Hide panel' : 'Show panel';
+}
+$('panel-hide').onclick = () => setPanel(aside.hidden);
+$('panel-show').onclick = () => setPanel(true);
+for (const b of document.querySelectorAll('[data-hide]')) {
+  const t = $(b.dataset.hide);
+  b.onclick = () => { t.hidden = !t.hidden; b.textContent = t.hidden ? 'show' : 'hide'; };
+}
+// The editor hides the IO table; its heading has to go with it, or the panel grows a heading over
+// nothing. The editor owns that hiding, so this follows it instead of duplicating the rule.
+new MutationObserver(() => { $('io-head').hidden = editor.active; }).observe($('io-wrap'), { attributes: true, attributeFilter: ['hidden'] });
+
+addEventListener('keydown', e => {
+  if (editor.active || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'f') pov.toggle();
+  else if (k === 'h') setPanel(aside.hidden);
+  else return;
+  e.preventDefault();
 });
 
 // ------------------------------------------------------------------ editor (web/editor.js)
@@ -647,6 +749,10 @@ const editor = createEditor({
   sceneName: () => serverScene?.name, serverScene: () => serverScene,
 });
 editorRef = editor;
+// Edit mode selects with the pointer and moves things with a gizmo: a locked mouse cannot do
+// either, so entering the editor leaves the walk.
+$('edit-btn').addEventListener('click', () => pov.exit());
+setWorkshop(true);
 
 // ------------------------------------------------------------------ stream
 const es = new EventSource('/api/stream');
