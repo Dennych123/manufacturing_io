@@ -107,13 +107,13 @@ function geometry(s) {
 // primitive. It loads once per asset and the geometry is SHARED by every link that names it, so
 // a rebuild must not dispose it - see `shared` below.
 // Two formats, because robot makers do not agree on one: ROS-Industrial ships the Fanuc as STL
-// (one BufferGeometry) and DENSO ships the VS-060 as COLLADA (a whole scene graph, with its own
+// (one BufferGeometry) and NDESO ships the VS-060 as COLLADA (a whole scene graph, with its own
 // materials). So this hands back an OBJECT3D either way, and the caller clones it - a cached
 // geometry cannot be added to two links at once, but a clone of a cached prototype can.
 //
 // A .dae is NOT rotated on the way in, even though these files say <up_axis>Y_UP</up_axis>. That
 // tag is metadata the URDF toolchain ignores: a URDF visual has rpy="0 0 0", so the vertex data
-// must already sit in the link frame, which is Z-up. Measured on the DENSO meshes - J2's upper
+// must already sit in the link frame, which is Z-up. Measured on the NDESO meshes - J2's upper
 // arm is 421 mm along Z, J1 is tallest in Z, base_link is a flat 171 x 160 x 30 plate - so the
 // data is Z-up and an "up-axis correction" here rotates them a second time. That is what an arm
 // scattered into loose pieces looks like.
@@ -470,7 +470,7 @@ setInterval(() => { if (ioDirty) { ioDirty = false; updatePanel(); } }, PANEL_MS
 
 // ------------------------------------------------------------------ operator panel (HTML, hideable)
 // The machine's selector, pushbuttons and lamps are scene components (they own their tags), but
-// they are drawn HERE, as a Denso-style panel beside the view, not in 3D. Every button sends
+// they are drawn HERE, as a Ndeso-style panel beside the view, not in 3D. Every button sends
 // edges only (down, up); the PLC enforces what each mode allows. Built once per scene; the lit
 // state is updated with the IO table.
 let opItems = [];

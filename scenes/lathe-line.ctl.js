@@ -2,7 +2,7 @@
 // without Sysmac. Keep the two in step: a change to one is a change to both.
 // Loaded from disk only, never through the API.
 //
-// The cell, as the video of the real line shows it: a DENSO VS-087 hangs upside down from a
+// The cell, as the video of the real line shows it: a NDESO NDESO-087 hangs upside down from a
 // traverse beam over the aisle and serves two TAKISAWA TCC-2000 lathes that run the SAME
 // operation in PARALLEL - neither feeds the other. Raw castings arrive on the infeed conveyor and
 // finished parts leave on a SEPARATE outfeed conveyor; both have a stop and a pin lift at the

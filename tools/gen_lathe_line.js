@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @ts-check
 // The lathe-line scene, built from what the video of the real cell shows (docs in the scene's
-// .ctl.js): a DENSO VS-087 hanging from a traverse beam over two TAKISAWA TCC-2000 lathes that
+// .ctl.js): a NDESO NDESO-087 hanging from a traverse beam over two TAKISAWA TCC-2000 lathes that
 // run the SAME operation in parallel, with a separate infeed and outfeed conveyor at one end of
 // the cell. The lathes' doors slide sideways, the way a TCC-2000's does.
 //
@@ -26,7 +26,7 @@ import { TYPES, withDefaults } from '../lib/components.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 /** Everything that moves WITH the arm: it cannot clash with itself here. */
-const ARM_IDS = new Set(['rail', 'rbase', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'hand', 'jawA', 'jawB']);
+const ARM_IDS = new Set(['rail', 'rbase', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'jawA', 'jawB']);
 const NAME = 'lathe-line';
 
 // ---------------------------------------------------------------------------- geometry (mm)
@@ -128,12 +128,12 @@ export const RAIL_DX = -180;
 export const RAIL_IN = STX_IN, RAIL_OUT = STX_OUT;
 const SK = { carriage: 96 };
 
-// DENSO VS-087, from DENSO's technical data sheet: arms 445 + 430 (875), reach 905 at point P,
+// NDESO NDESO-087, from NDESO's technical data sheet: arms 445 + 430 (875), reach 905 at point P,
 // J2 30 out from J1, J1->J2 395; ranges J1 +-170, J2 +135/-100, J3 +153/-136, J4 +-270, J5 +-120,
 // J6 +-360; top speeds 285 / 252.5 / 303 / 378.75 / 378.75 / 606 deg/s. The flange sits 80 from P.
 // The chain is set up the maker's way (upright, J4 along the forearm) and the whole robot is
 // turned over by the mount, so nothing below is re-derived for hanging.
-const VS087 = [
+const NDESO087 = [
   { id: 'j1', axis: 'z', to: [30, 0, 395], min: -170, max: 170, v: 285, w: 150 },
   { id: 'j2', axis: 'y', to: [0, 0, 445], min: -100, max: 135, v: 252.5, w: 130 },
   { id: 'j3', axis: 'y', to: [0, 0, 20], min: -136, max: 153, v: 303, w: 110 },
@@ -173,7 +173,7 @@ const SHELL = {
   j5: { file: 'j6', at: [0, 0, 0] },
   // J6 is the flange itself: the maker ships no seventh part, so the hub primitive draws it.
 };
-const SHELL_DIR = '/assets/robots/vs087/';
+const SHELL_DIR = '/assets/robots/ndeso087/';
 /** The cycle does not run the arm at its catalogue maximum; neither does the cell in the video.
  * At 0.5, and with the traverse at 1.2 m/s, the cell ran a 16.3 s cycle against a 13 s target: the
  * two long rail hauls (infeed to machine, machine to outfeed) were 2.7 s each and the arm's own
@@ -181,8 +181,22 @@ const SHELL_DIR = '/assets/robots/vs087/';
  * ROBOT is, so the cycle time is bought in the traverse and the arm and nowhere else. */
 const SPEED = 0.68;
 
-/** The double hand: jaw A along the flange axis, jaw B at 90 degrees to it. */
-const JAW = { span: 100, fingerLen: 50, fingerW: 10 };
+/**
+ * The double hand: jaw A along the flange axis, jaw B at 90 degrees to it.
+ *
+ * The jaws are VEE, cut for the casting's own radius, which is what the hand in the video wears
+ * and what every lathe-tending hand wears: the part is ROUND, so a flat pad holds it on one line
+ * and lets it roll, while a vee seats it on two flanks and locates it. The flanks are drawn and
+ * do not collide, so this is the picture only - the pad behind them is still the collider the
+ * model closes onto `blockAt`.
+ *
+ * A vee jaw is WIDE - the flanks reach out to jawR past the middle - and the two hands sit 90
+ * degrees apart on one flange, so the width is what sets how close they stand. Measured over the
+ * whole finger travel (0, 12, 25, 40, 50 mm): hand A clears hand B by 2.0 mm at every position,
+ * and the gap does not move, because both are bolted to the same flange. Widen a jaw and that is
+ * the number that goes first.
+ */
+const JAW = { span: 100, fingerLen: 50, fingerW: 14, jaw: 'vee', jawR: PART.d / 2 };
 const TCP = JAW.fingerLen * 0.6;                       // the gripper's catch-zone centre
 
 /** @param {number} v */
@@ -230,19 +244,24 @@ export function buildScene() {
 
   // ---- the robot. The base casting carries the J1 bearing and does NOT turn with it, so it rides
   // the carriage as a shell of its own; hung on J1 it span with the shoulder.
-  add({ id: 'rbase', type: 'shell', label: 'VS-087 BASE', parent: 'rail', socket: 'end',
+  add({ id: 'rbase', type: 'shell', label: 'NDESO-087 BASE', parent: 'rail', socket: 'end',
         at: [0, 0, SK.carriage], rot: SHELL_ROT, params: { asset: SHELL_DIR + 'j1.stl', scale: 1, color: '#f1efe8' } });
-  VS087.forEach((j, i) => {
+  NDESO087.forEach((j, i) => {
     const sh = SHELL[/** @type {keyof typeof SHELL} */ (j.id)];
-    add({ id: j.id, type: 'joint', label: 'VS-087 J' + (i + 1), station: 'ST1', parent: i ? VS087[i - 1].id : 'rail', socket: 'end',
+    add({ id: j.id, type: 'joint', label: 'NDESO-087 J' + (i + 1), station: 'ST1', parent: i ? NDESO087[i - 1].id : 'rail', socket: 'end',
           at: i ? [0, 0, 0] : [0, 0, SK.carriage],
           params: { kind: 'revolute', axis: j.axis, len: 0, to: j.to, min: j.min, max: j.max, home: 0,
                     vmax: r2(j.v * SPEED), acc: r2(j.v * SPEED * 3), width: j.w, color: '#f1efe8', jogPct: 5,
                     ...(sh ? { mesh: SHELL_DIR + sh.file + '.stl', meshScale: 1, meshAt: sh.at, meshRot: SHELL_ROT } : {}) },
           io: axisIo('J' + (i + 1)) });
   });
-  const jaw = { span: JAW.span, fingerLen: JAW.fingerLen, fingerW: JAW.fingerW, closeMs: 300, openMs: 300, band: 1.5 };
-  add({ id: 'hand', type: 'plate', label: 'DOUBLE HAND BLOCK', parent: 'j6', socket: 'end', at: [0, 0, -45], rot: [0, 90, 0], params: { size: [90, 70, 70] } });
+  const jaw = { ...JAW, closeMs: 300, openMs: 300, band: 1.5 };
+  // The two gripper BODIES are the hand: a 126 mm disc each, overlapping at 90 degrees on the
+  // flange, which is the compact dark block the video shows. There was an adapter plate here as
+  // well and it was simply wrong - measured in the flange frame, it ran z -90..0, so the whole
+  // 70 x 70 x 90 box sat BEHIND the flange face, inside the robot's own wrist castings, where it
+  // read as a grey slab hanging off the back of the hand. Nothing hung from it either: both jaws
+  // parent to `j6`, not to it.
   add({ id: 'jawA', type: 'gripper', label: 'HAND A (raw)', station: 'ST1', parent: 'j6', socket: 'end', at: [70, 0, 0], rot: [0, 90, 0], params: jaw,
         io: { close: 'GRIP_A', open: 'AS_A_OPEN', closed: 'AS_A_CLOSED' } });
   add({ id: 'jawB', type: 'gripper', label: 'HAND B (finished)', station: 'ST1', parent: 'j6', socket: 'end', at: [35, 0, 35], rot: [0, 0, 0], params: jaw,
@@ -437,7 +456,7 @@ export function buildScene() {
     format: 'mio-scene/1', name: NAME, sim: { dtMs: 4 },
     io: { driver: 'opcua', endpoint: 'opc.tcp://127.0.0.1:4840', prefix: 'GlobalVars.', mode: 'sim', minPulseMs: 20 },
     stations: [
-      { id: 'ST1', name: 'Robot', members: ['rail', ...VS087.map(j => j.id), 'jawA', 'jawB'], stepTag: 'ST1_STEP' },
+      { id: 'ST1', name: 'Robot', members: ['rail', ...NDESO087.map(j => j.id), 'jawA', 'jawB'], stepTag: 'ST1_STEP' },
       { id: 'ST2', name: 'TCC-2000 #1', members: ['chuck1', 'door1'], stepTag: 'ST2_STEP' },
       { id: 'ST3', name: 'TCC-2000 #2', members: ['chuck2', 'door2'], stepTag: 'ST3_STEP' },
       { id: 'ST4', name: 'Infeed', members: ['cvIn', 'liftIN', 'pinIN', 'stopIN', 'eyeIN', 'holdIN', 'eyeHoldIN'], stepTag: 'ST4_STEP' },
@@ -453,7 +472,7 @@ export function buildScene() {
 }
 
 // ---------------------------------------------------------------------------- poses
-const JOINTS = VS087.map(j => ({ id: j.id, min: j.min, max: j.max }));
+const JOINTS = NDESO087.map(j => ({ id: j.id, min: j.min, max: j.max }));
 /**
  * The catch-zone centre of a jaw, reaching along its +Z. Only the REACH direction is demanded, not
  * where the fingers close: the part is a cylinder, so the jaw may take it from any side, and
@@ -564,7 +583,7 @@ export function solvePoses(scene) {
   const g = goals();
   // The IK only needs the arm, and worldPoses() walks every component it is given: solving against
   // the whole cell (150 components, two of them lathes) costs about eight times as much.
-  const keep = new Set(['rail', ...VS087.map(j => j.id), 'jawA', 'jawB']);
+  const keep = new Set(['rail', ...NDESO087.map(j => j.id), 'jawA', 'jawB']);
   const armParts = scene.components.filter((/** @type {any} */ c) => keep.has(c.id));
   // The rail is not one of the solved joints, so the carriage has to be PARKED where the pose is
   // worked from: worldPoses() takes the rail's own `home` when no dof is given for it, and a pose
@@ -580,7 +599,7 @@ export function solvePoses(scene) {
   };
   const seeds = [];
   for (const j1 of [0, 90, -90, 180]) for (const j3 of [45, 110]) for (const j5 of [-60, 60]) seeds.push({ j1, j3, j5 });
-  const margin = (/** @type {Record<string, number>} */ d) => Math.min(...VS087.map(j => Math.min(d[j.id] - j.min, j.max - d[j.id])));
+  const margin = (/** @type {Record<string, number>} */ d) => Math.min(...NDESO087.map(j => Math.min(d[j.id] - j.min, j.max - d[j.id])));
   /** @type {Record<string, number[]>} */
   const poses = {};
   /** @type {Record<string, Record<string, number>>} */
@@ -600,13 +619,13 @@ export function solvePoses(scene) {
       const m = margin(r.dof);
       // A pose that clashes is out; among the rest, prefer the one that keeps the arm where the
       // previous pose left it, and then the one with the most room to its limits.
-      const move = from ? Math.max(...VS087.map(j => Math.abs(r.dof[j.id] - dofs[from][j.id]))) : 0;
+      const move = from ? Math.max(...NDESO087.map(j => Math.abs(r.dof[j.id] - dofs[from][j.id]))) : 0;
       const score = (bad.length ? -1000 : 0) + m - move / 4;
       if (!best || score > best.score) best = { dof: r.dof, m, err: r.err, bad, score };
     }
     if (!best) throw new Error('pose ' + k + ' did not solve');
     dofs[k] = best.dof;
-    poses[k] = VS087.map(j => r2(best.dof[j.id]));
+    poses[k] = NDESO087.map(j => r2(best.dof[j.id]));
     report.push(k.padEnd(8) + ' err ' + best.err.toFixed(3) + ' mm, margin ' + best.m.toFixed(1) + ' deg'
       + (best.bad.length ? '   CLASH: ' + best.bad.join(' | ') : ''));
   }

@@ -77,7 +77,7 @@ VAR
 	HOME_EDGE : BOOL;
 	PB_HOME_LAST : BOOL;
 END_VAR
-// lathe-line: a DENSO VS-087 hanging from a traverse beam serves two TAKISAWA TCC-2000 lathes
+// lathe-line: a NDESO NDESO-087 hanging from a traverse beam serves two TAKISAWA TCC-2000 lathes
 // that run the SAME operation in PARALLEL. Raw castings arrive on the infeed conveyor and finished
 // parts leave on a SEPARATE outfeed conveyor - neither lathe feeds the other. Both conveyors have
 // a stop and a pin lift at the loading end of the cell, where the robot works them. The lathes'

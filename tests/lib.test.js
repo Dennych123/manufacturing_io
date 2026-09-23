@@ -381,11 +381,11 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
       const p = of(id).params;
       if (i === 5) return p.mesh ? id + ': J6 is the flange, the maker ships no part for it' : '';
       const file = ids[i + 1];
-      if (p.mesh !== '/assets/robots/vs087/' + file + '.stl') return id + ': dressed in ' + p.mesh;
+      if (p.mesh !== '/assets/robots/ndeso087/' + file + '.stl') return id + ': dressed in ' + p.mesh;
       const want = qrot(R, D[file]).map((v, k) => v - org[id][k]);
       return near(p.meshAt, want, 1e-6) ? '' : id + ': at ' + fmt(p.meshAt) + ' want ' + fmt(want);
     }).filter(Boolean);
-    chk('lathe-line: every VS-087 link wears the casting whose bores are its own joints', wrong.length === 0, wrong.join(' | '));
+    chk('lathe-line: every NDESO-087 link wears the casting whose bores are its own joints', wrong.length === 0, wrong.join(' | '));
     const base = sc.components.find((/** @type {any} */ c) => c.type === 'shell' && /j1\.stl$/.test(c.params.asset));
     chk('lathe-line: the base casting rides the carriage and does not turn with J1',
         !!base && base.parent === 'rail' && near(base.rot, [90, 0, 90]), JSON.stringify(base && [base.parent, base.rot]));
@@ -405,6 +405,45 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
     && Math.abs(s.at[1]) >= p.width / 2 && top(s) >= top(belt) - 1e-9);
   chk('conveyor: no side member reaches the belt surface (a part pushed off the edge hangs on it)', flush.length === 0, JSON.stringify(flush));
   chk('conveyor: the side members are still there, just lower', shapes.some((/** @type {any} */ s) => s.size?.[1] === 30 && s.size?.[2] === 60));
+}
+
+// ---------------------------------------------------------------- the vee jaw (a lathe hand)
+// A flat pad holds a round part on ONE line and lets it roll; a vee seats it on two flanks. The
+// flanks are cut for a part of radius jawR, and they are placed by a formula that MIRRORS between
+// the two fingers - which is the trap: with the flank normal's sign right for one finger and
+// wrong for the other, hand L cradled the casting and hand R cut 3.5 mm INTO it. Nothing would
+// have reported that. The flanks are drawn and never collide, so the physics is identical either
+// way, and at cell scale 3.5 mm is invisible. So the geometry is pinned here, on BOTH fingers.
+{
+  const t = TYPES.gripper, R = 25;
+  const vee = withDefaults(t, { span: 100, fingerLen: 50, fingerW: 14, jaw: 'vee', jawR: R });
+  /** The distance from a point to a box, which here is only ever turned about Z. */
+  const toBox = (/** @type {any} */ s, /** @type {number[]} */ q) => {
+    const a = (s.rot ? s.rot[2] : 0) * Math.PI / 180, dx = q[0] - s.at[0], dy = q[1] - s.at[1];
+    const l = [dx * Math.cos(a) + dy * Math.sin(a), -dx * Math.sin(a) + dy * Math.cos(a)];
+    const d = [0, 1].map(k => Math.max(0, Math.abs(l[k]) - s.size[k] / 2));
+    return Math.hypot(d[0], d[1]);
+  };
+  // Closed on a part of radius R, the finger link stands at y = -m*R, so the part centre is at
+  // +m*R... in the finger's own frame, that is [0, -m*R].
+  const cut = [], loose = [];
+  for (const [link, m] of /** @type {Array<[string, number]>} */ ([['fingerL', -1], ['fingerR', 1]])) {
+    for (const s of t.shapes(vee).filter((/** @type {any} */ s) => s.link === link)) {
+      const d = toBox(s, [0, -m * R]);
+      if (d < R - 0.01) cut.push(link + ' cuts ' + (R - d).toFixed(2) + ' mm into the part');
+      if (d > R + 0.01) loose.push(link + ' stands ' + (d - R).toFixed(2) + ' mm off it');
+    }
+  }
+  chk('vee jaw: neither finger cuts into the part it is cut for', cut.length === 0, cut.join(' | '));
+  chk('vee jaw: the pad and both flanks all touch it - a vee that only hovers locates nothing', loose.length === 0, loose.join(' | '));
+  // The pad behind the flanks is still the one collider, so a vee jaw's physics is a flat jaw's.
+  const solid = (/** @type {any} */ p2) => t.shapes(p2).filter((/** @type {any} */ s) => s.link.startsWith('finger') && s.collide !== false);
+  const flat = withDefaults(t, { span: 100, fingerLen: 50, fingerW: 14, jaw: 'flat' });
+  chk('vee jaw: the flanks are DRAWN - the colliders are the flat jaw\'s, unchanged',
+    JSON.stringify(solid(vee)) === JSON.stringify(solid(flat)), solid(vee).length + ' vs ' + solid(flat).length + ' colliding shapes');
+  chk('vee jaw: a flat jaw is still plain - no flanks unless they are asked for',
+    t.shapes(flat).filter((/** @type {any} */ s) => s.link.startsWith('finger')).length === 2);
+  chk('vee jaw: a notch deeper than the finger is refused', t.check(withDefaults(t, { span: 100, fingerW: 3, jaw: 'vee', jawR: R })).length > 0);
 }
 
 // ---------------------------------------------------------------- index table (cam drive)

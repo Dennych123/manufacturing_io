@@ -656,7 +656,7 @@
 // Heartbeat: the plant says &quot;program not running or not assigned to a task&quot; when this stops.
 MIO_HEARTBEAT := MIO_HEARTBEAT + 1;
 
-// lathe-line: a DENSO VS-087 hanging from a traverse beam serves two TAKISAWA TCC-2000 lathes
+// lathe-line: a NDESO NDESO-087 hanging from a traverse beam serves two TAKISAWA TCC-2000 lathes
 // that run the SAME operation in PARALLEL. Raw castings arrive on the infeed conveyor and finished
 // parts leave on a SEPARATE outfeed conveyor - neither lathe feeds the other. Both conveyors have
 // a stop and a pin lift at the loading end of the cell, where the robot works them. The lathes'
@@ -1840,242 +1840,242 @@ PL_HOME := HOMED;</ST>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J1_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J1_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J1_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J1 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J1 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J2_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J2_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J2_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J2 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J2 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J3_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J3_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J3_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J3 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J3 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J4_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J4_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J4_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J4 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J4 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J5_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J5_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J5_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J5 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J5 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_TGT">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 TARGET</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 TARGET</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J6_EXEC">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 EXEC</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 EXEC</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_DONE">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 DONE</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 DONE</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_BUSY">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 BUSY</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 BUSY</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_POS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 ACTPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 ACTPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>LREAL</TypeName></Type>
           </Variable>
           <Variable name="J6_INPOS">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 INPOS</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 INPOS</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_JOG_P">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 JOG_P</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 JOG_P</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>
           <Variable name="J6_JOG_N">
-            <Documentation xsi:type="SimpleText">ST1 VS-087 J6 JOG_N</Documentation>
+            <Documentation xsi:type="SimpleText">ST1 NDESO-087 J6 JOG_N</Documentation>
             <AddData><Data name="https://www.ia.omron.com/Smc IEC61131_10_Ed1_0_SmcExt1_0_Spc1_0.xsd" handleUnknown="discard"><smcext:GlobalVariableAdditionalProperties networkPublish="PublishOnly" /></Data></AddData>
             <Type><TypeName>BOOL</TypeName></Type>
           </Variable>

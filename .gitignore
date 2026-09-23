@@ -12,5 +12,5 @@ assets/cad/
 # Vendor robot CAD and the shells built from it. A maker's CAD from a member area is not ours to
 # redistribute: tools/step_to_stl.py rebuilds these from the download, and every scene falls back
 # to its primitives when they are not there.
-assets/robots/vs087/
+assets/robots/ndeso087/
 tools/__pycache__/

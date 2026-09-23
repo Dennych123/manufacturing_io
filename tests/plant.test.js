@@ -1064,7 +1064,7 @@ chk('the PLC cannot write a sensor tag through fromPlc', x.events.every(e => !(e
   await q.close();
 }
 
-// ---------------------------------------------------------------- lathe-line (VS-087 + 2 lathes)
+// ---------------------------------------------------------------- lathe-line (NDESO-087 + 2 lathes)
 // A hanging six-axis robot on a traverse, two lathes and ONE conveyor past their fronts, with a
 // pop-up stop and a pin lift at each machine. The discriminating measurements: parts go OP10 then
 // OP20 and leave off the end of the belt, and the jaw takes the part out of a chuck (or off a pin)

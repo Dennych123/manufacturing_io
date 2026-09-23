@@ -346,7 +346,7 @@ in the code but break things silently** when violated. Most were paid for once i
   every reachable point is directly under the rail, which is true and useless. Reaching sideways
   is J1's job, and the envelope has to be measured with it free.
 - **A maker's per-axis CAD lands exactly, and the way to find out how is the ASSEMBLY file.**
-  DENSO ships the VS-087 as six STEP parts plus an assembly. Each part file is its assembly solid
+  NDESO ships the NDESO-087 as six STEP parts plus an assembly. Each part file is its assembly solid
   translated by a fixed offset, and the assembly stands the robot with its J1 axis along +Y - so the
   maker's frame maps to this repo's by the cyclic permutation (x, y, z) -> (z, x, y), which is
   rot [90, 0, 90]. With that, every joint bore in the assembly lands on this chain's joint origins
@@ -359,15 +359,15 @@ in the code but break things silently** when violated. Most were paid for once i
   one down the chain the arm still assembled perfectly at all-zero, and only a jog showed it: a 45
   degree jog moved the worst casting 205 mm (J2), 412 mm (J3) and 100 mm (J4) from where it belongs,
   while the axes themselves were exactly right. What says which link a solid is is its BORES: read
-  out of the VS-087 assembly, c001 carries the J1 bore alone (the base, which does not turn with
+  out of the NDESO-087 assembly, c001 carries the J1 bore alone (the base, which does not turn with
   J1 and rides the carriage as a `shell` of its own), c002 the J1 and J2 bores, c003 the J2 and J3
   bores, c004 the J3 bore and the J4 axis, c005 the J4 axis; the flange has no part of its own and
   the hub primitive draws it. `tests/lib.test.js` pins the mapping and every offset, from the
   measured assembly translations, so the shells are checked without the CAD being in git.
 - **A shell is a picture, so give it a triangle budget and keep it out of git when it is not ours.**
-  The VS-087's STEP tessellates to 132k triangles for one arm; decimated to 4k a link it is 24k for
+  The NDESO-087's STEP tessellates to 132k triangles for one arm; decimated to 4k a link it is 24k for
   the whole robot and the silhouette at cell scale is the same (tools/step_to_stl.py). Vendor CAD
-  from a member area is not redistributable: `assets/robots/vs087/` is gitignored, and the viewer
+  from a member area is not redistributable: `assets/robots/ndeso087/` is gitignored, and the viewer
   now draws the PRIMITIVES when a shell does not load - an invisible arm is the one failure a
   viewer must never show quietly.
 - **A retro-reflective sensor cannot see a matt BLACK part, and that is a sorting signal.**
@@ -413,6 +413,21 @@ in the code but break things silently** when violated. Most were paid for once i
   the old rule - holders take FREE parts only - the sequence had to unclamp first, and a horizontal
   chuck then drops the part before the fingers are anywhere near it. Nothing else changes: a holder
   still never takes a part another GRIPPER has.
+- **A round part needs a VEE jaw, and a gripper's DRAWN parts are where a mirrored formula hides.**
+  A flat pad holds a cylinder on one line and lets it roll; `jaw: 'vee'` on a gripper cuts a
+  prismatic notch for a part of radius `jawR`, so the casting seats on two flanks. The flanks are
+  drawn and never collide - the pad behind them is still the one collider the model closes onto
+  `blockAt` - which is exactly why the trap is quiet: the two fingers are mirror images, and with
+  the flank normal's sign right for one and wrong for the other, hand L cradled the casting while
+  hand R cut 3.5 mm INTO it. No physics could report that (the flanks are not there) and 3.5 mm is
+  invisible at cell scale. `tests/lib.test.js` pins both fingers against the part they are cut for.
+- **A block bolted to a flange can end up INSIDE the robot's own wrist, and nothing says so.**
+  Measured on `lathe-line`: the double hand's adapter plate ran z -90..0 in the FLANGE frame, so
+  all 70 x 70 x 90 of it sat behind the flange face, buried in the j5/j6 castings and hanging out
+  of the back of the hand as a grey slab. It held nothing either - both jaws parent to `j6`. A
+  kinematic body does not collide with the shells, the clash check skips whatever moves with the
+  arm, and so the picture simply lied. Check a tool's own boxes in the flange frame; the two
+  gripper bodies are the hand.
 - **A nest on a cylinder's rod end must sit clear of the rod-end block.** Every rod carries a 12 mm
   steel block at its end, and a nest mounted flat on the `rodEnd` socket puts its 6 mm floor
   straight through it. Measured on `lathe-line`: the part stood on the 19 mm block instead of the

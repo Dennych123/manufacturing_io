@@ -101,7 +101,7 @@ Fourteen machines run with their own PLC programs, each in `scenes/<name>.{json,
 | `robot-pitch` | a FANUC LR Mate 200iD (chain, limits and speeds from the ROS-Industrial xacro) with a cam-driven pitch-change head: five cups pick a row from a 5 x 5 pallet at 100 mm, the camshaft closes them to 60, the row goes into a jig and then to the bin |
 | `mps-sorting` | Festo Didactic's MPS Sorting station 8046325, sequence and IO from its manual: a 40 mm workpiece is laid on the belt, a stop holds it while three sensors read it - a through-beam sees every one, a retro-reflective one cannot see the matt black one, an inductive one sees the metal - and two swing gates send red, metallic and black to their own chutes |
 | `carton-sorter` | a sortation line on the Open Industry Project's own numbers (MIT): a 1.524 m belt at 2 m/s, cartons 600 x 400 x 400 at 10 kg fed 45 a minute, and two swing blades that lean across the belt so the belt itself drives each carton off onto a take-away. The PLC tracks destinations in a shift register, one queue per blade |
-| `lathe-line` | built from a video of a real cell: a DENSO VS-087 hangs from a traverse beam over two TAKISAWA TCC-2000 lathes (OP10 then OP20) with ONE conveyor along their fronts. A stopper pops out of the belt, a pin lift raises the part to the robot, and the 90-degree double hand swaps raw for finished through one door opening |
+| `lathe-line` | built from a video of a real cell: a NDESO NDESO-087 hangs from a traverse beam over two TAKISAWA TCC-2000 lathes (OP10 then OP20) with ONE conveyor along their fronts. A stopper pops out of the belt, a pin lift raises the part to the robot, and the 90-degree double hand swaps raw for finished through one door opening |
 
 | | |
 |---|---|

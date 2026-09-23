@@ -109,17 +109,17 @@
     {
       "id": "rbase",
       "type": "shell",
-      "label": "VS-087 BASE",
+      "label": "NDESO-087 BASE",
       "parent": "rail",
       "socket": "end",
       "at": [0, 0, 96],
       "rot": [90, 0, 90],
-      "params": { "asset": "/assets/robots/vs087/j1.stl", "scale": 1, "color": "#f1efe8" }
+      "params": { "asset": "/assets/robots/ndeso087/j1.stl", "scale": 1, "color": "#f1efe8" }
     },
     {
       "id": "j1",
       "type": "joint",
-      "label": "VS-087 J1",
+      "label": "NDESO-087 J1",
       "station": "ST1",
       "parent": "rail",
       "socket": "end",
@@ -136,7 +136,7 @@
         "acc": 581.4,
         "width": 150,
         "color": "#f1efe8",
-        "mesh": "/assets/robots/vs087/j2.stl",
+        "mesh": "/assets/robots/ndeso087/j2.stl",
         "meshScale": 1,
         "meshAt": [-5, 0, 395],
         "meshRot": [90, 0, 90],
@@ -157,7 +157,7 @@
     {
       "id": "j2",
       "type": "joint",
-      "label": "VS-087 J2",
+      "label": "NDESO-087 J2",
       "station": "ST1",
       "parent": "j1",
       "socket": "end",
@@ -174,7 +174,7 @@
         "acc": 515.1,
         "width": 130,
         "color": "#f1efe8",
-        "mesh": "/assets/robots/vs087/j3.stl",
+        "mesh": "/assets/robots/ndeso087/j3.stl",
         "meshScale": 1,
         "meshAt": [0, 0, 0],
         "meshRot": [90, 0, 90],
@@ -195,7 +195,7 @@
     {
       "id": "j3",
       "type": "joint",
-      "label": "VS-087 J3",
+      "label": "NDESO-087 J3",
       "station": "ST1",
       "parent": "j2",
       "socket": "end",
@@ -212,7 +212,7 @@
         "acc": 618.12,
         "width": 110,
         "color": "#f1efe8",
-        "mesh": "/assets/robots/vs087/j4.stl",
+        "mesh": "/assets/robots/ndeso087/j4.stl",
         "meshScale": 1,
         "meshAt": [0, 0, 0],
         "meshRot": [90, 0, 90],
@@ -233,7 +233,7 @@
     {
       "id": "j4",
       "type": "joint",
-      "label": "VS-087 J4",
+      "label": "NDESO-087 J4",
       "station": "ST1",
       "parent": "j3",
       "socket": "end",
@@ -250,7 +250,7 @@
         "acc": 772.65,
         "width": 90,
         "color": "#f1efe8",
-        "mesh": "/assets/robots/vs087/j5.stl",
+        "mesh": "/assets/robots/ndeso087/j5.stl",
         "meshScale": 1,
         "meshAt": [430, 0, 0],
         "meshRot": [90, 0, 90],
@@ -271,7 +271,7 @@
     {
       "id": "j5",
       "type": "joint",
-      "label": "VS-087 J5",
+      "label": "NDESO-087 J5",
       "station": "ST1",
       "parent": "j4",
       "socket": "end",
@@ -288,7 +288,7 @@
         "acc": 772.65,
         "width": 80,
         "color": "#f1efe8",
-        "mesh": "/assets/robots/vs087/j6.stl",
+        "mesh": "/assets/robots/ndeso087/j6.stl",
         "meshScale": 1,
         "meshAt": [0, 0, 0],
         "meshRot": [90, 0, 90],
@@ -309,7 +309,7 @@
     {
       "id": "j6",
       "type": "joint",
-      "label": "VS-087 J6",
+      "label": "NDESO-087 J6",
       "station": "ST1",
       "parent": "j5",
       "socket": "end",
@@ -341,16 +341,6 @@
       }
     },
     {
-      "id": "hand",
-      "type": "plate",
-      "label": "DOUBLE HAND BLOCK",
-      "parent": "j6",
-      "socket": "end",
-      "at": [0, 0, -45],
-      "rot": [0, 90, 0],
-      "params": { "size": [90, 70, 70] }
-    },
-    {
       "id": "jawA",
       "type": "gripper",
       "label": "HAND A (raw)",
@@ -362,10 +352,12 @@
       "params": {
         "span": 100,
         "fingerLen": 50,
-        "fingerW": 10,
+        "fingerW": 14,
         "closeMs": 300,
         "openMs": 300,
-        "band": 1.5
+        "band": 1.5,
+        "jaw": "vee",
+        "jawR": 25
       },
       "io": { "close": "GRIP_A", "open": "AS_A_OPEN", "closed": "AS_A_CLOSED" }
     },
@@ -381,10 +373,12 @@
       "params": {
         "span": 100,
         "fingerLen": 50,
-        "fingerW": 10,
+        "fingerW": 14,
         "closeMs": 300,
         "openMs": 300,
-        "band": 1.5
+        "band": 1.5,
+        "jaw": "vee",
+        "jawR": 25
       },
       "io": { "close": "GRIP_B", "open": "AS_B_OPEN", "closed": "AS_B_CLOSED" }
     },
@@ -778,7 +772,7 @@
       "label": "TCC-2000 #1 DOOR",
       "parent": "door1",
       "socket": "rodEnd",
-      "at": [740, 20, -362],
+      "at": [420, 20, -362],
       "rot": [0, -90, 0],
       "params": { "size": [740, 14, 680] }
     },
@@ -893,7 +887,7 @@
       "label": "TCC-2000 #2 DOOR",
       "parent": "door2",
       "socket": "rodEnd",
-      "at": [700, 20, -362],
+      "at": [420, 20, -362],
       "rot": [0, -90, 0],
       "params": { "size": [740, 14, 680] }
     },

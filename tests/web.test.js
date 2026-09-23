@@ -59,7 +59,7 @@ chk('/ -> web/index.html', is('/', 'web/index.html'));
 chk('/lib/scene.js and /vendor/three/... map to their folders', is('/lib/scene.js', 'lib/scene.js') && is('/vendor/three/build/three.module.js', 'node_modules/three/build/three.module.js'));
 chk('/assets/... serves a scene\'s 3D shells', is('/assets/robots/lrmate200id/meshes/link_1.stl', 'assets/robots/lrmate200id/meshes/link_1.stl'));
 chk('the STL loader the viewer imports exists in node_modules', fs.existsSync(staticPath(ROOT, '/vendor/three/examples/jsm/loaders/STLLoader.js')));
-// Robot makers do not agree on a format: ROS-Industrial ships the Fanuc as STL, DENSO ships its
+// Robot makers do not agree on a format: ROS-Industrial ships the Fanuc as STL, NDESO ships its
 // arms as COLLADA. The viewer imports both loaders, so both have to be there.
 chk('the COLLADA loader the viewer imports exists in node_modules', fs.existsSync(staticPath(ROOT, '/vendor/three/examples/jsm/loaders/ColladaLoader.js')));
 for (const u of ['/web/../server/pki/key.pem', '/web/%2e%2e/server/plant.js', '/lib/..%2fserver%2fplant.js', '/web/..\\server', '/web//x',
