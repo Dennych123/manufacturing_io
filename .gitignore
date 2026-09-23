@@ -10,8 +10,7 @@ plc/*.bak
 assets/cad/
 
 # Vendor robot CAD and the shells built from it. A maker's CAD from a member area is not ours to
-# redistribute by default: tools/step_to_stl.py rebuilds these from the download, and every scene
-# falls back to its primitives when they are not there. The NDESO-087 shells are the exception:
-# they are committed as assets/robots/anuuu.zip (licence confirmed by Denny, 2026-09-23).
+# redistribute: tools/step_to_stl.py rebuilds these from the download, and every scene falls back
+# to its primitives when they are not there.
 assets/robots/ndeso087/
 tools/__pycache__/
