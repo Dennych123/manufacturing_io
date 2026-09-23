@@ -367,9 +367,11 @@ in the code but break things silently** when violated. Most were paid for once i
 - **A shell is a picture, so give it a triangle budget and keep it out of git when it is not ours.**
   The NDESO-087's STEP tessellates to 132k triangles for one arm; decimated to 4k a link it is 24k for
   the whole robot and the silhouette at cell scale is the same (tools/step_to_stl.py). Vendor CAD
-  from a member area is not redistributable: `assets/robots/ndeso087/` is gitignored, and the viewer
-  now draws the PRIMITIVES when a shell does not load - an invisible arm is the one failure a
-  viewer must never show quietly.
+  from a member area is not redistributable by default: `assets/robots/ndeso087/` stays gitignored,
+  and the viewer draws the PRIMITIVES when a shell does not load - an invisible arm is the one
+  failure a viewer must never show quietly. The NDESO-087 shells themselves ARE in git, as
+  `assets/robots/anuuu.zip` (unzip into `assets/robots/`): Denny confirmed on 2026-09-23 that their
+  licence allows it. Any other maker's CAD still needs that confirmation first.
 - **A retro-reflective sensor cannot see a matt BLACK part, and that is a sorting signal.**
   `seesDark: false` on a part sensor makes it blind to a part whose colour luminance is under
   `DARK` (0.2). It is how Festo's MPS sorting station tells black from red with no colour camera:
