@@ -684,7 +684,6 @@ often than it is looked at.
   and `npm install` restores it from the lockfile). `tests/browser.test.js` already knew this and
   unlinks its junctions first, non-recursively; a throwaway worktree needs the same care, or its
   own `npm install`.
-=======
 - **A scene written by a generator loses every hand edit the generator does not know about.**
   `palletizing` was regenerated after its speed dial, its `ovr` bindings and its jog buttons had
   been added by hand, and all three vanished without a single error: the machine simply ran with
@@ -700,8 +699,6 @@ often than it is looked at.
 - **POST is refused unless the Host is this PC** (`postAllowed` in `server/http.js`). A page on
   another site whose name now resolves to 127.0.0.1 arrives from the local browser with Origin and
   Host equal to each other, so the Origin check alone lets it drive the machine.
-
->>>>>>> origin/operator-panel-and-more-scenes
 - `.gitattributes` = `* -text`. Generated files are compared byte for byte.
 - Generators get `--check`, which exits 1 when committed output is stale.
 - Dependencies are pinned exactly (no `^`). three is served from `node_modules`, never from a CDN.

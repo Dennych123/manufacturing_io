@@ -1,6 +1,33 @@
 # manufacturing_io — plan
 
-## 0. Decisions
+## 0. Position
+
+**manufacturing_io is a virtual commissioning tool for special purpose machines on Omron
+controllers, in the class of Rockwell Emulate3D, not of Factory I/O.** Factory I/O is built to
+teach people PLC programming against stock scenes. Emulate3D is what machine builders use to
+test a real control program against a model of a machine that does not exist yet, and to run the
+factory acceptance test before the steel is cut. That second job is this project's job.
+(Re-positioned 2026-09-23.)
+
+Emulate3D covers three uses from one model, and this plan takes them in this order:
+
+| use | Emulate3D range | here |
+|---|---|---|
+| **controls testing**: the real PLC program against the model, automated test cases, injected faults, a PASS/FAIL report | Emulate3D Controls Testing / Factory Test | **now**: V1 soft-PLC, V2 Test Runner + Fault Framework |
+| **throughput**: cycle time, bottleneck, experiments over parameter sets | Sim3D | later: V3 analyzer, V5 experiments |
+| **presentation**: layout, catalog, camera paths, a viewer anyone can open | Demo3D / Layout3D | later: V6, V7 |
+
+What carries over unchanged is what already made the model credible: friction-driven parts in a
+deterministic physics world (Emulate3D's "emergent load behaviour"), actuators modelled from the
+stroke times measured on the real machine, sensors that miss what a real sensor misses, and one
+scene file as the only source of names and numbers. Factory I/O parity is no longer a goal in its
+own right.
+
+Sources for the Emulate3D feature map (§14): I. McGregor, *Introduction to Emulate3D*, WSC 2012;
+the Emulate3D edition comparison (simplan); Rockwell's Emulate3D and Factory Test product pages;
+demo3d.com Connectivity.
+
+### 0.1 Decisions
 
 | | |
 |---|---|
@@ -23,24 +50,28 @@
 │ Sysmac Studio NX simulator  │◄──── subscribe PLC outputs (actuator commands)
 │ PLC program = the controller│────► write PLC inputs (sensors): batched, on change
 └─────────────────────────────┘
-               ▲
+               ▲  driver interface (V4): opcua | internal soft-PLC (V1) | replay
 ┌──────────────┴──────────────────────────────────────────────────┐
 │ server/  (Node, headless)                                       │
-│  opcua.js  THE single copy: session, browse+browseNext,         │
-│            subscribe, batched write, reconnect, CLI             │
-│  plant.js  Rapier world, fixed-step loop, attach/grip,          │
-│            part sensors, IO exchange, recording                 │
-│  main.js   CLI + HTTP: static, SSE /api/stream, POST /api/*     │
+│  opcua.js    THE single copy: session, browse+browseNext,       │
+│              subscribe, batched write, reconnect, CLI           │
+│  plant.js    Rapier world, fixed-step loop, attach/grip,        │
+│              part sensors, IO exchange, forcing, recording      │
+│  softplc.js  (V1) runs scenes/<name>.st in lockstep with plant  │
+│  fat.js      (V2) Test Runner: cases, faults, assertions, report│
+│  main.js     CLI + HTTP: static, SSE /api/stream, POST /api/*   │
 │ tools/gen_sysmac.js  scene → Sysmac XML, IO list, probe program │
 └──────────────┬──────────────────────────────────────────────────┘
                │ SSE (30 Hz deltas) + POST
 ┌──────────────┴──────────────────────────────────────────────────┐
-│ web/  index.html  app.js (viewer + IO panel)                    │
-│       editor.js (builder)  charts.js (time chart, Gantt)        │
+│ web/  index.html  app.js (viewer, IO panel, operator panel)     │
+│       editor.js (builder)  pov.js (walk-in)  workshop.js        │
+│       charts.js (V3: time chart, Gantt)                         │
 └─────────────────────────────────────────────────────────────────┘
  lib/  pure ES modules shared by BOTH sides, never import three or Rapier
-       math.js  scene.js  components.js  analysis.js
+       math.js  scene.js  components.js  ik.js  st.js (V1)  analysis.js (V3)
 ```
+
 
 **Why `lib/` matters.** A component describes its geometry as plain data (`box`, `cyl` and
 `sphere` with size and offset). Node turns that into Rapier colliders and the browser turns it
@@ -354,7 +385,7 @@ overshoots. Velocity prediction lives in the plant, only for mirrored DOFs (§3)
   rejected.
 - Internal controllers (`scenes/<name>.ctl.js`) load only from disk, never through the API.
 
-## 7. Recording and analysis (what Factory I/O does not have)
+## 7. Recording and analysis
 
 **Recording**
 - Events go to a 200k in-memory ring and to `runs/<iso>_<scene>.ndjson` (gitignored).
@@ -474,54 +505,222 @@ The scene is the same, with `io.mode: "twin"`:
 
 ## 11. Scene library
 
-| when | scene | shows |
-|---|---|---|
-| P1 | **cyl-on-slide** (hello world) | button → PLC → valve → cylinder on servo slide → reed → PLC → lamp |
-| P3 | From A to B | conveyor, photo-eye, emitter/remover |
-| P3 | Sorting by Height | height photo-eyes plus a pusher cylinder with reed switches |
-| P3 | Separating Station | escapement stoppers, a core SPM pattern |
-| P3 | Buffer Station / Queue of Items | stoppers and pallets |
-| P3 | Pick & Place (XZ pneumatic) | two-axis pneumatic pick and place with vacuum or gripper |
-| P3 | Assembler | lid onto base on an **index table** |
-| P3 | sort-by-material | inductive proximity (metalOnly) latched upstream of the stop beam; steel and plastic templates |
-| P3 | gripper-transfer | 2-finger gripper on a pneumatic lift on a pneumatic traverse, cylinder mounted on a rod end, a cross belt; a missed grip is a FAULT |
-| P3 | press-station | process station without a belt: feeder into a clamped nest, press with a dwell, ejector onto a chute |
-| P3 | palletizing | the heaviest scene: a 10 x 10 pallet of 100 spark plugs, a five-up vacuum gantry on two servo axes, a rotary carrier with five-slot jigs, an unload head. It is what pins the pose cache and the step budget |
-| P5 | **CE Insert Track** (ceinsert) | ST1 stoppers/dividers, ST2 buffer with servo in mirror mode, ST3 ejector/pusher, QR reader |
-| P6 | **Blurobot cell** (rb4axis) | rail + 3R arm (mirror joints), process stations with covers, physical PCBs |
-| P6 | press-fit, drill, seaming | lifter/radial cylinders, motor, servo, nest, index table; press-fit adds a nest that captures a pin at seat depth |
-| P6 | Converge Station, Production Line, Sorting by Weight, Elevator | the same primitives |
-| skip | Filling Tank, Level Control, Batching | fluids and analogue processes, not SPM |
-| later | Palletizer, Automated Warehouse | need a gantry or stacker; possible later with servo mode |
+Every scene is built from a real source (a video, an open repo or a maker's manual), never
+invented. Each has `scenes/<name>.json`, a PLC program `<name>.st`, its generated
+`<name>.sysmac.xml`, and, until V1 retires them, an internal controller `<name>.ctl.js`.
 
-Each scene can include `scenes/<name>.st`, a PLC demo program, and `scenes/<name>.ctl.js`, an
-internal controller used for tests and demos without a PLC. The UI marks the internal controller
-in yellow ("INTERNAL CONTROLLER — not a PLC"). Scene tests check numbers and tags against the
-source repos (rb4axis `robot.config.json`, ceinsert `extract/variables.tsv`), with a loud SKIP
-when those repos are absent.
+| scene | shows |
+|---|---|
+| cyl-on-slide | hello world: button → PLC → valve → cylinder on a servo slide → reed → PLC → lamp |
+| a-to-b | conveyor, photo-eye, emitter/remover; the invariant-waiting and write-off rules |
+| stopper-pusher | stopper and pusher on a belt, discharge onto a chute |
+| pick-place | XZ pneumatic pick and place with a vacuum cup and a nest |
+| assembler | lid onto base on an index table |
+| sort-by-height | two height beams decide, the pusher sorts |
+| sort-by-material | inductive proximity latched upstream of the stop beam; steel and plastic |
+| buffer-queue | metering one part at a time into a buffer line |
+| gripper-transfer | 2-finger gripper on a lift on a traverse; a missed grip is a FAULT |
+| press-station | feeder into a clamped nest, press with a dwell, ejector onto a chute |
+| pallet-line | pallets on a belt, a pop-up stop, a lift that locates the pallet |
+| palletizing | a 10 × 10 pallet of plugs, a five-up vacuum gantry, a rotary carrier, an unload head; the step-budget scene |
+| blurobot | the rb4axis cell: rail + 3R arm, two ICC testers and two DW writers with covers |
+| robot-pitch | FANUC LR Mate 200iD from its URDF; a pitch-change cup head |
+| lathe-line | the TAKISAWA line from its video: NDESO-087 on a rail, two lathes, knife-blade escapement |
+| carton-sorter | Open Industry Project numbers: angled diverters and a shift-register tracker |
+| mps-sorting | Festo MPS sorting station from its manual: colour and metal sorting |
+
+Next, from the old list: **CE Insert Track** (ceinsert, needs V4 `mirror`), press-fit, drill and
+seaming cells. Fluids and analogue processes (filling tank, level control, batching) stay out:
+they are not SPM.
 
 **Left out on purpose (YAGNI):**
-- Factory I/O `.factoryio` import (it is plain XML, so it can come later);
-- first-person camera and VR;
-- STL/STEP import (until box/cyl/sphere is not enough);
-- cylinder force/stall modelling (until press or clamp checks need it);
-- Modbus (until a non-Omron PLC needs it).
+- Factory I/O `.factoryio` import;
+- VR and stereoscopic views, game controllers;
+- NVIDIA Omniverse / OpenUSD, AutoMod export, 3D PDF;
+- catalog encryption and licensing;
+- a friction-free "analytic" physics mode for speed (Sim3D has one). The headless plant already
+  runs many times faster than real time; measure before adding a second physics;
+- native Rockwell, Siemens or Beckhoff drivers, and Modbus. OPC UA reaches Sysmac, PLCSIM
+  Advanced, TwinCAT and CODESYS; a second driver waits for a PLC that needs it;
+- cylinder force/stall modelling beyond the V2 fault models.
+
+Done since the first plan, although it was left out then: the first-person walk (`web/pov.js`)
+and the maker's CAD as shells (`tools/step_to_stl.py`, a `mesh` shape, drawn and never collided).
 
 ## 12. Repo layout (grows only when a phase needs it)
 
 ```
 manufacturing_io/
   package.json  package-lock.json  .gitattributes (* -text)  .gitignore
-  README.md  CLAUDE.md  docs/PLAN.md  docs/SETUP.md (Studio steps + symptom → cause)
-  server/  main.js  opcua.js  plant.js
-  lib/     math.js  scene.js  components.js  analysis.js
-  web/     index.html  app.js  editor.js  charts.js
-  tools/   gen_sysmac.js
-  scenes/  <name>.json  [<name>.st]  [<name>.ctl.js]  <name>.sysmac.xml  <name>.io.tsv
-  tests/   run.js  lib / plant / opcua / sysmac / analysis / web .test.js
+  README.md  CLAUDE.md  docs/PLAN.md  docs/SETUP.md  docs/SMC2.md
+  server/  main.js  http.js  scenes.js  opcua.js  plant.js  [softplc.js V1]  [fat.js V2]  [drivers/ V4]
+  lib/     math.js  scene.js  components.js  ik.js  [st.js V1]  [analysis.js V3]
+  web/     index.html  app.js  editor.js  pov.js  workshop.js  [charts.js V3]
+  tools/   gen_sysmac.js  gen_lathe_line.js  smc2.js  zip.js  step_to_stl.py
+  scenes/  <name>.json  <name>.st  <name>.sysmac.xml  [<name>.ctl.js until V1]  [<name>.fat.json V2]
+  assets/  robot shells (vendor CAD gitignored)
+  tests/   run.js  lib / plant / rapier / ctl / scenes / opcua / sysmac / smc2 / repo / web / browser .test.js
 ```
 
-## 13. Phases
+## 13. Status (reviewed 2026-09-23)
+
+The original phases P0–P7 were planned against Factory I/O. What they planned and what they
+measured is kept in Appendix A. Against the code as it stands:
+
+| phase | status | still open |
+|---|---|---|
+| P0 bootstrap, OPC UA, latency | **done** | — |
+| P1 cyl-on-slide round trip | **done** | — |
+| P2 editor | **partial**: undo/redo, TransformControls, validate, `baseVersion` 409 | a preset catalog; tag autocomplete from `/api/tags` to be verified end to end; servo `positions` mode (`servoLinear` is `plant` mode only) |
+| P3 parts and material flow | **done**: loose parts, belt slip, holders, the hand, pallets, index table, 17 scenes, watchdog + FAULT + operator panel | live PLC runs of the newer scenes; **sort-by-material's rare fault at 1204 s** (needs its own reproduction); **blurobot has no operator panel** (`joint` needs `ovr` and jog first) |
+| P4 analyzer | **not started**. Runs are recorded as NDJSON, and nothing reads them yet | all of it → V3 |
+| P5 IO list and ceinsert | **not started**. `gen_sysmac.js` has `--scene` only | `--iolist/--bind/--shim`, servo `mirror`, the ceinsert scene → V4 |
+| P6 more machines | **mostly done**: blurobot, robot-pitch, lathe-line, palletizing, press-station, carton-sorter, mps-sorting | the rb4axis PLC program driving blurobot (needs `mirror`) → V4 |
+| P7 twin and FUXA | **not started** | → V8 |
+
+## 14. Emulate3D feature map
+
+| Emulate3D | here now | gap → phase |
+|---|---|---|
+| friction-based, emergent load movement | Rapier, belt slip + friction torque, holders | — |
+| internal soft PLC (ladder / IL / SFC) | `.ctl.js` twins written by hand beside each `.st` | an ST interpreter runs the `.st` itself → **V1** |
+| co-simulation at variable speed (Logix Echo protocol) | the internal controller already scans in lockstep with the plant step (`server/plant.js`, step 1) | the soft-PLC inherits it, so a test runs faster than real time and replays bit for bit → V1, V2 |
+| Factory Test: Test Runner | `tests/ctl.test.js` against a faked plant, the 30-minute soak | scenario files, a runner and a report → **V2** |
+| Factory Test: Fault Framework | forcing (the IO image) and the hand (the material flow) | faults in the component MODELS → **V2** |
+| Tag Browser, PLC connections | OPC UA browse, `/api/tags`, overwrite detection, heartbeat | one driver interface, a mapping panel and a mismatch report → V4 |
+| HMI panels | the operator panel on every scene | — |
+| analyser, data collection (Throughput, TimeInState, StateTracker) | recorder only | V3 |
+| experiments manager, data-driven models | — | V5 |
+| QuickStart catalog, snapping, conveyor profile editor, BOM, dimensions | `TYPES` + the editor | V6 |
+| CAD import with data reduction | shells, `tools/step_to_stl.py` | written pipeline → V6 |
+| camera paths, videos, viewer file | walk-in, workshop | V7 |
+| robot controller emulation (ROBOGUIDE, RobotStudio) | joint chains and IK tables solved once | after V8, if a real cell needs it |
+| Omniverse / OpenUSD, VR, AutoMod export, catalog licensing | — | out of scope (§11) |
+
+## 15. Roadmap
+
+Each phase ends runnable, with a written exit criterion. Controls testing first.
+
+### V1 — Soft-PLC: the `.st` runs itself
+- `lib/st.js` is pure, with no three and no Rapier, so the browser can later show online values.
+  It holds a parser and an interpreter for the subset the scenes use. Counted in `scenes/*.st` on
+  2026-09-23: 60 `TON`, 35 `CASE`, 55 `ELSIF`, 11 `MOD`, 4 `ABS`, 3 `ARRAY`, 1 `WHILE`. It also
+  needs `VAR … END_VAR` with initial values, `:=`, `IF`, and comparison and boolean operators.
+- **Integer types wrap as the PLC wraps them**: `UDINT` modulo 2³², `INT`/`DINT` signed. The
+  write-off clamp exists because `EM - RM` underflows a `UDINT`. An interpreter on plain JS
+  numbers would hide exactly the bug it must reproduce. An unknown construct is a parse ERROR,
+  never a skip.
+- `server/softplc.js` → `{ scan(io, t), reset() }`, the same contract as a `.ctl.js`, so the plant
+  loop does not change. An optional `scanMs` (the task period) scans every k steps.
+- **Parity gate, per scene:** run the `.ctl.js` and the `.st` for 30 minutes of sim and require an
+  identical NDJSON event log. Only then is that scene's `.ctl.js` deleted. The step-number
+  comparison in `tests/ctl.test.js` becomes a test of the ST, and the faked-plant races run
+  against it.
+- **Exit:**
+  - every scene runs its `.st` in the soft-PLC, and the soak numbers match Appendix A;
+  - no `.ctl.js` is left, and `--internal` means the soft-PLC.
+
+### V2 — Test Runner + Fault Framework (the controls-testing core)
+- `scenes/<name>.fat.json` holds `cases[]`, each `{ name, steps: [{ at | when, do }], expect: [...] }`.
+  - **Actions:** `press`, `dial`, `force`, `unforce`, `hand` (take / jam / drop), `fault`, `clear`.
+  - **Assertions:** `step = N within T`, `tag = v within T`, `cycles ≥ n in a window`, `FAULT
+    raised within T`, part balance, and no lost part, NaN or warning. Assertions can also use the
+    Denso alarm categories (Emergency, Cycle stop, Fault stop, Warning) where a scene exposes them.
+- **Faults change the MODEL.** A `faults` map per type in `lib/components.js`, applied in the
+  plant's `sample()`:
+  - sensors: stuck on, stuck off, flicker;
+  - cylinders: slow (× k), stalled, dead valve, air loss (every pneumatic at once);
+  - servos: Done never comes;
+  - emitters: a burst, a missing part.
+
+  These are three layers that find three kinds of bug, and the plan keeps them apart:
+  - **forcing** lies on the IO image: does the PLC handle a lying sensor?
+  - **the hand** breaks the material flow: does the sequence handle a part that stopped moving?
+  - **a fault** breaks the machine: does the program notice a cylinder that never arrives?
+- `node server/main.js --fat <scene>` runs headless on the soft-PLC, faster than real time and
+  deterministic. With `--endpoint` it runs the same cases against the live PLC at 1×. It writes
+  three things:
+  - a JSON result;
+  - a self-contained HTML report: per case PASS/FAIL, the moment of failure, and the tag trace
+    around it;
+  - the NDJSON, as the evidence.
+- The open P3 items become FAT cases: the sort-by-material 1204 s landing, the blurobot panel,
+  the live runs of the newer scenes.
+- **Exit:**
+  - every scene has a FAT file: a normal cycle plus every fault that applies to its components;
+  - all of them pass on the soft-PLC inside `node tests/run.js`;
+  - a-to-b's FAT passes live against the Sysmac simulator.
+
+### V3 — Analyzer (old P4)
+`lib/analysis.js`, then in the browser the time chart, Gantt, cycle time, line balance,
+OEE-lite, compare and CSV, plus `--report` and `--replay` on the command line (§7). The V2 report
+uses the same time chart. **Exit:** as the old P4 (Appendix A).
+
+### V4 — Driver interface and tag mapping (old P5)
+- `server/drivers/{opcua,internal,replay}.js` share one contract:
+  `connect / browse / subscribe / write / close`. The twin read-only guard moves into that
+  interface, so no driver can forget it.
+- A **Tag Browser** panel. It browses the PLC and auto-maps bindings by name and by comment. It
+  reports the mismatches: missing tag, type mismatch, direction conflict, coil on an input.
+- `--iolist`, `--bind`, `--shim`; servo `mirror` and `positions` modes; the CE Insert Track
+  scene; the rb4axis program driving blurobot. **Exit:** as the old P5 and P6.
+
+### V5 — Experiments (Sim3D-lite)
+An `experiments` block sweeps parameters: belt speed, stroke times, feed rate, override. The runs
+go in parallel, headless on the soft-PLC (`worker_threads`), and the result is a table of
+throughput, cycle time and bottleneck. Emitter schedules can come from a CSV. **Exit:** a sweep
+over a-to-b's belt speed reproduces the cycle times measured one run at a time.
+
+### V6 — Catalog and layout
+A preset catalog with thumbnails; snap connectors between conveyors that show the flow; BOM
+export; dimensions; the CAD import pipeline, written down.
+
+### V7 — Presentation
+Camera paths; a standalone replay viewer (one HTML file plus the NDJSON) that anyone can open
+without the server; a screenshot and video helper.
+
+### V8 — Digital twin (old P7)
+As §8 and the old P7, now reading through the V4 driver interface.
+
+## 16. Tests (`node tests/run.js`)
+
+| suite | checks |
+|---|---|
+| `lib` | math compose/invert; `validate()` rejects missing parent, cycles, unknown type, duplicate ids and two writers; the rod-end world pose of the cylinder on the slide equals hand-computed numbers; stroke time ±1 step; cushion and each valve type; reed band edges and hysteresis; servo matches test vectors copied from rb4axis `langkahSumbu`; the cycloid reaches the pitch exactly and `inPos` only in dwell |
+| `plant` | kinematic bodies line up with links; a conveyor part reaches the photo-eye on time; grip take/release; a cylinder pushes a part; the hand holds a part still (0.00 mm in 4 s over a running belt), the queue builds behind it, the run still replays, and the hand never takes a part a holder has; two runs give identical logs; a 12 ms blip becomes 100 ms plus a warning; static check that physics never calls `driver.write`. Loud SKIP if Rapier is not installed |
+| `opcua` | a fake session returning 3 browse batches is fully mapped; `plain()`; the whitelist; twin rejects every write; suffix path matching; live echo only when the simulator answers, else loud SKIP |
+| `sysmac` | PublishOnly on every bound tag; `ArrayTypeSpec`, never `<TypeName>ARRAY`; no `P_` POUs; LF in `<ST>`; `--check`; IO list has 4 columns, unique addresses, allowed types, `ST<n>` present, every SOL has an AS with the same stem; `--bind` against a fixture; XSD via the sysmac script or loud SKIP |
+| `analysis` | cycle-time rules on synthetic logs, Gantt intervals, bottleneck, OEE formulas, compare alignment, CSV quoting |
+| `web` | static checks: no CDN in the importmap; exact dependency pins; `lib/` never imports three or Rapier; `web/` builds geometry only from `lib` shapes and poses only from `worldPoses`; panel updates throttled; sliders use `onchange` |
+| `browser` | headless Chrome over CDP, only with `MIO_BROWSER=1`: the editor end to end (tree, properties, undo/redo, Add, Save to disk, canonical text, 3D click), then the hand on `a-to-b` — a real mouse press on a part jams it in the plant, it holds still over the running belt, and the release lets it go. No page errors on either page |
+| `st` (V1) | the interpreter on each construct the scenes use; `UDINT` wraps at 2³² (the write-off underflow); an unknown construct is an error; `.st` and `.ctl.js` give identical event logs per scene until the `.ctl.js` is retired |
+| `fat` (V2) | every `scenes/<name>.fat.json` passes on the soft-PLC; a deliberately broken sequence FAILS its case (a runner that cannot fail proves nothing); faults, forcing and the hand stay three separate layers |
+
+## 17. Risks
+
+| risk | handling |
+|---|---|
+| Sysmac OPC UA revises sampling to ≥ 50 ms | measured in P0; commands as levels or counters; `minPulseMs` / `offDelayMs`; PLC-side trace |
+| simulator OPC UA server needs Studio ≥ 1.62 | check first (SETUP.md) |
+| AT-assigned variables not writable in the simulator | tested in P0, before naming conventions are fixed |
+| MC axis variables are not publishable | generated `--shim` copies them into published globals |
+| PLC coil overwrites a sensor tag | overwrite detection warning |
+| program not assigned to a task (silent) | `MIO_HEARTBEAT` check in the UI |
+| Windows timer granularity (~15 ms) | accumulator + 50-step cap + overrun counter |
+| Rapier 0.14 → 0.20 API changes | P0 smoke test |
+| determinism | deterministic build; tests still allow ±1 step on edge times |
+| many parts | part cap with recycling, deltas only, `dtMs` knob. Parts must NOT sleep: Rapier 0.20 kinematic links do not wake them (measured, `rapier.test.js`). If CPU matters, wake parts that touch a moving link |
+| three `TransformControls` API change | exact pin + `getHelper()` note |
+| two people editing at once | `baseVersion` → 409 |
+| writing to a real machine by accident | twin read-only inside the driver |
+| scope creep toward all of Emulate3D | controls testing first (V1, V2); everything in §11's out-of-scope list stays out until a real machine needs it |
+| the soft-PLC and the real PLC disagree (types, scan order, TON timing) | V1 parity gate against the `.ctl.js`, integer wrap modelled, parse errors never skipped; a FAT that passes on the soft-PLC is re-run live before it counts as commissioning evidence |
+| a test runner that always passes | the `fat` suite includes a sequence broken on purpose that must FAIL |
+
+## Appendix A. Phase history P0–P7 (as planned, with what was measured)
+
+The phases as first written, against Factory I/O, with the status notes and measurements taken
+while building them. The rules in CLAUDE.md cite this evidence, so it stays here word for word.
 
 Each phase ends runnable, with a written exit criterion.
 
@@ -842,34 +1041,3 @@ Open in P6: press-fit, drill and seaming cells; the rb4axis PLC program itself d
   (`GET /api/tags`, `PUT /api/tag/values`) for FUXA's WebAPI device, bound to 127.0.0.1. FUXA's
   own API had an unauthenticated tag disclosure (CVE-2026-43946).
 - **Exit:** twin runs against a real or simulated PLC with zero writes, proven by the driver test.
-
-## 14. Tests (`node tests/run.js`)
-
-| suite | checks |
-|---|---|
-| `lib` | math compose/invert; `validate()` rejects missing parent, cycles, unknown type, duplicate ids and two writers; the rod-end world pose of the cylinder on the slide equals hand-computed numbers; stroke time ±1 step; cushion and each valve type; reed band edges and hysteresis; servo matches test vectors copied from rb4axis `langkahSumbu`; the cycloid reaches the pitch exactly and `inPos` only in dwell |
-| `plant` | kinematic bodies line up with links; a conveyor part reaches the photo-eye on time; grip take/release; a cylinder pushes a part; the hand holds a part still (0.00 mm in 4 s over a running belt), the queue builds behind it, the run still replays, and the hand never takes a part a holder has; two runs give identical logs; a 12 ms blip becomes 100 ms plus a warning; static check that physics never calls `driver.write`. Loud SKIP if Rapier is not installed |
-| `opcua` | a fake session returning 3 browse batches is fully mapped; `plain()`; the whitelist; twin rejects every write; suffix path matching; live echo only when the simulator answers, else loud SKIP |
-| `sysmac` | PublishOnly on every bound tag; `ArrayTypeSpec`, never `<TypeName>ARRAY`; no `P_` POUs; LF in `<ST>`; `--check`; IO list has 4 columns, unique addresses, allowed types, `ST<n>` present, every SOL has an AS with the same stem; `--bind` against a fixture; XSD via the sysmac script or loud SKIP |
-| `analysis` | cycle-time rules on synthetic logs, Gantt intervals, bottleneck, OEE formulas, compare alignment, CSV quoting |
-| `web` | static checks: no CDN in the importmap; exact dependency pins; `lib/` never imports three or Rapier; `web/` builds geometry only from `lib` shapes and poses only from `worldPoses`; panel updates throttled; sliders use `onchange` |
-| `browser` | headless Chrome over CDP, only with `MIO_BROWSER=1`: the editor end to end (tree, properties, undo/redo, Add, Save to disk, canonical text, 3D click), then the hand on `a-to-b` — a real mouse press on a part jams it in the plant, it holds still over the running belt, and the release lets it go. No page errors on either page |
-
-## 15. Risks
-
-| risk | handling |
-|---|---|
-| Sysmac OPC UA revises sampling to ≥ 50 ms | measured in P0; commands as levels or counters; `minPulseMs` / `offDelayMs`; PLC-side trace |
-| simulator OPC UA server needs Studio ≥ 1.62 | check first (SETUP.md) |
-| AT-assigned variables not writable in the simulator | tested in P0, before naming conventions are fixed |
-| MC axis variables are not publishable | generated `--shim` copies them into published globals |
-| PLC coil overwrites a sensor tag | overwrite detection warning |
-| program not assigned to a task (silent) | `MIO_HEARTBEAT` check in the UI |
-| Windows timer granularity (~15 ms) | accumulator + 50-step cap + overrun counter |
-| Rapier 0.14 → 0.20 API changes | P0 smoke test |
-| determinism | deterministic build; tests still allow ±1 step on edge times |
-| many parts | part cap with recycling, deltas only, `dtMs` knob. Parts must NOT sleep: Rapier 0.20 kinematic links do not wake them (measured, `rapier.test.js`). If CPU matters, wake parts that touch a moving link |
-| three `TransformControls` API change | exact pin + `getHelper()` note |
-| two people editing at once | `baseVersion` → 409 |
-| writing to a real machine by accident | twin read-only inside the driver |
-| scope creep toward all of Factory I/O | SPM kit first; Factory I/O classics interleaved as smoke tests |
