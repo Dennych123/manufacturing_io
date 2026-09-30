@@ -6,7 +6,7 @@
 //   1. PLC outputs that arrived, panel presses, the internal controller's scan
 //   2. component.step()
 //   3. worldPoses() -> kinematic targets
-//   4. conveyors and held parts (P3)
+//   4. conveyors, held parts (P3), pins on tracks
 //   5. world.step()
 //   6. part sensors (P3)
 //   7. publish sensors (minPulseMs hold), record edges
@@ -16,11 +16,17 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { compile, worldPoses, tags as sceneTags, validate, stringify, partRoles } from '../lib/scene.js';
 import { qmul, qaxis, qeuler, qrot, pose, compose, invert, apply, rng, hash32 } from '../lib/math.js';
-import { DENSITY, luminance, DARK } from '../lib/components.js';
+import { DENSITY, luminance, DARK, laneAdvance, lanePoint, trackAccel } from '../lib/components.js';
 
 // Collision groups, (memberships << 16) | filter. Machine and parts collide with everything;
 // part sensors cast with PART_RAYS so they see parts only, never the machine.
 const G_MACHINE = (0x0001 << 16) | 0xffff, G_PART = (0x0002 << 16) | 0xffff;
+/**
+ * A pin on a track: a part the part sensors' rays still see (they carry every membership bit), but
+ * that interacts with nothing else - it is moved along its lane, and hundreds of them stand a few
+ * mm apart, which only fed the broad phase pairs nobody needed.
+ */
+const G_TRACK = (0x0002 << 16) | 0x0004;
 export const PART_RAYS = (0xffff << 16) | 0x0002;
 /** Below this a part has fallen off the machine: removed, and reported. mm */
 const LOST_Z = -1000;
@@ -159,11 +165,27 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   const byId = new Map(comps.map(r => [r.id, r]));
   const emitters = comps.filter(r => r.t.flow === 'emitter').map(r => ({ r, rand: rng(hash32(r.id)), next: /** @type {any} */ (null), slot: 0 }));
   const removers = comps.filter(r => r.t.flow === 'remover');
+  const joiners = comps.filter(r => r.t.flow === 'joiner');
   const sensors = comps.filter(r => r.t.sense);
   const holders = comps.filter(r => r.t.hold).map(r => ({ r, link: '', prev: /** @type {any} */ (null) }));
   /** Holders a gripper may take a part OUT of (a chuck, a locating pin), by id and as a list. */
   const nestHolders = holders.filter(h => h.r.t.hold === 'nest');
   const holderOf = new Map(holders.map(h => [h.r.id, h]));
+  // Pin tracks (lib/components.js `track`): each lane is a queue of {pt, s, v, hold}, FRONT first.
+  // Processed downstream first, so a lane sees where the pins ahead of it already are this step.
+  const tracks = comps.filter(r => r.t.flow === 'track').map(r => ({
+    r, id: r.id, p: r.p, a: trackAccel(r.p), made: 0, next: /** @type {any} */ (null), lastF: /** @type {any} */ (null),
+    lanes: r.p.lanes.map(() => /** @type {any[]} */ ([])),
+    acc: r.p.supply.map((/** @type {any} */ sp) => sp.lanes.map(() => 0)),
+    gates: r.p.gates.map((/** @type {any} */ g) => ({ ...g, closed: false })),
+    sep: 0, push: 0, esc: /** @type {Set<any>} */ (new Set()),
+  }));
+  const trackOf = new Map(tracks.map(tr => [tr.id, tr]));
+  for (const tr of tracks) tr.next = tr.p.next ? trackOf.get(tr.p.next) ?? null : null;
+  {
+    const hops = (/** @type {any} */ tr) => { let n = 0; for (let x = tr.next; x && n <= tracks.length; x = x.next) n++; return n; };
+    tracks.sort((a, b) => hops(a) - hops(b));
+  }
   /** Metal parts (inductive proximity sees them). */
   const METAL = new Set(['steel', 'alu']);
   /** A part too dark to return light to a retro-reflective sensor (`seesDark: false`). */
@@ -271,11 +293,15 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     const rf = (s0?.kind === 'box' ? Math.hypot(s0.size[0], s0.size[1]) / 4 : (s0?.r ?? 10) * 2 / 3) * SK;
     const pt = { uid, tpl, body, cols, rf, ctr: s0?.at ?? [0, 0, 0], cw: /** @type {number[]} */ ([0, 0, 0]),
                  held: /** @type {any} */ (null), rel: /** @type {any} */ (null), pin: /** @type {any} */ (null), pinTo: /** @type {any} */ (null), off: false,
+                 // on a track lane / in its escapement (see the track step)
+                 track: /** @type {any} */ (null), esc: /** @type {any} */ (null), escTr: /** @type {any} */ (null), P: /** @type {any} */ (null), drop: 0,
                  // A part held by something that never moves is written to Rapier once and then
                  // left alone: 95 plugs standing in pallet pockets used to cost 300 allocations
                  // and 200 boundary calls a step to be told, again, exactly where they already are.
                  parked: false };
     pt.cw = partCentre(pt);
+    // A pin hangs by its head: its origin (the tip) sits this far below the rail top.
+    /** @type {any} */ (pt).drop = pp.kind === 'pin' ? pp.size[2] - pp.headH : 0;
     parts.set(uid, pt);
     free.add(pt);
     for (const c of cols) colPart.set(c.handle, pt);
@@ -347,7 +373,14 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     if (r.t.hold === 'vacuum') {
       let found = null;
       world.intersectionsWithShape({ x: F.p[0] * SK, y: F.p[1] * SK, z: F.p[2] * SK }, { x: 0, y: 0, z: 0, w: 1 }, new R.Ball(r.p.reach * SK),
-        (/** @type {any} */ col) => { const pt = colPart.get(col.handle); if (pt && !pt.held && !pt.pin) { found = pt; return false; } return true; }, undefined, PART_RAYS);
+        // A cup (or a magnet) may take a part out of a NEST, the same hand-over a gripper makes
+        // (see inZone): the add-on's magnet heads lift the M&B off its turntable and out of the
+        // vacuum area, both of which hold it. Never out of another cup or a gripper.
+        (/** @type {any} */ col) => {
+          const pt = colPart.get(col.handle);
+          if (pt && !pt.pin && (!pt.held || defs.get(pt.held.id).t.hold === 'nest')) { found = pt; return false; }
+          return true;
+        }, undefined, PART_RAYS);
       return found;
     }
     // A gripper reaches here only as the fallback in the holders loop (`cand ?? candidate(...)`),
@@ -387,15 +420,49 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     return true;
   }
-  /** @param {string} uid @param {'remove'|'lost'|'reset'} ev */
+  /** @param {string} uid @param {'remove'|'lost'|'reset'|'join'} ev */
   function removePart(uid, ev) {
     const pt = parts.get(uid);
     if (!pt) return;
+    offTrack(pt);
     for (const c of pt.cols) colPart.delete(c.handle);
     world.removeRigidBody(pt.body);
     parts.delete(uid);
     free.delete(pt);
     rec({ t: plant.t, k: 'part', uid, ev });
+  }
+  /** A pin leaves its lane or its escapement (the hand took it, a remover did, a reset). @param {any} pt */
+  function offTrack(pt) {
+    if (pt.track) {
+      const l = pt.track.tr.lanes[pt.track.i], k = l.indexOf(pt.track);
+      if (k >= 0) l.splice(k, 1);
+      pt.track = null;
+    }
+    if (pt.escTr) { pt.escTr.esc.delete(pt); pt.escTr = null; pt.esc = null; }
+    for (const c of pt.cols) c.setCollisionGroups(G_PART);
+  }
+  /** A pin that stood still as a fixed body moves again. @param {any} q */
+  function wake(q) {
+    if (!q.fixed) return;
+    q.pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, false);
+    q.fixed = false;
+  }
+  /** Kinematic target for a pin, and where it now is (mm). @param {any} pt @param {import('../lib/math.js').Pose} P */
+  function putPin(pt, P) {
+    pt.P = P;
+    pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
+    pt.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
+  }
+  /** Where a pin hangs in lane i at s: head on the rail tops, square to the track frame. @param {any} tr @param {any} F @param {number} i @param {number} s @param {any} pt */
+  function pinPose(tr, F, i, s, pt) {
+    const l = lanePoint(tr.p, i, s);
+    return compose(F, pose([l[0], l[1], l[2] - pt.drop]));
+  }
+  /** Hand a pin to a carrier link (the separator's rod, the pusher's rod, the track): it rides it at the pose it has now. @param {any} pt @param {any} W @param {string} id @param {string} link */
+  function carry(pt, W, id, link) {
+    pt.held = { id, link };
+    pt.rel = compose(invert(W[id][link]), pt.P);
+    pt.parked = false;
   }
   function spawnSceneParts() {
     const W = worldPoses(scene, dofOf());
@@ -433,7 +500,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     /** @type {Array<(msg: string, t: number) => void>} */
     warnListeners: [],
     dof: dofOf(),
-    step, exchange, start, stop, reset, press, dial, holdPart, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn, setScale,
+    step, exchange, start, stop, reset, press, dial, holdPart, force, fromPlc, plcSaw, driverUp, snapshot, status, close, warn, setScale, tune,
     /** Advance `ms` of sim time now, without pacing (tests, fast internal runs). @param {number} ms */
     run(ms) { for (let n = Math.round(ms / dtMs); n > 0; n--) step(); },
   };
@@ -539,12 +606,21 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     for (const bl of belts) {
       const r = byId.get(bl.id), F = W[bl.id][bl.link], vb = r.s.v * SK;
       const u = qrot(F.q, [1, 0, 0]), n = qrot(F.q, [0, 0, 1]), vbelt = [u[0] * vb, u[1] * vb, u[2] * vb];
+      const side = qrot(F.q, [0, 1, 0]), cz = r.p.centering || 0;
       for (const pt of parts.values()) {
         if (pt.held || pt.pin) continue;                      // a held part follows its holder; a pinned one stays put
         let touch = false;
         for (const pc of pt.cols) world.contactPair(bl.col, pc, (/** @type {any} */ m) => { if (m.numContacts() > 0) touch = true; });
         if (!touch) continue;
-        const v = pt.body.linvel(), dv = beltDv([v.x, v.y, v.z], vbelt, n, r.p.mu, dt), m = pt.body.mass();
+        // `centering`: the belt's guides funnel a part to its centre line, at up to this speed (a part
+        // dropped onto a belt from a side lands off centre and would ride there).
+        let vt = vbelt;
+        if (cz > 0) {
+          const off = (pt.cw[0] - F.p[0]) * side[0] + (pt.cw[1] - F.p[1]) * side[1] + (pt.cw[2] - F.p[2]) * side[2];
+          const vl = Math.max(-cz, Math.min(cz, -off * 4)) * SK;
+          vt = [vbelt[0] + side[0] * vl, vbelt[1] + side[1] * vl, vbelt[2] + side[2] * vl];
+        }
+        const v = pt.body.linvel(), dv = beltDv([v.x, v.y, v.z], vt, n, r.p.mu, dt), m = pt.body.mass();
         pt.body.applyImpulse({ x: m * dv[0], y: m * dv[1], z: m * dv[2] }, true);
         const w = pt.body.angvel(), dw = beltSpin(w.x * n[0] + w.y * n[1] + w.z * n[2], r.p.mu, dt, pt.rf);
         pt.body.setAngvel({ x: w.x + n[0] * dw, y: w.y + n[1] * dw, z: w.z + n[2] * dw }, true);
@@ -571,17 +647,22 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         pt.body.setNextKinematicRotation({ x: pt.pin.q[0], y: pt.pin.q[1], z: pt.pin.q[2], w: pt.pin.q[3] });
         continue;
       }
+      if (pt.track) continue;                  // a pin in a lane: the track step below moves it
       if (!pt.held) continue;
       if (pt.parked) continue;                 // its holder never moves: it is already there
       const P = compose(W[pt.held.id][pt.held.link], pt.rel);
+      pt.P = P;
       pt.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
       pt.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
       if (still.has(pt.held.id)) pt.parked = true;
     }
+    // 4c. pin tracks
+    for (const tr of tracks) trackStep(tr, W);
     // 5. physics
     world.step();
     // A part with a NaN pose, or below the floor, is gone: say so instead of streaming garbage.
     for (const pt of parts.values()) {
+      if (pt.track || pt.esc) continue;        // moved along a track: it cannot have fallen anywhere
       const t = pt.body.translation();
       if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z) && t.z >= LOST_Z * SK) continue;
       warn('part lost ' + pt.uid + ' at ' + [t.x, t.y, t.z].map(v => Math.round(v / SK)).join(', ') + ' mm');
@@ -589,7 +670,9 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     // Every part's world centre for this step: the removers and the holders all read it from here.
     // A parked part sits still on something that never moves, so its centre is read once.
-    for (const pt of parts.values()) if (!pt.parked) pt.cw = partCentre(pt);
+    // Pins on a track are skipped too: they are never free, and no remover or holder takes them.
+    // Reading 400 of them from Rapier every step was a third of this scene's step (measured).
+    for (const pt of parts.values()) if (!pt.parked && !pt.track && !pt.esc) pt.cw = partCentre(pt);
     // 6a. material flow: emitters spawn at their frame once the spot is clear; removers take
     // every part whose centre is inside their box.
     for (const em of emitters) {
@@ -603,7 +686,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
         const gx = slots > 1 ? (n % cols - (cols - 1) / 2) * pitch : 0;
         const gy = slots > 1 ? (Math.floor(n / cols) - (rows - 1) / 2) * pitchY : 0;
         const off = j > 0 ? [gx + (em.rand() * 2 - 1) * j, gy + (em.rand() * 2 - 1) * j, 0] : (gx || gy ? [gx, gy, 0] : undefined);
-        em.next = compose(W[r.id][defs.get(r.id).root], pose(off));
+        const jd = r.p.jitterDeg || 0;
+        em.next = compose(W[r.id][defs.get(r.id).root], pose(off, jd > 0 ? [0, 0, (em.rand() * 2 - 1) * jd] : undefined));
       }
       if (!spawnClear(defs.get(r.p.template), em.next, r.p.dropOnto)) {
         // A tray loader moves on to the next hole rather than waiting on a full one, one hole a
@@ -620,10 +704,65 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       const F = invert(W[r.id][defs.get(r.id).root]), [sx, sy, sz] = r.p.size;
       taken.length = 0;
       for (const pt of parts.values()) {
+        if (pt.track || pt.esc) continue;
         const l = apply(F, pt.cw);
         if (Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz) taken.push(pt.uid);
       }
       for (const uid of taken) { removePart(uid, 'remove'); r.s.n++; }
+    }
+    // 6a'. joiners: an assembly or process station turns the parts in its zone into one part
+    // (lib/components.js joiner). A part a gripper or cup is carrying is passing, not joined; a
+    // part a nest holds is joined, and the new part is held by that nest in its place.
+    for (const r of joiners) {
+      const F = W[r.id][defs.get(r.id).root], inv = invert(F), [sx, sy, sz] = r.p.size;
+      taken.length = 0;
+      let moving = false;
+      for (const pt of parts.values()) {
+        if (pt.track || pt.esc || pt.pin) continue;
+        if (pt.held && defs.get(pt.held.id).t.hold !== 'nest') continue;
+        const l = apply(inv, pt.cw);
+        if (!(Math.abs(l[0]) <= sx / 2 && Math.abs(l[1]) <= sy / 2 && l[2] >= 0 && l[2] <= sz)) continue;
+        taken.push(pt.uid);
+        if (!pt.held) { const v = pt.body.linvel(); if (Math.hypot(v.x, v.y, v.z) / SK > 5) moving = true; }
+      }
+      let go = false;
+      if (r.p.mode === 'tag') go = r.s.req > r.s.n && taken.length > 0;
+      else {
+        r.s.calm = taken.length >= r.p.n && !moving ? r.s.calm + dtMs : 0;
+        go = r.s.calm >= r.p.settleMs && r.s.calm - dtMs < r.p.settleMs;
+      }
+      if (r.p.mode === 'tag' && r.s.req > r.s.n && !taken.length) r.s.req = r.s.n;   // nothing there: the request lapses
+      if (!go) continue;
+      const list = taken.map(u => parts.get(u)).sort((a, b) => a.cw[2] - b.cw[2]);
+      const low = list[0], t = low.body.translation(), q = low.body.rotation();
+      let P = { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] };
+      // The new part stands UPRIGHT on the lowest one's underside: a diaphragm turned over under an
+      // M&B makes a horn that is the right way up (its origin, the underside, is at the top of a
+      // part lying upside down).
+      if (qrot(P.q, [0, 0, 1])[2] < 0) {
+        const s0 = defs.get(low.tpl).shapes.find((/** @type {any} */ x) => x.collide !== false);
+        const H = s0 ? (s0.kind === 'cyl' ? s0.h : s0.kind === 'box' ? s0.size[2] : 2 * (s0.r || 0)) : 0;
+        P = { p: [P.p[0], P.p[1], P.p[2] - H], q: qmul(P.q, qeuler([180, 0, 0])) };
+      }
+      const nestId = low.held?.id ?? null;
+      for (const pt of list) {
+        if (pt.held) { const h = holderOf.get(pt.held.id); if (h && h.r.s.uid === pt.uid) h.r.s.uid = null; }
+        removePart(pt.uid, 'join');
+      }
+      r.s.n++;
+      const uid = r.id + '.' + r.s.n, tpl = r.s.alt && r.p.templateAlt ? r.p.templateAlt : r.p.template;
+      spawnPart(tpl, P, uid, r.id);
+      rec({ t: plant.t, k: 'part', uid, ev: 'join', from: list.map(pt => pt.uid) });
+      const h = nestId ? holderOf.get(nestId) : null;
+      if (h) {
+        const pt = parts.get(uid), link = h.link || (h.link = h.r.t.holdLink || defs.get(h.r.id).root), HF = W[h.r.id][link];
+        pt.rel = compose(invert(HF), P);
+        pt.held = { id: h.r.id, link };
+        free.delete(pt);
+        pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+        refreshPart(pt);
+        h.r.s.uid = uid;
+      }
     }
     // 6b. part sensors: Rapier queries against PARTS only (PART_RAYS). The component model
     // turns s.hit into its output at the next step (NO/NC, off-delay).
@@ -674,7 +813,23 @@ export async function createPlant(scene, { driver = null, controller = null, rec
           // it was caught in. Without this a part is frozen wherever it happened to be when its
           // centre entered the pocket - measured 11.6 mm in the air, which then made a press
           // that stops at the nominal part height squeeze it and fling it off the table.
-          pt.rel = r.t.snap ? pose([0, 0, 0]) : compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
+          pt.rel = r.t.snap === true ? pose([0, 0, 0]) : compose(invert(F), { p: [t.x / SK, t.y / SK, t.z / SK], q: [q.x, q.y, q.z, q.w] });
+          // snap 'yaw': seated square on the floor like a nest, but at the angle it was put down -
+          // the orienting turntable's whole job is to find that angle.
+          // A part put down UPSIDE DOWN stays upside down: the add-on's flip gripper turns the
+          // diaphragm over before the slide, and seating it square turned it back (Denny saw it).
+          if (r.t.snap === true) {
+            const rel = compose(invert(F), { p: [0, 0, 0], q: [q.x, q.y, q.z, q.w] });
+            if (qrot(rel.q, [0, 0, 1])[2] < 0) {
+              const s0 = defs.get(pt.tpl).shapes.find((/** @type {any} */ x) => x.collide !== false);
+              const H = s0 ? (s0.kind === 'cyl' ? s0.h : s0.kind === 'box' ? s0.size[2] : 2 * (s0.r || 0)) : 0;
+              pt.rel = pose([0, 0, H], [180, 0, 0]);
+            }
+          }
+          if (r.t.snap === 'yaw') {
+            const Q = pt.rel.q, yaw = Math.atan2(2 * (Q[3] * Q[2] + Q[0] * Q[1]), 1 - 2 * (Q[1] * Q[1] + Q[2] * Q[2])) * 180 / Math.PI;
+            pt.rel = pose([0, 0, 0], [0, 0, yaw]);
+          }
           // Taken out of a nest (see inZone): that holder loses it here and now, so its `present`
           // drops on the same step - the machine must notice the part it thinks it has is gone.
           if (pt.held && pt.held.id !== r.id) { const prev = holderOf.get(pt.held.id); if (prev) prev.r.s.uid = null; }
@@ -684,11 +839,13 @@ export async function createPlant(scene, { driver = null, controller = null, rec
           pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
           refreshPart(pt);
           r.s.uid = pt.uid;
+          if ('relYaw' in r.s) { const Q = pt.rel.q; r.s.relYaw = Math.atan2(2 * (Q[3] * Q[2] + Q[0] * Q[1]), 1 - 2 * (Q[1] * Q[1] + Q[2] * Q[2])) * 180 / Math.PI; }
           rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'hold', by: r.id });
         }
       } else if (!want && r.s.uid) {
         const pt = parts.get(r.s.uid);
         r.s.uid = null;
+        if ('relYaw' in r.s) r.s.relYaw = null;
         if (pt) {
           pt.held = null;
           pt.parked = false;
@@ -704,6 +861,123 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     // 7. sensors -> PLC image
     publishAll();
+  }
+
+  /**
+   * One step of a pin track: gates, the lanes' queues (lib/components.js laneAdvance), hand-over to
+   * the next track where a lane end meets one of its lane starts, the bowl feeders, and the
+   * escapement at the lower end.
+   * @param {any} tr @param {Record<string, Record<string, import('../lib/math.js').Pose>>} W
+   */
+  function trackStep(tr, W) {
+    const p = tr.p, root = defs.get(tr.id).root, F = W[tr.id][root], L = p.length, half = p.pitch / 2;
+    const moved = !tr.lastF || F.p.some((v, i) => Math.abs(v - tr.lastF.p[i]) > 1e-9) || F.q.some((v, i) => Math.abs(v - tr.lastF.q[i]) > 1e-12);
+    tr.lastF = F;
+    // Gates: closing clamps whatever pin is under it (a finger gripper pinches the one there).
+    for (const g of tr.gates) {
+      const closed = (plant.dof[g.id] ?? 0) >= g.x;
+      if (closed && !g.closed) for (const i of g.lanes) for (const q of tr.lanes[i]) if (Math.abs(q.s - g.at) < half) q.hold = g;
+      if (!closed && g.closed) for (const i of g.lanes) for (const q of tr.lanes[i]) if (q.hold === g) q.hold = null;
+      g.closed = closed;
+    }
+    const nx = tr.next, F2 = nx ? W[nx.id][defs.get(nx.id).root] : null;
+    for (let i = 0; i < tr.lanes.length; i++) {
+      const lane = tr.lanes[i];
+      // Which lane of the next track, if any, this one's end meets right now (a shuttle moves).
+      let j = -1;
+      if (nx) {
+        const E = apply(F, lanePoint(p, i, L));
+        for (let k = 0; k < nx.lanes.length && j < 0; k++) {
+          const S = apply(/** @type {any} */ (F2), lanePoint(nx.p, k, 0));
+          if (Math.hypot(E[0] - S[0], E[1] - S[1], E[2] - S[2]) < 1.5) j = k;
+        }
+      }
+      if (lane.length) {
+        const nl = j >= 0 ? nx.lanes[j] : null;
+        const lim = nl ? (nl.length ? L + nl[nl.length - 1].s - p.pitch : Infinity) : L - half;
+        const gates = tr.gates.filter((/** @type {any} */ g) => g.closed && g.lanes.includes(i)).map((/** @type {any} */ g) => g.at);
+        laneAdvance(lane, lim, gates, { a: tr.a, vmax: p.vmax, dt, pitch: p.pitch });
+        while (nl && lane.length && lane[0].s > L) {
+          const q = lane.shift();
+          wake(q);
+          q.s -= L; q.tr = nx; q.i = j; q.w = NaN;
+          q.pt.held = { id: nx.id, link: defs.get(nx.id).root };
+          nl.push(q);
+          putPin(q.pt, pinPose(nx, F2, j, q.s, q.pt));
+          q.w = q.s;
+        }
+        for (const q of lane) {
+          if (moved || q.s !== q.w) { wake(q); putPin(q.pt, pinPose(tr, F, i, q.s, q.pt)); q.w = q.s; q.idle = 0; }
+          else if (!q.fixed && ++q.idle > 5) {
+            // A pin that has stood still for a few steps becomes a FIXED body: Rapier skips it, where
+            // it updates every kinematic body every step. Most of a full machine's 400 pins stand in
+            // queues. Measured with 358 pins: 1426 -> 705 us a step.
+            q.pt.body.setBodyType(R.RigidBodyType.Fixed, false);
+            q.fixed = true;
+          }
+        }
+      }
+    }
+    // Bowl feeders: at most one pin pending per lane - a blocked feeder does not bank a backlog.
+    p.supply.forEach((/** @type {any} */ sp, /** @type {number} */ k) => {
+      sp.lanes.forEach((/** @type {number} */ i, /** @type {number} */ n) => {
+        if (!tr.r.s.feed[k]) { tr.acc[k][n] = 0; return; }
+        tr.acc[k][n] = Math.min(1, tr.acc[k][n] + sp.rate * dt);
+        const lane = tr.lanes[i];
+        if (tr.acc[k][n] < 1 || (lane.length && lane[lane.length - 1].s < p.pitch)) return;
+        tr.acc[k][n] = 0;
+        tr.made++;
+        const uid = tr.id + '.' + tr.made, pd = defs.get(sp.template).p;
+        const P0 = pinPose(tr, F, i, 0, { drop: pd.size[2] - pd.headH });
+        spawnPart(sp.template, P0, uid, tr.id);
+        const pt = /** @type {any} */ (parts.get(uid));
+        free.delete(pt);
+        pt.body.setBodyType(R.RigidBodyType.KinematicPositionBased, true);
+        for (const c of pt.cols) c.setCollisionGroups(G_TRACK);
+        pt.held = { id: tr.id, link: root };
+        const q = { pt, tr, i, s: 0, v: 0, hold: null, w: 0, idle: 0, fixed: false };
+        pt.track = q;
+        pt.P = P0;
+        lane.push(q);
+      });
+    });
+    // The escapement: separator out takes each lane's front pin, separator back leaves it in the
+    // slot, pusher out carries it and lets it fall once it is pushAt out.
+    const es = p.escape;
+    if (es && es.sep) {
+      const sx = plant.dof[es.sep] ?? 0, px = plant.dof[es.push] ?? 0, EPS = 0.05;
+      if (sx > EPS && tr.sep <= EPS) {
+        tr.lanes.forEach((/** @type {any[]} */ lane) => {
+          const q = lane[0];
+          if (!q || q.s < L - half - 0.5) return;
+          lane.shift();
+          wake(q);
+          const pt = q.pt;
+          pt.track = null;
+          carry(pt, W, es.sep, 'rod');
+          pt.esc = 'sep'; pt.escTr = tr; tr.esc.add(pt);
+        });
+      }
+      if (sx < tr.sep - 1e-9) for (const pt of tr.esc) if (pt.esc === 'sep') { carry(pt, W, tr.id, root); pt.esc = 'slot'; }
+      if (px > EPS && tr.push <= EPS) for (const pt of tr.esc) if (pt.esc === 'sep' || pt.esc === 'slot') { carry(pt, W, es.push, 'rod'); pt.esc = 'push'; }
+      if (px >= es.pushAt) {
+        for (const pt of [...tr.esc]) {
+          if (pt.esc !== 'push') continue;
+          tr.esc.delete(pt); pt.esc = null; pt.escTr = null;
+          pt.held = null; pt.parked = false;
+          free.add(pt);
+          pt.body.setBodyType(R.RigidBodyType.Dynamic, true);
+          for (const c of pt.cols) c.setCollisionGroups(G_PART);
+          refreshPart(pt);
+          pt.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          pt.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+          pt.cw = partCentre(pt);
+          tr.r.s.n++;
+          rec({ t: plant.t, k: 'part', uid: pt.uid, ev: 'release', by: tr.id });
+        }
+      }
+      tr.sep = sx; tr.push = px;
+    }
   }
 
   /** Every component model for one interval, PLC outputs in, sensor values out (raw). @param {number} dt s */
@@ -782,6 +1056,7 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
     if (!!pt.pin === down) return;
     if (down) {
+      offTrack(pt);                                               // out of its lane or escapement
       // Taking a part OUT of a gripper, a cup or a nest is the point of the exercise: the machine
       // then runs its cycle with nothing in its hand, and the PLC has to notice. The holder loses
       // the part here, so its own switch (vacuum, nest present) goes false at the next step.
@@ -836,6 +1111,19 @@ export async function createPlant(scene, { driver = null, controller = null, rec
    * Forcing acts on the IO image, so the PLC sees it too. null releases.
    * @param {string} tag @param {any} value
    */
+  /**
+   * What-if speeds: a component's timing parameter changed while it runs (a cylinder's stroke time,
+   * an axis's speed). The models read their params every step, so the next move uses it.
+   * @param {string} id @param {string} key @param {number} value
+   */
+  function tune(id, key, value) {
+    const r = byId.get(id);
+    if (!r) throw new Error('no component ' + id);
+    if (!(key in r.p) || typeof r.p[key] !== 'number') throw new Error(id + ' has no numeric param ' + key);
+    if (!(Number.isFinite(value) && value > 0)) throw new Error(key + ' must be a positive number');
+    r.p[key] = value;
+  }
+
   function force(tag, value) {
     if (!tagInfo.has(tag)) throw new Error('unknown tag ' + tag);
     if (value == null) forced.delete(tag); else forced.set(tag, value);
@@ -855,6 +1143,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     hands.length = 0;                                          // a hand edge for a part that is about to go
     dials.length = 0;
     for (const uid of [...parts.keys()]) removePart(uid, 'reset');
+    for (const tr of tracks) {
+      tr.made = 0; tr.lastF = null; tr.sep = 0; tr.push = 0;
+      for (const a of tr.acc) a.fill(0);
+      for (const g of tr.gates) g.closed = false;
+    }
     spawnSceneParts();
     settle();
     // The internal controller keeps its own copies of plant counters (the last emitter count it
@@ -951,7 +1244,8 @@ export async function createPlant(scene, { driver = null, controller = null, rec
   }
   function status() {
     return {
-      io: driver ? driver.status() : { driver: 'internal', ok: true, msg: 'INTERNAL CONTROLLER - not a PLC', heartbeat: null },
+      // A controller that is a real program says what it is (the ladder soft-PLC); a .ctl.js twin does not.
+      io: driver ? driver.status() : /** @type {any} */ (controller)?.status?.() ?? { driver: 'internal', ok: true, msg: 'INTERNAL CONTROLLER - not a PLC', heartbeat: null },
       plant: { mode: plant.mode, t: plant.t, overruns: plant.overruns, stepUs: plant.stepUs, behindMs: plant.behindMs, parts: parts.size, scale: plant.scale,
                cycleMs: cycleLast, avgMs: cycleRing.length ? Math.round(cycleRing.reduce((a, b) => a + b, 0) / cycleRing.length) : 0,
                cycles: cycleRing.length, cycleTag: countTag },

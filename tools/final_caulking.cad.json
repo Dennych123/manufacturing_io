@@ -1,0 +1,5320 @@
+{
+ "source": "MT0190133-0002-OT-3.html",
+ "note": "written by tools/gen_final_caulking.js --cad; the STLs are gitignored",
+ "products": {
+  "diaph": [
+   {
+    "asset": "assets/cad/final-caulking/prod_diaph_ffffff.stl",
+    "color": "#ffffff"
+   }
+  ],
+  "mb": [
+   {
+    "asset": "assets/cad/final-caulking/prod_mb_ffe300.stl",
+    "color": "#ffe300"
+   },
+   {
+    "asset": "assets/cad/final-caulking/prod_mb_a41c1c.stl",
+    "color": "#a41c1c"
+   },
+   {
+    "asset": "assets/cad/final-caulking/prod_mb_6363f1.stl",
+    "color": "#6363f1"
+   }
+  ],
+  "unit": [
+   {
+    "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl",
+    "color": "#ffe300"
+   },
+   {
+    "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl",
+    "color": "#a41c1c"
+   },
+   {
+    "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl",
+    "color": "#6363f1"
+   }
+  ]
+ },
+ "shells": [
+  {
+   "id": "mv_ec1_20df38",
+   "label": "CAD ec1 #20df38",
+   "asset": "assets/cad/final-caulking/mv_ec1_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 734
+  },
+  {
+   "id": "mv_ec1_63f175",
+   "label": "CAD ec1 #63f175",
+   "asset": "assets/cad/final-caulking/mv_ec1_63f175.stl",
+   "color": "#63f175",
+   "boxes": [],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 12
+  },
+  {
+   "id": "mv_ec1_dabeeb",
+   "label": "CAD ec1 #dabeeb",
+   "asset": "assets/cad/final-caulking/mv_ec1_dabeeb.stl",
+   "color": "#dabeeb",
+   "boxes": [],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 214
+  },
+  {
+   "id": "mv_ec1_df2222",
+   "label": "CAD ec1 #df2222",
+   "asset": "assets/cad/final-caulking/mv_ec1_df2222.stl",
+   "color": "#df2222",
+   "boxes": [],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 333
+  },
+  {
+   "id": "mv_ec1_ff9f00",
+   "label": "CAD ec1 #ff9f00",
+   "asset": "assets/cad/final-caulking/mv_ec1_ff9f00.stl",
+   "color": "#ff9f00",
+   "boxes": [
+    [
+     -30.4,
+     -168.5,
+     135,
+     12,
+     252,
+     120
+    ]
+   ],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 1850
+  },
+  {
+   "id": "mv_ec1_ffaaaa",
+   "label": "CAD ec1 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_ec1_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -85.4,
+     -173.5,
+     105,
+     98,
+     242,
+     10
+    ],
+    [
+     -85.4,
+     -173.5,
+     165,
+     98,
+     242,
+     10
+    ]
+   ],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 566
+  },
+  {
+   "id": "mv_ec1_ffe300",
+   "label": "CAD ec1 #ffe300",
+   "asset": "assets/cad/final-caulking/mv_ec1_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 74
+  },
+  {
+   "id": "mv_ec1_ffffff",
+   "label": "CAD ec1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_ec1_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     13.4,
+     -152,
+     139.4,
+     75.5,
+     185,
+     214.3
+    ],
+    [
+     -99.1,
+     -4,
+     0,
+     120,
+     77,
+     134
+    ],
+    [
+     -99.1,
+     -47.5,
+     0,
+     120,
+     10,
+     134
+    ],
+    [
+     -84.9,
+     -47.5,
+     135,
+     97,
+     10,
+     120
+    ],
+    [
+     -72.6,
+     -62.5,
+     47.5,
+     50,
+     20,
+     95
+    ],
+    [
+     -90.6,
+     -29.8,
+     105,
+     79,
+     25.4,
+     44
+    ],
+    [
+     -90.6,
+     -29.8,
+     165,
+     79,
+     25.4,
+     44
+    ],
+    [
+     35.1,
+     -117.5,
+     -17,
+     17,
+     34.2,
+     100
+    ],
+    [
+     -46.6,
+     -62.5,
+     20,
+     15,
+     20,
+     50
+    ],
+    [
+     -90.1,
+     -62.5,
+     20,
+     15,
+     20,
+     50
+    ],
+    [
+     50.6,
+     -264.5,
+     135,
+     8,
+     20,
+     50
+    ],
+    [
+     -133.4,
+     -36,
+     101.3,
+     16.6,
+     9.2,
+     15.3
+    ],
+    [
+     -133.4,
+     -36,
+     161.3,
+     16.6,
+     9.2,
+     15.3
+    ]
+   ],
+   "parent": "ec1",
+   "socket": "slider",
+   "tris": 5699
+  },
+  {
+   "id": "mv_ec2_00aaaa",
+   "label": "CAD ec2 #00aaaa",
+   "asset": "assets/cad/final-caulking/mv_ec2_00aaaa.stl",
+   "color": "#00aaaa",
+   "boxes": [
+    [
+     0,
+     -0.5,
+     -77.4,
+     17,
+     241,
+     70
+    ]
+   ],
+   "parent": "ec2",
+   "socket": "slider",
+   "tris": 288
+  },
+  {
+   "id": "mv_ec2_20df38",
+   "label": "CAD ec2 #20df38",
+   "asset": "assets/cad/final-caulking/mv_ec2_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "ec2",
+   "socket": "slider",
+   "tris": 234
+  },
+  {
+   "id": "mv_ec2_a4a41c",
+   "label": "CAD ec2 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_ec2_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     0,
+     -0.5,
+     -117.4,
+     77,
+     241,
+     10
+    ]
+   ],
+   "parent": "ec2",
+   "socket": "slider",
+   "tris": 1218
+  },
+  {
+   "id": "mv_ec2_ffe300",
+   "label": "CAD ec2 #ffe300",
+   "asset": "assets/cad/final-caulking/mv_ec2_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "ec2",
+   "socket": "slider",
+   "tris": 124
+  },
+  {
+   "id": "mv_ec2_ffffff",
+   "label": "CAD ec2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_ec2_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -28.5,
+     -3,
+     -56.4,
+     34,
+     224,
+     49
+    ],
+    [
+     28.5,
+     2,
+     -56.4,
+     34,
+     224,
+     49
+    ],
+    [
+     -0.4,
+     -0.5,
+     -131,
+     106.2,
+     106.7,
+     7.8
+    ],
+    [
+     2,
+     -0.5,
+     -128.5,
+     79,
+     75,
+     12.3
+    ],
+    [
+     0,
+     -0.5,
+     -121.4,
+     35,
+     35,
+     10
+    ],
+    [
+     -27,
+     -91.5,
+     -90.4,
+     36,
+     11,
+     17
+    ],
+    [
+     27,
+     90.5,
+     -90.4,
+     36,
+     11,
+     17
+    ],
+    [
+     38.5,
+     -49.5,
+     -87.4,
+     13,
+     21,
+     15
+    ],
+    [
+     -38.5,
+     48.5,
+     -87.4,
+     13,
+     21,
+     15
+    ],
+    [
+     -36.5,
+     -96.2,
+     -90.4,
+     10,
+     24.5,
+     10
+    ],
+    [
+     36.5,
+     95.2,
+     -90.4,
+     10,
+     24.5,
+     10
+    ],
+    [
+     -36.5,
+     -99,
+     -90.4,
+     16.2,
+     4,
+     14
+    ],
+    [
+     36.5,
+     98,
+     -90.4,
+     16.2,
+     4,
+     14
+    ],
+    [
+     -22.5,
+     -63.5,
+     -31.1,
+     4,
+     32,
+     4.6
+    ],
+    [
+     16.5,
+     -61.7,
+     -31.1,
+     4,
+     32,
+     4.6
+    ],
+    [
+     -16.5,
+     60.7,
+     -31.1,
+     4,
+     32,
+     4.6
+    ],
+    [
+     22.5,
+     62.5,
+     -31.1,
+     4,
+     32,
+     4.6
+    ]
+   ],
+   "parent": "ec2",
+   "socket": "slider",
+   "tris": 6648
+  },
+  {
+   "id": "mv_ec3_20df38",
+   "label": "CAD ec3 #20df38",
+   "asset": "assets/cad/final-caulking/mv_ec3_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "ec3",
+   "socket": "slider",
+   "tris": 24
+  },
+  {
+   "id": "mv_ec3_323232",
+   "label": "CAD ec3 #323232",
+   "asset": "assets/cad/final-caulking/mv_ec3_323232.stl",
+   "color": "#323232",
+   "boxes": [],
+   "parent": "ec3",
+   "socket": "slider",
+   "tris": 178
+  },
+  {
+   "id": "mv_ec3_ffffff",
+   "label": "CAD ec3 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_ec3_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -105.1,
+     46.5,
+     27.4,
+     256.5,
+     40,
+     67
+    ],
+    [
+     0,
+     1.5,
+     -28.2,
+     50,
+     72,
+     28.3
+    ],
+    [
+     -19.8,
+     16.5,
+     -10.1,
+     89.7,
+     102.6,
+     8
+    ],
+    [
+     23.1,
+     -20.7,
+     -18.7,
+     4.6,
+     27,
+     4
+    ],
+    [
+     23.1,
+     23.7,
+     -18.7,
+     4.6,
+     27,
+     4
+    ]
+   ],
+   "parent": "ec3",
+   "socket": "slider",
+   "tris": 2092
+  },
+  {
+   "id": "mv_ec4_20df38",
+   "label": "CAD ec4 #20df38",
+   "asset": "assets/cad/final-caulking/mv_ec4_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 888
+  },
+  {
+   "id": "mv_ec4_323232",
+   "label": "CAD ec4 #323232",
+   "asset": "assets/cad/final-caulking/mv_ec4_323232.stl",
+   "color": "#323232",
+   "boxes": [],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 168
+  },
+  {
+   "id": "mv_ec4_34b7f8",
+   "label": "CAD ec4 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_ec4_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     175.5,
+     -26,
+     32.4,
+     230,
+     194,
+     15
+    ]
+   ],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 1776
+  },
+  {
+   "id": "mv_ec4_ff9f00",
+   "label": "CAD ec4 #ff9f00",
+   "asset": "assets/cad/final-caulking/mv_ec4_ff9f00.stl",
+   "color": "#ff9f00",
+   "boxes": [
+    [
+     113,
+     -42,
+     -33.6,
+     135,
+     15,
+     113
+    ]
+   ],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 756
+  },
+  {
+   "id": "mv_ec4_ffe300",
+   "label": "CAD ec4 #ffe300",
+   "asset": "assets/cad/final-caulking/mv_ec4_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 112
+  },
+  {
+   "id": "mv_ec4_ffffff",
+   "label": "CAD ec4 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_ec4_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     175.5,
+     -45.5,
+     277.9,
+     210,
+     15,
+     446
+    ],
+    [
+     178,
+     -86,
+     210.4,
+     57,
+     52,
+     139.5
+    ],
+    [
+     83,
+     -70.5,
+     267.9,
+     15,
+     35,
+     426
+    ],
+    [
+     268,
+     -70.5,
+     267.9,
+     15,
+     35,
+     426
+    ],
+    [
+     175.5,
+     -78,
+     47.4,
+     210,
+     70,
+     15
+    ],
+    [
+     85.5,
+     -27.7,
+     -47.6,
+     165,
+     13.5,
+     85
+    ],
+    [
+     175.5,
+     -73.7,
+     510.4,
+     60,
+     76.5,
+     25
+    ],
+    [
+     120.5,
+     -80,
+     317.9,
+     30,
+     54,
+     65
+    ],
+    [
+     230.5,
+     -80,
+     317.9,
+     30,
+     54,
+     65
+    ],
+    [
+     105,
+     47,
+     12.2,
+     79,
+     44,
+     25.4
+    ],
+    [
+     105,
+     -75,
+     12.2,
+     79,
+     44,
+     25.4
+    ],
+    [
+     246,
+     47,
+     12.2,
+     79,
+     44,
+     25.4
+    ],
+    [
+     246,
+     -75,
+     12.2,
+     79,
+     44,
+     25.4
+    ],
+    [
+     175.5,
+     -92,
+     381.9,
+     140,
+     30,
+     20
+    ],
+    [
+     83,
+     -32.2,
+     385.9,
+     20,
+     16.5,
+     220
+    ],
+    [
+     268,
+     -32.2,
+     385.9,
+     20,
+     16.5,
+     220
+    ],
+    [
+     175.5,
+     -66.5,
+     370.9,
+     60,
+     88,
+     12
+    ],
+    [
+     175.5,
+     -62.2,
+     135.3,
+     52,
+     18.5,
+     30.7
+    ],
+    [
+     175.5,
+     -62.2,
+     285.5,
+     52,
+     18.5,
+     30.7
+    ],
+    [
+     80.5,
+     -20,
+     13.9,
+     20,
+     60,
+     22
+    ],
+    [
+     200.5,
+     -20,
+     13.9,
+     20,
+     60,
+     22
+    ],
+    [
+     150.5,
+     -64,
+     348.4,
+     6,
+     83,
+     33
+    ],
+    [
+     200.5,
+     -64,
+     348.4,
+     6,
+     83,
+     33
+    ],
+    [
+     120.5,
+     -92,
+     337.3,
+     14,
+     12.2,
+     79.3
+    ],
+    [
+     230.5,
+     -92,
+     337.3,
+     14,
+     12.2,
+     79.3
+    ],
+    [
+     175.5,
+     -97,
+     517.6,
+     14,
+     12.2,
+     79.3
+    ],
+    [
+     175.5,
+     -92,
+     396.9,
+     40,
+     20,
+     10
+    ],
+    [
+     120.5,
+     -92,
+     361.4,
+     21.9,
+     19,
+     11
+    ],
+    [
+     230.5,
+     -92,
+     361.4,
+     21.9,
+     19,
+     11
+    ],
+    [
+     175.5,
+     -97,
+     493.4,
+     21.9,
+     19,
+     11
+    ],
+    [
+     175.5,
+     -86,
+     309.6,
+     25.4,
+     22,
+     8
+    ],
+    [
+     120.5,
+     -92,
+     328.4,
+     21.9,
+     19,
+     6
+    ],
+    [
+     120.5,
+     -92,
+     352.9,
+     21.9,
+     19,
+     6
+    ],
+    [
+     230.5,
+     -92,
+     328.4,
+     21.9,
+     19,
+     6
+    ],
+    [
+     230.5,
+     -92,
+     352.9,
+     21.9,
+     19,
+     6
+    ],
+    [
+     175.5,
+     -97,
+     501.9,
+     21.9,
+     19,
+     6
+    ],
+    [
+     175.5,
+     -97,
+     525.9,
+     21.9,
+     19,
+     6
+    ],
+    [
+     62.2,
+     50.7,
+     18.4,
+     16.6,
+     15.3,
+     9.2
+    ],
+    [
+     62.2,
+     -71.3,
+     18.4,
+     16.6,
+     15.3,
+     9.2
+    ],
+    [
+     288.8,
+     50.7,
+     18.4,
+     16.6,
+     15.3,
+     9.2
+    ],
+    [
+     288.8,
+     -71.3,
+     18.4,
+     16.6,
+     15.3,
+     9.2
+    ],
+    [
+     197.5,
+     -73.7,
+     165.6,
+     4.6,
+     4,
+     27
+    ],
+    [
+     197.5,
+     -98.3,
+     250.6,
+     4.6,
+     4,
+     27
+    ]
+   ],
+   "parent": "ec4",
+   "socket": "slider",
+   "tris": 11528
+  },
+  {
+   "id": "mv_flip_ffffff",
+   "label": "CAD flip #ffffff",
+   "asset": "assets/cad/final-caulking/mv_flip_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0,
+     0,
+     15.1,
+     64,
+     64,
+     30.6
+    ]
+   ],
+   "parent": "flip",
+   "socket": "slider",
+   "tris": 442
+  },
+  {
+   "id": "mv_g1_fingerL_20df38",
+   "label": "CAD g1 #20df38",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerL_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "g1",
+   "socket": "fingerL",
+   "tris": 44
+  },
+  {
+   "id": "mv_g1_fingerL_ffe300",
+   "label": "CAD g1 #ffe300",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerL_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "g1",
+   "socket": "fingerL",
+   "tris": 52
+  },
+  {
+   "id": "mv_g1_fingerL_ffffff",
+   "label": "CAD g1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerL_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0,
+     8.5,
+     -15.7,
+     30,
+     42,
+     26.5
+    ],
+    [
+     0,
+     23.8,
+     -36.2,
+     27,
+     43.4,
+     14.6
+    ],
+    [
+     0,
+     0,
+     2.6,
+     60,
+     25,
+     10
+    ]
+   ],
+   "parent": "g1",
+   "socket": "fingerL",
+   "tris": 874
+  },
+  {
+   "id": "mv_g1_fingerR_20df38",
+   "label": "CAD g1 #20df38",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerR_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "g1",
+   "socket": "fingerR",
+   "tris": 44
+  },
+  {
+   "id": "mv_g1_fingerR_ffe300",
+   "label": "CAD g1 #ffe300",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerR_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "g1",
+   "socket": "fingerR",
+   "tris": 56
+  },
+  {
+   "id": "mv_g1_fingerR_ffffff",
+   "label": "CAD g1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g1_fingerR_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0,
+     -5.5,
+     -15.7,
+     30,
+     42,
+     26.5
+    ],
+    [
+     0,
+     -20.8,
+     -36.2,
+     27,
+     43.4,
+     14.6
+    ],
+    [
+     0,
+     3,
+     2.6,
+     60,
+     25,
+     10
+    ]
+   ],
+   "parent": "g1",
+   "socket": "fingerR",
+   "tris": 872
+  },
+  {
+   "id": "mv_g2_fingerL_ffffff",
+   "label": "CAD g2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g2_fingerL_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -19,
+     -0.7,
+     1.6,
+     95,
+     23,
+     12
+    ],
+    [
+     -58.4,
+     16.9,
+     1.6,
+     33.9,
+     23.8,
+     12
+    ]
+   ],
+   "parent": "g2",
+   "socket": "fingerL",
+   "tris": 360
+  },
+  {
+   "id": "mv_g2_fingerR_ffffff",
+   "label": "CAD g2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g2_fingerR_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -19,
+     0.7,
+     1.6,
+     95,
+     23,
+     12
+    ],
+    [
+     -58.4,
+     -17,
+     1.6,
+     33.9,
+     23.8,
+     12
+    ]
+   ],
+   "parent": "g2",
+   "socket": "fingerR",
+   "tris": 364
+  },
+  {
+   "id": "mv_g3_fingerL_f1f163",
+   "label": "CAD g3 #f1f163",
+   "asset": "assets/cad/final-caulking/mv_g3_fingerL_f1f163.stl",
+   "color": "#f1f163",
+   "boxes": [
+    [
+     -31.5,
+     -2.1,
+     19.5,
+     100,
+     23,
+     37
+    ]
+   ],
+   "parent": "g3",
+   "socket": "fingerL",
+   "tris": 232
+  },
+  {
+   "id": "mv_g3_fingerL_ffffff",
+   "label": "CAD g3 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g3_fingerL_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -73.2,
+     17,
+     31.5,
+     33.5,
+     23.8,
+     15.5
+    ]
+   ],
+   "parent": "g3",
+   "socket": "fingerL",
+   "tris": 208
+  },
+  {
+   "id": "mv_g3_fingerR_f1f163",
+   "label": "CAD g3 #f1f163",
+   "asset": "assets/cad/final-caulking/mv_g3_fingerR_f1f163.stl",
+   "color": "#f1f163",
+   "boxes": [
+    [
+     -31.5,
+     2.1,
+     19.5,
+     100,
+     23,
+     37
+    ]
+   ],
+   "parent": "g3",
+   "socket": "fingerR",
+   "tris": 232
+  },
+  {
+   "id": "mv_g3_fingerR_ffffff",
+   "label": "CAD g3 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_g3_fingerR_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -73.2,
+     -16.9,
+     31.5,
+     33.5,
+     23.8,
+     15.5
+    ]
+   ],
+   "parent": "g3",
+   "socket": "fingerR",
+   "tris": 208
+  },
+  {
+   "id": "mv_gp1_f1_34b7f8",
+   "label": "CAD gp1 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp1_f1_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     14.5,
+     -13.2,
+     6.1,
+     6.3,
+     12.9,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f1",
+   "tris": 114
+  },
+  {
+   "id": "mv_gp1_f1_a4a41c",
+   "label": "CAD gp1 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp1_f1_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     6.8,
+     -21.3,
+     17.4,
+     24.1,
+     34.9,
+     31.5
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f1",
+   "tris": 304
+  },
+  {
+   "id": "mv_gp1_f1_beebc4",
+   "label": "CAD gp1 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp1_f1_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     4,
+     -13.4,
+     24.1,
+     12.6,
+     12.1,
+     18
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f1",
+   "tris": 230
+  },
+  {
+   "id": "mv_gp1_f1_ffaaaa",
+   "label": "CAD gp1 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp1_f1_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     12.3,
+     -26.8,
+     6.1,
+     24.5,
+     41.5,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f1",
+   "tris": 110
+  },
+  {
+   "id": "mv_gp1_f1_ffffff",
+   "label": "CAD gp1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp1_f1_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0.5,
+     -3.9,
+     21.1,
+     11.1,
+     8.1,
+     14
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f1",
+   "tris": 104
+  },
+  {
+   "id": "mv_gp1_f2_34b7f8",
+   "label": "CAD gp1 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp1_f2_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     2,
+     15.4,
+     6.1,
+     9.9,
+     11.2,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f2",
+   "tris": 116
+  },
+  {
+   "id": "mv_gp1_f2_a4a41c",
+   "label": "CAD gp1 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp1_f2_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     12.9,
+     12.8,
+     17.4,
+     31.3,
+     33.5,
+     31.5
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f2",
+   "tris": 294
+  },
+  {
+   "id": "mv_gp1_f2_beebc4",
+   "label": "CAD gp1 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp1_f2_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     7.5,
+     6.4,
+     24.1,
+     13.6,
+     13.5,
+     18
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f2",
+   "tris": 238
+  },
+  {
+   "id": "mv_gp1_f2_ffaaaa",
+   "label": "CAD gp1 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp1_f2_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     14.9,
+     20.3,
+     6.1,
+     34.5,
+     38,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f2",
+   "tris": 100
+  },
+  {
+   "id": "mv_gp1_f2_ffffff",
+   "label": "CAD gp1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp1_f2_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     1,
+     -1.4,
+     21.1,
+     10.9,
+     10.3,
+     14
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f2",
+   "tris": 104
+  },
+  {
+   "id": "mv_gp1_f3_34b7f8",
+   "label": "CAD gp1 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp1_f3_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     -16.5,
+     -9.7,
+     6.1,
+     13.1,
+     4.2,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f3",
+   "tris": 120
+  },
+  {
+   "id": "mv_gp1_f3_a4a41c",
+   "label": "CAD gp1 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp1_f3_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     -19.7,
+     1,
+     17.4,
+     33.9,
+     19.3,
+     31.5
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f3",
+   "tris": 302
+  },
+  {
+   "id": "mv_gp1_f3_beebc4",
+   "label": "CAD gp1 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp1_f3_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     -11.5,
+     -0.5,
+     24.1,
+     10.9,
+     11.5,
+     18
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f3",
+   "tris": 226
+  },
+  {
+   "id": "mv_gp1_f3_ffaaaa",
+   "label": "CAD gp1 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp1_f3_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -27.2,
+     -1,
+     6.1,
+     41.4,
+     18.3,
+     7
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f3",
+   "tris": 112
+  },
+  {
+   "id": "mv_gp1_f3_ffffff",
+   "label": "CAD gp1 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp1_f3_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -1.5,
+     -2.2,
+     21.1,
+     6.7,
+     10.7,
+     14
+    ]
+   ],
+   "parent": "gp1",
+   "socket": "f3",
+   "tris": 112
+  },
+  {
+   "id": "mv_gp1s_20df38",
+   "label": "CAD gp1s #20df38",
+   "asset": "assets/cad/final-caulking/mv_gp1s_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 78
+  },
+  {
+   "id": "mv_gp1s_6363f1",
+   "label": "CAD gp1s #6363f1",
+   "asset": "assets/cad/final-caulking/mv_gp1s_6363f1.stl",
+   "color": "#6363f1",
+   "boxes": [
+    [
+     18.9,
+     -28.6,
+     -26.4,
+     6.7,
+     38,
+     6.7
+    ],
+    [
+     38.4,
+     -28.6,
+     -10.8,
+     6.7,
+     38,
+     6.7
+    ]
+   ],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 228
+  },
+  {
+   "id": "mv_gp1s_aaaaaa",
+   "label": "CAD gp1s #aaaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp1s_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     25.1,
+     -7.1,
+     25.8,
+     64.4,
+     46,
+     61.8
+    ],
+    [
+     11.2,
+     -25.5,
+     5.9,
+     19,
+     15.3,
+     19.1
+    ],
+    [
+     18.1,
+     -25.5,
+     45.1,
+     17,
+     15.3,
+     17.6
+    ],
+    [
+     48.7,
+     -25.5,
+     19.5,
+     16,
+     15.3,
+     15.2
+    ]
+   ],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 1110
+  },
+  {
+   "id": "mv_gp1s_bc63f1",
+   "label": "CAD gp1s #bc63f1",
+   "asset": "assets/cad/final-caulking/mv_gp1s_bc63f1.stl",
+   "color": "#bc63f1",
+   "boxes": [
+    [
+     41,
+     20.9,
+     -4.5,
+     75,
+     10,
+     107
+    ],
+    [
+     75.5,
+     65.9,
+     -36,
+     12,
+     80,
+     60
+    ],
+    [
+     44.5,
+     38.4,
+     -19,
+     50,
+     25,
+     6
+    ],
+    [
+     44.5,
+     38.4,
+     -53,
+     50,
+     25,
+     6
+    ]
+   ],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 698
+  },
+  {
+   "id": "mv_gp1s_ebebbe",
+   "label": "CAD gp1s #ebebbe",
+   "asset": "assets/cad/final-caulking/mv_gp1s_ebebbe.stl",
+   "color": "#ebebbe",
+   "boxes": [
+    [
+     30.5,
+     -20.6,
+     -23,
+     38,
+     3,
+     38
+    ]
+   ],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 248
+  },
+  {
+   "id": "mv_gp1s_ffe300",
+   "label": "CAD gp1s #ffe300",
+   "asset": "assets/cad/final-caulking/mv_gp1s_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 32
+  },
+  {
+   "id": "mv_gp1s_ffffff",
+   "label": "CAD gp1s #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp1s_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     2.8,
+     87.4,
+     -100.5,
+     29.5,
+     58,
+     213
+    ],
+    [
+     -1.2,
+     98.6,
+     12,
+     35.5,
+     33.5,
+     12
+    ],
+    [
+     7.1,
+     0.9,
+     36.2,
+     16.3,
+     20,
+     13
+    ],
+    [
+     3.9,
+     7.4,
+     18,
+     17.1,
+     20,
+     8.5
+    ],
+    [
+     -11,
+     106.9,
+     17.2,
+     10,
+     10,
+     24.5
+    ],
+    [
+     -11,
+     106.9,
+     20,
+     16.2,
+     14,
+     4
+    ]
+   ],
+   "parent": "gp1s",
+   "socket": "rodEnd",
+   "tris": 1658
+  },
+  {
+   "id": "mv_gp2_f1_34b7f8",
+   "label": "CAD gp2 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp2_f1_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     -2.6,
+     -14.9,
+     6.1,
+     9.9,
+     11.2,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f1",
+   "tris": 120
+  },
+  {
+   "id": "mv_gp2_f1_a4a41c",
+   "label": "CAD gp2 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp2_f1_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     -13.5,
+     -12.3,
+     17.4,
+     31.3,
+     33.5,
+     31.5
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f1",
+   "tris": 294
+  },
+  {
+   "id": "mv_gp2_f1_beebc4",
+   "label": "CAD gp2 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp2_f1_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     -8.3,
+     -6.1,
+     24.8,
+     13.6,
+     13.5,
+     18
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f1",
+   "tris": 218
+  },
+  {
+   "id": "mv_gp2_f1_ffaaaa",
+   "label": "CAD gp2 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp2_f1_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -15.5,
+     -19.7,
+     6.1,
+     34.5,
+     38,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f1",
+   "tris": 108
+  },
+  {
+   "id": "mv_gp2_f1_ffffff",
+   "label": "CAD gp2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp2_f1_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -1.6,
+     1.9,
+     21.1,
+     10.9,
+     10.3,
+     14
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f1",
+   "tris": 112
+  },
+  {
+   "id": "mv_gp2_f2_34b7f8",
+   "label": "CAD gp2 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp2_f2_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     16.3,
+     8.9,
+     6.1,
+     13.1,
+     4.2,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f2",
+   "tris": 116
+  },
+  {
+   "id": "mv_gp2_f2_a4a41c",
+   "label": "CAD gp2 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp2_f2_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     19.5,
+     -1.8,
+     17.4,
+     33.9,
+     19.3,
+     31.5
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f2",
+   "tris": 294
+  },
+  {
+   "id": "mv_gp2_f2_beebc4",
+   "label": "CAD gp2 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp2_f2_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     11.3,
+     -0.4,
+     24.1,
+     10.9,
+     11.5,
+     18
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f2",
+   "tris": 238
+  },
+  {
+   "id": "mv_gp2_f2_ffaaaa",
+   "label": "CAD gp2 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp2_f2_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     27,
+     0.2,
+     6.1,
+     41.4,
+     18.3,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f2",
+   "tris": 104
+  },
+  {
+   "id": "mv_gp2_f2_ffffff",
+   "label": "CAD gp2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp2_f2_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     1.3,
+     1.4,
+     21.1,
+     6.7,
+     10.7,
+     14
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f2",
+   "tris": 104
+  },
+  {
+   "id": "mv_gp2_f3_34b7f8",
+   "label": "CAD gp2 #34b7f8",
+   "asset": "assets/cad/final-caulking/mv_gp2_f3_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     -13.7,
+     13.5,
+     6.1,
+     6.3,
+     12.9,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f3",
+   "tris": 118
+  },
+  {
+   "id": "mv_gp2_f3_a4a41c",
+   "label": "CAD gp2 #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_gp2_f3_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     -6,
+     21.6,
+     17.4,
+     24.1,
+     34.9,
+     31.5
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f3",
+   "tris": 308
+  },
+  {
+   "id": "mv_gp2_f3_beebc4",
+   "label": "CAD gp2 #beebc4",
+   "asset": "assets/cad/final-caulking/mv_gp2_f3_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     -3.2,
+     13.7,
+     24.1,
+     12.6,
+     12.1,
+     18
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f3",
+   "tris": 230
+  },
+  {
+   "id": "mv_gp2_f3_ffaaaa",
+   "label": "CAD gp2 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp2_f3_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -11.5,
+     27.1,
+     6.1,
+     24.5,
+     41.5,
+     7
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f3",
+   "tris": 98
+  },
+  {
+   "id": "mv_gp2_f3_ffffff",
+   "label": "CAD gp2 #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp2_f3_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0.3,
+     4.2,
+     21.1,
+     11.1,
+     8.1,
+     14
+    ]
+   ],
+   "parent": "gp2",
+   "socket": "f3",
+   "tris": 104
+  },
+  {
+   "id": "mv_gp2s_20df38",
+   "label": "CAD gp2s #20df38",
+   "asset": "assets/cad/final-caulking/mv_gp2s_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 66
+  },
+  {
+   "id": "mv_gp2s_6363f1",
+   "label": "CAD gp2s #6363f1",
+   "asset": "assets/cad/final-caulking/mv_gp2s_6363f1.stl",
+   "color": "#6363f1",
+   "boxes": [
+    [
+     -38.4,
+     28.6,
+     -10.8,
+     6.7,
+     38,
+     6.7
+    ],
+    [
+     -18.9,
+     28.6,
+     -26.4,
+     6.7,
+     38,
+     6.7
+    ]
+   ],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 234
+  },
+  {
+   "id": "mv_gp2s_aaaaaa",
+   "label": "CAD gp2s #aaaaaa",
+   "asset": "assets/cad/final-caulking/mv_gp2s_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     -25.1,
+     7.1,
+     25.8,
+     64.4,
+     46,
+     61.8
+    ],
+    [
+     -11.2,
+     25.5,
+     5.9,
+     19,
+     15.3,
+     19.1
+    ],
+    [
+     -18.1,
+     25.5,
+     45.1,
+     17,
+     15.3,
+     17.6
+    ],
+    [
+     -48.7,
+     25.5,
+     19.5,
+     16,
+     15.3,
+     15.2
+    ]
+   ],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 1136
+  },
+  {
+   "id": "mv_gp2s_bc63f1",
+   "label": "CAD gp2s #bc63f1",
+   "asset": "assets/cad/final-caulking/mv_gp2s_bc63f1.stl",
+   "color": "#bc63f1",
+   "boxes": [
+    [
+     -41,
+     -20.9,
+     -4.5,
+     75,
+     10,
+     107
+    ],
+    [
+     -75.5,
+     -65.9,
+     -36,
+     12,
+     80,
+     60
+    ],
+    [
+     -44.5,
+     -38.4,
+     -19,
+     50,
+     25,
+     6
+    ],
+    [
+     -44.5,
+     -38.4,
+     -53,
+     50,
+     25,
+     6
+    ]
+   ],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 700
+  },
+  {
+   "id": "mv_gp2s_ebebbe",
+   "label": "CAD gp2s #ebebbe",
+   "asset": "assets/cad/final-caulking/mv_gp2s_ebebbe.stl",
+   "color": "#ebebbe",
+   "boxes": [
+    [
+     -30.5,
+     20.6,
+     -23,
+     38,
+     3,
+     38
+    ]
+   ],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 240
+  },
+  {
+   "id": "mv_gp2s_ffe300",
+   "label": "CAD gp2s #ffe300",
+   "asset": "assets/cad/final-caulking/mv_gp2s_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 30
+  },
+  {
+   "id": "mv_gp2s_ffffff",
+   "label": "CAD gp2s #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gp2s_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -2.7,
+     -87.4,
+     -100.5,
+     29.5,
+     58,
+     213
+    ],
+    [
+     1.3,
+     -98.6,
+     12,
+     35.5,
+     33.5,
+     12
+    ],
+    [
+     -7.1,
+     -0.9,
+     36.2,
+     16.3,
+     20,
+     13
+    ],
+    [
+     -3.9,
+     -7.4,
+     18,
+     17.1,
+     20,
+     8.5
+    ],
+    [
+     11,
+     -106.9,
+     17.3,
+     10,
+     10,
+     24.5
+    ],
+    [
+     11,
+     -106.9,
+     20,
+     16.2,
+     14,
+     4
+    ]
+   ],
+   "parent": "gp2s",
+   "socket": "rodEnd",
+   "tris": 1668
+  },
+  {
+   "id": "mv_gu_00aaaa",
+   "label": "CAD gu #00aaaa",
+   "asset": "assets/cad/final-caulking/mv_gu_00aaaa.stl",
+   "color": "#00aaaa",
+   "boxes": [],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 32
+  },
+  {
+   "id": "mv_gu_0bf4f4",
+   "label": "CAD gu #0bf4f4",
+   "asset": "assets/cad/final-caulking/mv_gu_0bf4f4.stl",
+   "color": "#0bf4f4",
+   "boxes": [
+    [
+     107,
+     105.3,
+     -45,
+     37,
+     34.5,
+     97
+    ]
+   ],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 318
+  },
+  {
+   "id": "mv_gu_20df38",
+   "label": "CAD gu #20df38",
+   "asset": "assets/cad/final-caulking/mv_gu_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 168
+  },
+  {
+   "id": "mv_gu_323232",
+   "label": "CAD gu #323232",
+   "asset": "assets/cad/final-caulking/mv_gu_323232.stl",
+   "color": "#323232",
+   "boxes": [],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 330
+  },
+  {
+   "id": "mv_gu_df2222",
+   "label": "CAD gu #df2222",
+   "asset": "assets/cad/final-caulking/mv_gu_df2222.stl",
+   "color": "#df2222",
+   "boxes": [],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 188
+  },
+  {
+   "id": "mv_gu_ffaaaa",
+   "label": "CAD gu #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_gu_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -5.5,
+     80.5,
+     -28.6,
+     245,
+     15,
+     100
+    ]
+   ],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 1116
+  },
+  {
+   "id": "mv_gu_ffe300",
+   "label": "CAD gu #ffe300",
+   "asset": "assets/cad/final-caulking/mv_gu_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 92
+  },
+  {
+   "id": "mv_gu_ffffff",
+   "label": "CAD gu #ffffff",
+   "asset": "assets/cad/final-caulking/mv_gu_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     24.9,
+     217.5,
+     96.9,
+     243.8,
+     88,
+     44
+    ],
+    [
+     160.5,
+     66.2,
+     -53.5,
+     84,
+     121.3,
+     70
+    ],
+    [
+     17,
+     195.5,
+     87,
+     173,
+     45,
+     64.9
+    ],
+    [
+     3.5,
+     93,
+     19.4,
+     160,
+     10,
+     196
+    ],
+    [
+     -3,
+     -2.5,
+     -118.1,
+     40,
+     40,
+     153.5
+    ],
+    [
+     3.5,
+     154.5,
+     123.4,
+     160,
+     127,
+     12
+    ],
+    [
+     3.5,
+     135.1,
+     -23.6,
+     63,
+     74.6,
+     33.6
+    ],
+    [
+     3.5,
+     128,
+     10.7,
+     52,
+     80,
+     35
+    ],
+    [
+     -95.5,
+     60.3,
+     -20.6,
+     44,
+     25.4,
+     79
+    ],
+    [
+     89.5,
+     60.3,
+     -20.6,
+     44,
+     25.4,
+     79
+    ],
+    [
+     195.5,
+     193.4,
+     86.7,
+     100,
+     34.2,
+     17
+    ],
+    [
+     -3,
+     -2.5,
+     -21.4,
+     31,
+     31,
+     60
+    ],
+    [
+     -43.5,
+     133,
+     52.4,
+     6,
+     70,
+     130
+    ],
+    [
+     50.5,
+     133,
+     52.4,
+     6,
+     70,
+     130
+    ],
+    [
+     -3,
+     67,
+     -14.6,
+     60,
+     12,
+     47
+    ],
+    [
+     -3,
+     -2.5,
+     -4.1,
+     29.5,
+     26.9,
+     8
+    ],
+    [
+     186.1,
+     99.4,
+     -57.5,
+     21.5,
+     20.2,
+     6
+    ],
+    [
+     186.1,
+     90.4,
+     -49.5,
+     21.5,
+     20.2,
+     6
+    ],
+    [
+     164.3,
+     20.5,
+     -64,
+     39,
+     7,
+     9
+    ],
+    [
+     164.3,
+     20.5,
+     -43,
+     39,
+     7,
+     9
+    ],
+    [
+     -91.8,
+     66.5,
+     22.2,
+     15.3,
+     9.2,
+     16.6
+    ],
+    [
+     93.2,
+     66.5,
+     22.2,
+     15.3,
+     9.2,
+     16.6
+    ],
+    [
+     -6,
+     94.3,
+     -37.2,
+     4,
+     37,
+     4.6
+    ],
+    [
+     13,
+     99.3,
+     -37.2,
+     4,
+     37,
+     4.6
+    ]
+   ],
+   "parent": "gu",
+   "socket": "rodEnd",
+   "tris": 7810
+  },
+  {
+   "id": "mv_mbIn_0bf4f4",
+   "label": "CAD mbIn #0bf4f4",
+   "asset": "assets/cad/final-caulking/mv_mbIn_0bf4f4.stl",
+   "color": "#0bf4f4",
+   "boxes": [
+    [
+     -3.7,
+     -17.4,
+     -4.4,
+     55,
+     139.1,
+     12
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 670
+  },
+  {
+   "id": "mv_mbIn_6363f1",
+   "label": "CAD mbIn #6363f1",
+   "asset": "assets/cad/final-caulking/mv_mbIn_6363f1.stl",
+   "color": "#6363f1",
+   "boxes": [
+    [
+     15.8,
+     55.1,
+     -18.6,
+     16,
+     6,
+     36.4
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 200
+  },
+  {
+   "id": "mv_mbIn_aaaaaa",
+   "label": "CAD mbIn #aaaaaa",
+   "asset": "assets/cad/final-caulking/mv_mbIn_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     -12.7,
+     -20.2,
+     -19.3,
+     36,
+     134.5,
+     17.7
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 416
+  },
+  {
+   "id": "mv_mbIn_ebebbe",
+   "label": "CAD mbIn #ebebbe",
+   "asset": "assets/cad/final-caulking/mv_mbIn_ebebbe.stl",
+   "color": "#ebebbe",
+   "boxes": [
+    [
+     13.8,
+     -52,
+     -17.6,
+     16,
+     18,
+     38.4
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 336
+  },
+  {
+   "id": "mv_mbIn_f16363",
+   "label": "CAD mbIn #f16363",
+   "asset": "assets/cad/final-caulking/mv_mbIn_f16363.stl",
+   "color": "#f16363",
+   "boxes": [
+    [
+     11.5,
+     30.8,
+     -28.9,
+     20,
+     14.6,
+     9
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 222
+  },
+  {
+   "id": "mv_mbIn_ffaaaa",
+   "label": "CAD mbIn #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_mbIn_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -3.7,
+     -25,
+     16.6,
+     55,
+     10,
+     30
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 320
+  },
+  {
+   "id": "mv_mbIn_ffffff",
+   "label": "CAD mbIn #ffffff",
+   "asset": "assets/cad/final-caulking/mv_mbIn_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -0.7,
+     -3,
+     61.6,
+     49,
+     34,
+     124
+    ],
+    [
+     -37,
+     -66,
+     -19.9,
+     21.5,
+     20,
+     4.6
+    ],
+    [
+     -37,
+     9,
+     -13.9,
+     21.5,
+     20,
+     4.6
+    ]
+   ],
+   "parent": "mbIn",
+   "socket": "rodEnd",
+   "tris": 1414
+  },
+  {
+   "id": "mv_mbLoad_20df38",
+   "label": "CAD mbLoad #20df38",
+   "asset": "assets/cad/final-caulking/mv_mbLoad_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "mbLoad",
+   "socket": "rodEnd",
+   "tris": 156
+  },
+  {
+   "id": "mv_mbLoad_a4a41c",
+   "label": "CAD mbLoad #a4a41c",
+   "asset": "assets/cad/final-caulking/mv_mbLoad_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     5,
+     2.6,
+     31.5,
+     50,
+     36,
+     69
+    ]
+   ],
+   "parent": "mbLoad",
+   "socket": "rodEnd",
+   "tris": 640
+  },
+  {
+   "id": "mv_mbLoad_ff9f00",
+   "label": "CAD mbLoad #ff9f00",
+   "asset": "assets/cad/final-caulking/mv_mbLoad_ff9f00.stl",
+   "color": "#ff9f00",
+   "boxes": [
+    [
+     0,
+     45.1,
+     33.5,
+     42,
+     11,
+     60
+    ]
+   ],
+   "parent": "mbLoad",
+   "socket": "rodEnd",
+   "tris": 438
+  },
+  {
+   "id": "mv_mbLoad_ffffff",
+   "label": "CAD mbLoad #ffffff",
+   "asset": "assets/cad/final-caulking/mv_mbLoad_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     26.6,
+     -0.5,
+     1.3,
+     10.8,
+     89.5,
+     107.7
+    ],
+    [
+     -1.7,
+     -1.7,
+     -70.5,
+     32,
+     21.5,
+     141
+    ],
+    [
+     0,
+     33.1,
+     19,
+     40,
+     25,
+     69
+    ],
+    [
+     24,
+     25.6,
+     33.5,
+     20,
+     38,
+     38
+    ],
+    [
+     -0.5,
+     14.6,
+     66.8,
+     16,
+     20,
+     22.5
+    ],
+    [
+     2,
+     26.1,
+     75.5,
+     33,
+     3,
+     27
+    ],
+    [
+     12.5,
+     26.1,
+     55.2,
+     9.8,
+     27,
+     9.8
+    ],
+    [
+     -12.5,
+     26.1,
+     55.2,
+     9.8,
+     27,
+     9.8
+    ],
+    [
+     -12.5,
+     26.1,
+     11.8,
+     9.8,
+     27,
+     9.8
+    ],
+    [
+     12.5,
+     26.1,
+     11.8,
+     9.8,
+     27,
+     9.8
+    ],
+    [
+     -7.1,
+     38.1,
+     83.4,
+     6.7,
+     38,
+     6.7
+    ],
+    [
+     12.4,
+     38.1,
+     67.8,
+     6.7,
+     38,
+     6.7
+    ],
+    [
+     22,
+     9.6,
+     33.5,
+     16,
+     2,
+     38
+    ],
+    [
+     24.6,
+     93.8,
+     33.3,
+     0.5,
+     100,
+     10.5
+    ],
+    [
+     24.6,
+     93.8,
+     28.3,
+     0.5,
+     100,
+     0.5
+    ]
+   ],
+   "parent": "mbLoad",
+   "socket": "rodEnd",
+   "tris": 2710
+  },
+  {
+   "id": "mv_mbOutU_f1f163",
+   "label": "CAD mbOutU #f1f163",
+   "asset": "assets/cad/final-caulking/mv_mbOutU_f1f163.stl",
+   "color": "#f1f163",
+   "boxes": [
+    [
+     -49.7,
+     -11.5,
+     232.6,
+     42,
+     35,
+     15
+    ]
+   ],
+   "parent": "mbOutU",
+   "socket": "rodEnd",
+   "tris": 480
+  },
+  {
+   "id": "mv_mbOutU_ffe300",
+   "label": "CAD mbOutU #ffe300",
+   "asset": "assets/cad/final-caulking/mv_mbOutU_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "mbOutU",
+   "socket": "rodEnd",
+   "tris": 30
+  },
+  {
+   "id": "mv_mbOutU_ffffff",
+   "label": "CAD mbOutU #ffffff",
+   "asset": "assets/cad/final-caulking/mv_mbOutU_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0.2,
+     0,
+     126.1,
+     42,
+     60,
+     253
+    ],
+    [
+     -43.5,
+     0,
+     176.6,
+     29.5,
+     58,
+     97
+    ],
+    [
+     -22.3,
+     2,
+     157.9,
+     13,
+     64,
+     130
+    ],
+    [
+     -47.3,
+     -39.7,
+     136.6,
+     36,
+     30.4,
+     11
+    ],
+    [
+     -58.5,
+     -38.5,
+     159.6,
+     13.5,
+     32,
+     23
+    ],
+    [
+     -36.8,
+     26.3,
+     203.8,
+     4,
+     4.6,
+     32
+    ],
+    [
+     -42.8,
+     26.3,
+     164.6,
+     4,
+     4.6,
+     32
+    ]
+   ],
+   "parent": "mbOutU",
+   "socket": "rodEnd",
+   "tris": 3498
+  },
+  {
+   "id": "mv_mbOut_20df38",
+   "label": "CAD mbOut #20df38",
+   "asset": "assets/cad/final-caulking/mv_mbOut_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "mbOut",
+   "socket": "rodEnd",
+   "tris": 152
+  },
+  {
+   "id": "mv_mbOut_bc63f1",
+   "label": "CAD mbOut #bc63f1",
+   "asset": "assets/cad/final-caulking/mv_mbOut_bc63f1.stl",
+   "color": "#bc63f1",
+   "boxes": [
+    [
+     -41,
+     -66.5,
+     -4.9,
+     120,
+     189,
+     10
+    ]
+   ],
+   "parent": "mbOut",
+   "socket": "rodEnd",
+   "tris": 806
+  },
+  {
+   "id": "mv_mbOut_ff9f00",
+   "label": "CAD mbOut #ff9f00",
+   "asset": "assets/cad/final-caulking/mv_mbOut_ff9f00.stl",
+   "color": "#ff9f00",
+   "boxes": [
+    [
+     -73,
+     -136.5,
+     24.6,
+     60,
+     42,
+     11
+    ]
+   ],
+   "parent": "mbOut",
+   "socket": "rodEnd",
+   "tris": 506
+  },
+  {
+   "id": "mv_mbOut_ffffff",
+   "label": "CAD mbOut #ffffff",
+   "asset": "assets/cad/final-caulking/mv_mbOut_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0.2,
+     1,
+     54.1,
+     34,
+     49,
+     108
+    ],
+    [
+     -105.2,
+     -109.9,
+     -19,
+     107.7,
+     10.8,
+     89.5
+    ],
+    [
+     -58.5,
+     -136.5,
+     12.6,
+     69,
+     40,
+     25
+    ],
+    [
+     -73,
+     -112.5,
+     7.1,
+     38,
+     20,
+     38
+    ],
+    [
+     -76.5,
+     -160.5,
+     -5.9,
+     10,
+     35,
+     20
+    ],
+    [
+     -71,
+     -177,
+     5.6,
+     33,
+     30,
+     3
+    ],
+    [
+     -94.7,
+     -124,
+     5.6,
+     9.8,
+     9.8,
+     27
+    ],
+    [
+     -94.7,
+     -149,
+     5.6,
+     9.8,
+     9.8,
+     27
+    ],
+    [
+     -51.3,
+     -149,
+     5.6,
+     9.8,
+     9.8,
+     27
+    ],
+    [
+     -51.3,
+     -124,
+     5.6,
+     9.8,
+     9.8,
+     27
+    ],
+    [
+     -80.1,
+     -186.4,
+     17.6,
+     6.7,
+     6.7,
+     38
+    ],
+    [
+     -60.6,
+     -170.8,
+     17.6,
+     6.7,
+     6.7,
+     38
+    ],
+    [
+     -73.2,
+     -111.9,
+     75.3,
+     10.5,
+     0.5,
+     100
+    ],
+    [
+     -78.2,
+     -111.9,
+     75.3,
+     0.5,
+     0.5,
+     100
+    ]
+   ],
+   "parent": "mbOut",
+   "socket": "rodEnd",
+   "tris": 2606
+  },
+  {
+   "id": "mv_mbs_00aaaa",
+   "label": "CAD mbs #00aaaa",
+   "asset": "assets/cad/final-caulking/mv_mbs_00aaaa.stl",
+   "color": "#00aaaa",
+   "boxes": [
+    [
+     130.9,
+     94,
+     17.8,
+     296,
+     70,
+     12
+    ],
+    [
+     -22.1,
+     94,
+     29.3,
+     10,
+     70,
+     75
+    ],
+    [
+     22.9,
+     94,
+     4.3,
+     80,
+     6,
+     15
+    ],
+    [
+     -3.1,
+     94,
+     40.3,
+     28,
+     6,
+     33
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 858
+  },
+  {
+   "id": "mv_mbs_20df38",
+   "label": "CAD mbs #20df38",
+   "asset": "assets/cad/final-caulking/mv_mbs_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 509
+  },
+  {
+   "id": "mv_mbs_beebc4",
+   "label": "CAD mbs #beebc4",
+   "asset": "assets/cad/final-caulking/mv_mbs_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     86.3,
+     -4.5,
+     168.3,
+     30,
+     60,
+     165
+    ],
+    [
+     -1.6,
+     -36,
+     220.8,
+     185,
+     3,
+     20
+    ],
+    [
+     -1.6,
+     -36,
+     115.8,
+     185,
+     3,
+     20
+    ],
+    [
+     66.3,
+     -14.5,
+     220.8,
+     10,
+     40,
+     3
+    ],
+    [
+     66.3,
+     -14.5,
+     115.8,
+     10,
+     40,
+     3
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 388
+  },
+  {
+   "id": "mv_mbs_dabeeb",
+   "label": "CAD mbs #dabeeb",
+   "asset": "assets/cad/final-caulking/mv_mbs_dabeeb.stl",
+   "color": "#dabeeb",
+   "boxes": [
+    [
+     102.9,
+     78,
+     -43.2,
+     240,
+     10,
+     60
+    ],
+    [
+     90.9,
+     53,
+     -43.2,
+     216,
+     40,
+     6
+    ],
+    [
+     -22.1,
+     58.5,
+     -43.2,
+     10,
+     65,
+     60
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 696
+  },
+  {
+   "id": "mv_mbs_f16363",
+   "label": "CAD mbs #f16363",
+   "asset": "assets/cad/final-caulking/mv_mbs_f16363.stl",
+   "color": "#f16363",
+   "boxes": [
+    [
+     152.9,
+     129.5,
+     34,
+     13,
+     61,
+     68.5
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 284
+  },
+  {
+   "id": "mv_mbs_ff9f00",
+   "label": "CAD mbs #ff9f00",
+   "asset": "assets/cad/final-caulking/mv_mbs_ff9f00.stl",
+   "color": "#ff9f00",
+   "boxes": [
+    [
+     165.4,
+     61,
+     -4.5,
+     75,
+     24,
+     52.5
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 552
+  },
+  {
+   "id": "mv_mbs_ffaaaa",
+   "label": "CAD mbs #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_mbs_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -32.1,
+     48.5,
+     11.8,
+     10,
+     161,
+     170
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 1831
+  },
+  {
+   "id": "mv_mbs_ffe300",
+   "label": "CAD mbs #ffe300",
+   "asset": "assets/cad/final-caulking/mv_mbs_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 48
+  },
+  {
+   "id": "mv_mbs_ffffff",
+   "label": "CAD mbs #ffffff",
+   "asset": "assets/cad/final-caulking/mv_mbs_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     159.7,
+     94,
+     39.8,
+     238.5,
+     70,
+     36
+    ],
+    [
+     -9.7,
+     -4.5,
+     8.3,
+     30,
+     58,
+     145
+    ],
+    [
+     163.9,
+     97.8,
+     -43.2,
+     113,
+     29.5,
+     58
+    ],
+    [
+     -58.1,
+     -0.2,
+     -0.2,
+     36,
+     37.5,
+     62
+    ],
+    [
+     -32.6,
+     -2,
+     -0.2,
+     15,
+     37,
+     50
+    ],
+    [
+     269.9,
+     141.5,
+     45.3,
+     13,
+     37,
+     46
+    ],
+    [
+     180.4,
+     112.8,
+     -81.7,
+     40,
+     13.5,
+     32
+    ],
+    [
+     237.9,
+     139,
+     58.8,
+     27,
+     37,
+     17
+    ],
+    [
+     211.9,
+     101.5,
+     -82.9,
+     11,
+     36,
+     30.4
+    ],
+    [
+     103.9,
+     104.8,
+     -54.5,
+     7,
+     41.5,
+     33.5
+    ],
+    [
+     -19.6,
+     109,
+     90.8,
+     15,
+     23,
+     12
+    ],
+    [
+     -19.6,
+     109,
+     -47.2,
+     15,
+     23,
+     12
+    ],
+    [
+     -32.1,
+     -2,
+     -34.2,
+     10,
+     25,
+     8
+    ],
+    [
+     123.9,
+     97,
+     -17,
+     32,
+     4,
+     4.6
+    ],
+    [
+     184.7,
+     91,
+     -17,
+     32,
+     4,
+     4.6
+    ],
+    [
+     115.7,
+     61.5,
+     32.8,
+     32,
+     4.6,
+     4
+    ],
+    [
+     239.9,
+     61.5,
+     38.8,
+     32,
+     4.6,
+     4
+    ]
+   ],
+   "parent": "mbs",
+   "socket": "rodEnd",
+   "tris": 4678
+  },
+  {
+   "id": "mv_ngTilt_ff6aff",
+   "label": "CAD ngTilt #ff6aff",
+   "asset": "assets/cad/final-caulking/mv_ngTilt_ff6aff.stl",
+   "color": "#ff6aff",
+   "boxes": [
+    [
+     -21.3,
+     6.6,
+     0,
+     15,
+     150,
+     100
+    ],
+    [
+     1.2,
+     -0.4,
+     0,
+     30,
+     20,
+     40
+    ]
+   ],
+   "parent": "ngTilt",
+   "socket": "slider",
+   "tris": 292
+  },
+  {
+   "id": "mv_pin_ebbebe",
+   "label": "CAD pin #ebbebe",
+   "asset": "assets/cad/final-caulking/mv_pin_ebbebe.stl",
+   "color": "#ebbebe",
+   "boxes": [
+    [
+     0,
+     0,
+     -26.6,
+     40,
+     25,
+     29
+    ],
+    [
+     0,
+     0,
+     -38.6,
+     10,
+     10,
+     77
+    ]
+   ],
+   "parent": "pin",
+   "socket": "rodEnd",
+   "tris": 444
+  },
+  {
+   "id": "mv_rot_20df38",
+   "label": "CAD rot #20df38",
+   "asset": "assets/cad/final-caulking/mv_rot_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "rot",
+   "socket": "top",
+   "tris": 86
+  },
+  {
+   "id": "mv_rot_aaaaaa",
+   "label": "CAD rot #aaaaaa",
+   "asset": "assets/cad/final-caulking/mv_rot_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     0,
+     -1,
+     -48.1,
+     20,
+     20,
+     70
+    ]
+   ],
+   "parent": "rot",
+   "socket": "top",
+   "tris": 104
+  },
+  {
+   "id": "mv_rot_ebbebe",
+   "label": "CAD rot #ebbebe",
+   "asset": "assets/cad/final-caulking/mv_rot_ebbebe.stl",
+   "color": "#ebbebe",
+   "boxes": [
+    [
+     0,
+     -1,
+     -54.6,
+     16,
+     16,
+     7
+    ]
+   ],
+   "parent": "rot",
+   "socket": "top",
+   "tris": 128
+  },
+  {
+   "id": "mv_rot_ffe300",
+   "label": "CAD rot #ffe300",
+   "asset": "assets/cad/final-caulking/mv_rot_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [],
+   "parent": "rot",
+   "socket": "top",
+   "tris": 80
+  },
+  {
+   "id": "mv_shut2_0bf4f4",
+   "label": "CAD shut2 #0bf4f4",
+   "asset": "assets/cad/final-caulking/mv_shut2_0bf4f4.stl",
+   "color": "#0bf4f4",
+   "boxes": [
+    [
+     -23.5,
+     0.5,
+     90.1,
+     5,
+     133,
+     360
+    ]
+   ],
+   "parent": "shut2",
+   "socket": "rodEnd",
+   "tris": 268
+  },
+  {
+   "id": "mv_shut2_aaaaaa",
+   "label": "CAD shut2 #aaaaaa",
+   "asset": "assets/cad/final-caulking/mv_shut2_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     0,
+     0.5,
+     -146.1,
+     25,
+     62,
+     292.5
+    ],
+    [
+     0,
+     0.5,
+     -346.1,
+     25,
+     62,
+     292.5
+    ]
+   ],
+   "parent": "shut2",
+   "socket": "rodEnd",
+   "tris": 1028
+  },
+  {
+   "id": "mv_shut2_bc63f1",
+   "label": "CAD shut2 #bc63f1",
+   "asset": "assets/cad/final-caulking/mv_shut2_bc63f1.stl",
+   "color": "#bc63f1",
+   "boxes": [
+    [
+     -2.7,
+     0.5,
+     40.9,
+     36.5,
+     68,
+     81.5
+    ]
+   ],
+   "parent": "shut2",
+   "socket": "rodEnd",
+   "tris": 328
+  },
+  {
+   "id": "mv_shut2_ffaaaa",
+   "label": "CAD shut2 #ffaaaa",
+   "asset": "assets/cad/final-caulking/mv_shut2_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     -38.3,
+     51.5,
+     238.6,
+     20.5,
+     77.4,
+     63
+    ]
+   ],
+   "parent": "shut2",
+   "socket": "rodEnd",
+   "tris": 168
+  },
+  {
+   "id": "mv_tray_20df38",
+   "label": "CAD tray #20df38",
+   "asset": "assets/cad/final-caulking/mv_tray_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "tray",
+   "socket": "rodEnd",
+   "tris": 214
+  },
+  {
+   "id": "mv_tray_ffffff",
+   "label": "CAD tray #ffffff",
+   "asset": "assets/cad/final-caulking/mv_tray_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     0,
+     -6.4,
+     -77.5,
+     70,
+     40,
+     175
+    ],
+    [
+     0,
+     0.1,
+     -82.3,
+     62,
+     25,
+     164.5
+    ],
+    [
+     24.5,
+     2.6,
+     -38.6,
+     49,
+     65,
+     15
+    ],
+    [
+     0,
+     -7.4,
+     -192.1,
+     40,
+     45,
+     25
+    ],
+    [
+     0,
+     -49.4,
+     -78,
+     25,
+     25,
+     48
+    ],
+    [
+     0,
+     -49.4,
+     -24,
+     25,
+     25,
+     48
+    ],
+    [
+     0,
+     -9.4,
+     25,
+     50,
+     20,
+     30
+    ],
+    [
+     0,
+     -40.9,
+     -156,
+     40,
+     29,
+     12
+    ],
+    [
+     0,
+     -49.4,
+     -111.5,
+     12,
+     12,
+     49
+    ],
+    [
+     0,
+     -49.4,
+     -10.5,
+     12,
+     12,
+     49
+    ],
+    [
+     0,
+     -49.4,
+     -51,
+     25,
+     25,
+     6
+    ],
+    [
+     -9.8,
+     -55.4,
+     -74.5,
+     6.1,
+     6.1,
+     27
+    ],
+    [
+     -6,
+     -59.2,
+     -82.5,
+     6.1,
+     6.1,
+     27
+    ],
+    [
+     6,
+     -59.2,
+     -19.5,
+     6.1,
+     6.1,
+     27
+    ],
+    [
+     9.8,
+     -55.4,
+     -27.5,
+     6.1,
+     6.1,
+     27
+    ],
+    [
+     0,
+     -49.4,
+     -129,
+     9.2,
+     8,
+     4
+    ],
+    [
+     0,
+     -49.4,
+     7,
+     9.2,
+     8,
+     4
+    ]
+   ],
+   "parent": "tray",
+   "socket": "rodEnd",
+   "tris": 4320
+  },
+  {
+   "id": "mv_tslide_20df38",
+   "label": "CAD tslide #20df38",
+   "asset": "assets/cad/final-caulking/mv_tslide_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "parent": "tslide",
+   "socket": "rodEnd",
+   "tris": 188
+  },
+  {
+   "id": "mv_tslide_ebbebe",
+   "label": "CAD tslide #ebbebe",
+   "asset": "assets/cad/final-caulking/mv_tslide_ebbebe.stl",
+   "color": "#ebbebe",
+   "boxes": [
+    [
+     -51.9,
+     -31.7,
+     55,
+     36,
+     37.5,
+     62
+    ]
+   ],
+   "parent": "tslide",
+   "socket": "rodEnd",
+   "tris": 264
+  },
+  {
+   "id": "mv_tslide_f16363",
+   "label": "CAD tslide #f16363",
+   "asset": "assets/cad/final-caulking/mv_tslide_f16363.stl",
+   "color": "#f16363",
+   "boxes": [
+    [
+     -98.4,
+     -36,
+     63,
+     31,
+     13,
+     32
+    ]
+   ],
+   "parent": "tslide",
+   "socket": "rodEnd",
+   "tris": 244
+  },
+  {
+   "id": "mv_tslide_ffffff",
+   "label": "CAD tslide #ffffff",
+   "asset": "assets/cad/final-caulking/mv_tslide_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     -76.9,
+     -70,
+     55,
+     12,
+     99,
+     100
+    ],
+    [
+     -89.4,
+     -79.5,
+     55,
+     13,
+     80,
+     100
+    ],
+    [
+     -76.4,
+     -31,
+     55,
+     13,
+     35,
+     54
+    ],
+    [
+     -98.9,
+     -26.3,
+     27.7,
+     6,
+     25.5,
+     29.2
+    ]
+   ],
+   "parent": "tslide",
+   "socket": "rodEnd",
+   "tris": 1670
+  },
+  {
+   "id": "shl_00aaaa",
+   "label": "CAD #00aaaa",
+   "asset": "assets/cad/final-caulking/shl_00aaaa.stl",
+   "color": "#00aaaa",
+   "boxes": [
+    [
+     735,
+     217.8,
+     730.4,
+     10,
+     122.5,
+     183
+    ],
+    [
+     755,
+     191.5,
+     640.9,
+     30,
+     70,
+     10
+    ]
+   ],
+   "tris": 484
+  },
+  {
+   "id": "shl_00ff9f",
+   "label": "CAD #00ff9f",
+   "asset": "assets/cad/final-caulking/shl_00ff9f.stl",
+   "color": "#00ff9f",
+   "boxes": [],
+   "tris": 108
+  },
+  {
+   "id": "shl_0bf4f4",
+   "label": "CAD #0bf4f4",
+   "asset": "assets/cad/final-caulking/shl_0bf4f4.stl",
+   "color": "#0bf4f4",
+   "boxes": [
+    [
+     494.6,
+     189,
+     806,
+     99.9,
+     107,
+     11.7
+    ]
+   ],
+   "tris": 412
+  },
+  {
+   "id": "shl_2020df",
+   "label": "CAD #2020df",
+   "asset": "assets/cad/final-caulking/shl_2020df.stl",
+   "color": "#2020df",
+   "boxes": [],
+   "tris": 8
+  },
+  {
+   "id": "shl_20df38",
+   "label": "CAD #20df38",
+   "asset": "assets/cad/final-caulking/shl_20df38.stl",
+   "color": "#20df38",
+   "boxes": [],
+   "tris": 2725
+  },
+  {
+   "id": "shl_323232",
+   "label": "CAD #323232",
+   "asset": "assets/cad/final-caulking/shl_323232.stl",
+   "color": "#323232",
+   "boxes": [],
+   "tris": 1402
+  },
+  {
+   "id": "shl_34b7f8",
+   "label": "CAD #34b7f8",
+   "asset": "assets/cad/final-caulking/shl_34b7f8.stl",
+   "color": "#34b7f8",
+   "boxes": [
+    [
+     416.5,
+     227.5,
+     875.9,
+     284,
+     140,
+     10
+    ],
+    [
+     369.5,
+     50,
+     830.9,
+     85,
+     170,
+     10
+    ],
+    [
+     402,
+     121.3,
+     853.4,
+     10,
+     312.5,
+     35
+    ],
+    [
+     337,
+     121.3,
+     853.4,
+     10,
+     312.5,
+     35
+    ],
+    [
+     416.5,
+     282.5,
+     858.4,
+     284,
+     10,
+     25
+    ],
+    [
+     369.5,
+     100,
+     853.4,
+     55,
+     10,
+     35
+    ]
+   ],
+   "tris": 1024
+  },
+  {
+   "id": "shl_6363f1",
+   "label": "CAD #6363f1",
+   "asset": "assets/cad/final-caulking/shl_6363f1.stl",
+   "color": "#6363f1",
+   "boxes": [
+    [
+     475,
+     86.1,
+     620.9,
+     64,
+     10,
+     320
+    ],
+    [
+     475,
+     80.1,
+     455.9,
+     64,
+     62,
+     10
+    ],
+    [
+     475,
+     101.1,
+     595.9,
+     6,
+     20,
+     270
+    ]
+   ],
+   "tris": 708
+  },
+  {
+   "id": "shl_9d0bf4",
+   "label": "CAD #9d0bf4",
+   "asset": "assets/cad/final-caulking/shl_9d0bf4.stl",
+   "color": "#9d0bf4",
+   "boxes": [],
+   "tris": 608
+  },
+  {
+   "id": "shl_a41c1c",
+   "label": "CAD #a41c1c",
+   "asset": "assets/cad/final-caulking/shl_a41c1c.stl",
+   "color": "#a41c1c",
+   "boxes": [],
+   "tris": 270
+  },
+  {
+   "id": "shl_a4a41c",
+   "label": "CAD #a4a41c",
+   "asset": "assets/cad/final-caulking/shl_a4a41c.stl",
+   "color": "#a4a41c",
+   "boxes": [
+    [
+     83.5,
+     187.3,
+     619.4,
+     90,
+     105.5,
+     157
+    ],
+    [
+     475,
+     -81.7,
+     786.5,
+     120,
+     126.3,
+     73.1
+    ],
+    [
+     730,
+     213.5,
+     628.4,
+     340,
+     154,
+     15
+    ],
+    [
+     68,
+     191.3,
+     440.9,
+     340,
+     112.5,
+     20
+    ],
+    [
+     475,
+     -101.9,
+     746.1,
+     120,
+     30.2,
+     39.8
+    ]
+   ],
+   "tris": 2378
+  },
+  {
+   "id": "shl_aaaaaa",
+   "label": "CAD #aaaaaa",
+   "asset": "assets/cad/final-caulking/shl_aaaaaa.stl",
+   "color": "#aaaaaa",
+   "boxes": [
+    [
+     -705,
+     189,
+     731.1,
+     2497,
+     75,
+     129.6
+    ],
+    [
+     -705,
+     189,
+     776.4,
+     2436,
+     107,
+     34
+    ],
+    [
+     -1516,
+     175.1,
+     710.4,
+     322,
+     157.2,
+     134
+    ],
+    [
+     -145,
+     165.5,
+     838.4,
+     124,
+     220,
+     175
+    ],
+    [
+     55,
+     165.5,
+     838.4,
+     124,
+     220,
+     175
+    ],
+    [
+     -1463.5,
+     194,
+     699.7,
+     80,
+     117,
+     80
+    ],
+    [
+     -1282,
+     173.8,
+     725.4,
+     100,
+     99.3,
+     60
+    ],
+    [
+     -145,
+     220.5,
+     945.9,
+     115,
+     105,
+     40
+    ],
+    [
+     55,
+     220.5,
+     945.9,
+     115,
+     105,
+     40
+    ],
+    [
+     -40,
+     213.5,
+     1569.4,
+     30,
+     64,
+     233
+    ],
+    [
+     -145,
+     220.5,
+     975.9,
+     115,
+     105,
+     20
+    ],
+    [
+     55,
+     220.5,
+     975.9,
+     115,
+     105,
+     20
+    ],
+    [
+     -1927.5,
+     189,
+     777.2,
+     55,
+     107,
+     35.6
+    ],
+    [
+     517.5,
+     189,
+     777.2,
+     55,
+     107,
+     35.6
+    ],
+    [
+     -1282,
+     128,
+     737.9,
+     106,
+     15,
+     85
+    ],
+    [
+     -505,
+     189,
+     763.9,
+     37,
+     124.6,
+     25
+    ],
+    [
+     475,
+     207.5,
+     910.4,
+     64.4,
+     47,
+     21
+    ],
+    [
+     426.5,
+     207.5,
+     903.4,
+     230,
+     15,
+     13
+    ],
+    [
+     -267,
+     261,
+     953.3,
+     28,
+     50,
+     25
+    ],
+    [
+     -198,
+     360,
+     953.3,
+     50,
+     28,
+     25
+    ],
+    [
+     -123,
+     360,
+     953.3,
+     50,
+     28,
+     25
+    ],
+    [
+     -267,
+     9,
+     953.3,
+     28,
+     50,
+     25
+    ],
+    [
+     -198,
+     360,
+     1338.5,
+     50,
+     28,
+     25
+    ],
+    [
+     -123,
+     360,
+     1338.5,
+     50,
+     28,
+     25
+    ],
+    [
+     -267,
+     261,
+     1338.5,
+     28,
+     50,
+     25
+    ],
+    [
+     -267,
+     9,
+     1338.5,
+     28,
+     50,
+     25
+    ],
+    [
+     875,
+     284,
+     867.4,
+     45,
+     40,
+     5
+    ]
+   ],
+   "tris": 13052
+  },
+  {
+   "id": "shl_baf40b",
+   "label": "CAD #baf40b",
+   "asset": "assets/cad/final-caulking/shl_baf40b.stl",
+   "color": "#baf40b",
+   "boxes": [],
+   "tris": 512
+  },
+  {
+   "id": "shl_bc63f1",
+   "label": "CAD #bc63f1",
+   "asset": "assets/cad/final-caulking/shl_bc63f1.stl",
+   "color": "#bc63f1",
+   "boxes": [
+    [
+     615,
+     217.8,
+     730.4,
+     10,
+     122.5,
+     183
+    ],
+    [
+     723,
+     34,
+     630.9,
+     380,
+     18,
+     20
+    ],
+    [
+     723,
+     94,
+     630.9,
+     380,
+     18,
+     20
+    ],
+    [
+     595,
+     191.5,
+     640.9,
+     30,
+     70,
+     10
+    ]
+   ],
+   "tris": 1522
+  },
+  {
+   "id": "shl_bebeeb",
+   "label": "CAD #bebeeb",
+   "asset": "assets/cad/final-caulking/shl_bebeeb.stl",
+   "color": "#bebeeb",
+   "boxes": [
+    [
+     383,
+     50,
+     440.9,
+     1060,
+     170,
+     20
+    ],
+    [
+     475,
+     -108.9,
+     791.5,
+     126,
+     94.8,
+     74
+    ],
+    [
+     472.5,
+     244,
+     797.9,
+     155,
+     3,
+     77
+    ],
+    [
+     497.5,
+     134,
+     787.9,
+     105,
+     3,
+     57
+    ]
+   ],
+   "tris": 4808
+  },
+  {
+   "id": "shl_beebc4",
+   "label": "CAD #beebc4",
+   "asset": "assets/cad/final-caulking/shl_beebc4.stl",
+   "color": "#beebc4",
+   "boxes": [
+    [
+     93.5,
+     109,
+     552.9,
+     460,
+     25,
+     204
+    ],
+    [
+     402.5,
+     595,
+     1348.1,
+     255,
+     15,
+     315
+    ],
+    [
+     402.5,
+     645.5,
+     1331.6,
+     255,
+     15,
+     210
+    ],
+    [
+     316,
+     620.3,
+     1343.1,
+     12,
+     35.5,
+     233
+    ],
+    [
+     489,
+     620.3,
+     1343.1,
+     12,
+     35.5,
+     233
+    ]
+   ],
+   "tris": 2977
+  },
+  {
+   "id": "shl_dabeeb",
+   "label": "CAD #dabeeb",
+   "asset": "assets/cad/final-caulking/shl_dabeeb.stl",
+   "color": "#dabeeb",
+   "boxes": [
+    [
+     875,
+     284.5,
+     894.9,
+     118,
+     114,
+     10
+    ]
+   ],
+   "tris": 732
+  },
+  {
+   "id": "shl_df2222",
+   "label": "CAD #df2222",
+   "asset": "assets/cad/final-caulking/shl_df2222.stl",
+   "color": "#df2222",
+   "boxes": [
+    [
+     875,
+     405,
+     893.9,
+     130,
+     125,
+     6
+    ],
+    [
+     901,
+     402,
+     900.9,
+     8,
+     131,
+     8
+    ],
+    [
+     849,
+     402,
+     900.9,
+     8,
+     131,
+     8
+    ],
+    [
+     837.5,
+     387.5,
+     904.4,
+     3,
+     160,
+     15
+    ],
+    [
+     912.5,
+     392.5,
+     904.4,
+     3,
+     150,
+     15
+    ]
+   ],
+   "tris": 1089
+  },
+  {
+   "id": "shl_ebbebe",
+   "label": "CAD #ebbebe",
+   "asset": "assets/cad/final-caulking/shl_ebbebe.stl",
+   "color": "#ebbebe",
+   "boxes": [
+    [
+     427,
+     273,
+     899.9,
+     257,
+     45,
+     38
+    ],
+    [
+     875,
+     289.5,
+     728.4,
+     60,
+     91,
+     55
+    ],
+    [
+     875,
+     274,
+     773.9,
+     60,
+     60,
+     66
+    ],
+    [
+     723,
+     35.5,
+     645.4,
+     380,
+     15,
+     13
+    ],
+    [
+     723,
+     95.5,
+     645.4,
+     380,
+     15,
+     13
+    ],
+    [
+     -140.6,
+     199.5,
+     1251,
+     33.3,
+     54.8,
+     39.7
+    ],
+    [
+     783.9,
+     95.5,
+     652.4,
+     64.4,
+     47,
+     21
+    ],
+    [
+     783.9,
+     35.5,
+     652.4,
+     64.4,
+     47,
+     21
+    ],
+    [
+     870.8,
+     95.5,
+     652.4,
+     64.4,
+     47,
+     21
+    ],
+    [
+     870.8,
+     35.5,
+     652.4,
+     64.4,
+     47,
+     21
+    ],
+    [
+     875,
+     284,
+     811.4,
+     32,
+     32,
+     41
+    ]
+   ],
+   "tris": 8549
+  },
+  {
+   "id": "shl_ebebbe",
+   "label": "CAD #ebebbe",
+   "asset": "assets/cad/final-caulking/shl_ebebbe.stl",
+   "color": "#ebebbe",
+   "boxes": [
+    [
+     683,
+     99.5,
+     535.9,
+     300,
+     174,
+     140
+    ],
+    [
+     93.5,
+     -10,
+     552.9,
+     460,
+     25,
+     204
+    ],
+    [
+     723,
+     72,
+     613.4,
+     400,
+     229,
+     15
+    ],
+    [
+     683,
+     50,
+     458.4,
+     340,
+     157,
+     15
+    ],
+    [
+     875,
+     287,
+     712.9,
+     86,
+     70,
+     124
+    ],
+    [
+     875,
+     274.5,
+     782.4,
+     114,
+     95,
+     15
+    ],
+    [
+     853.5,
+     264.5,
+     643.4,
+     137,
+     70,
+     15
+    ]
+   ],
+   "tris": 4251
+  },
+  {
+   "id": "shl_f16363",
+   "label": "CAD #f16363",
+   "asset": "assets/cad/final-caulking/shl_f16363.stl",
+   "color": "#f16363",
+   "boxes": [
+    [
+     475,
+     -147.7,
+     770.6,
+     126,
+     22.6,
+     43.9
+    ]
+   ],
+   "tris": 4592
+  },
+  {
+   "id": "shl_ff6aff",
+   "label": "CAD #ff6aff",
+   "asset": "assets/cad/final-caulking/shl_ff6aff.stl",
+   "color": "#ff6aff",
+   "boxes": [
+    [
+     675,
+     285.5,
+     763.9,
+     110,
+     255,
+     108
+    ],
+    [
+     675,
+     220.5,
+     851.4,
+     110,
+     105,
+     67
+    ],
+    [
+     675.3,
+     323,
+     681.4,
+     70,
+     70,
+     57
+    ],
+    [
+     615,
+     358,
+     763.9,
+     10,
+     110,
+     108
+    ],
+    [
+     675,
+     220.5,
+     889.9,
+     110,
+     105,
+     10
+    ]
+   ],
+   "tris": 732
+  },
+  {
+   "id": "shl_ffaaaa",
+   "label": "CAD #ffaaaa",
+   "asset": "assets/cad/final-caulking/shl_ffaaaa.stl",
+   "color": "#ffaaaa",
+   "boxes": [
+    [
+     426.5,
+     206,
+     889.9,
+     230,
+     18,
+     18
+    ]
+   ],
+   "tris": 322
+  },
+  {
+   "id": "shl_ffe300",
+   "label": "CAD #ffe300",
+   "asset": "assets/cad/final-caulking/shl_ffe300.stl",
+   "color": "#ffe300",
+   "boxes": [
+    [
+     -271,
+     122.4,
+     982.7,
+     31.6,
+     425.1,
+     42.1
+    ],
+    [
+     -270.9,
+     122.4,
+     1309.1,
+     31.6,
+     425.1,
+     42.1
+    ],
+    [
+     -156.4,
+     364,
+     982.3,
+     265.1,
+     31.6,
+     42.1
+    ],
+    [
+     -156.4,
+     363.9,
+     1309.4,
+     265.1,
+     31.6,
+     42.1
+    ]
+   ],
+   "tris": 4174
+  },
+  {
+   "id": "shl_ffffff",
+   "label": "CAD #ffffff",
+   "asset": "assets/cad/final-caulking/shl_ffffff.stl",
+   "color": "#ffffff",
+   "boxes": [
+    [
+     49.9,
+     191,
+     506.8,
+     316.2,
+     99,
+     145.8
+    ],
+    [
+     340,
+     544.9,
+     1362.4,
+     132,
+     85.2,
+     365.3
+    ],
+    [
+     63.3,
+     63,
+     610.4,
+     443.5,
+     67,
+     85
+    ],
+    [
+     340,
+     538.6,
+     1632.2,
+     132,
+     95.7,
+     185.3
+    ],
+    [
+     369.5,
+     48.5,
+     640.9,
+     75,
+     75,
+     350
+    ],
+    [
+     154.9,
+     61.5,
+     505.4,
+     260.3,
+     64,
+     85
+    ],
+    [
+     412.5,
+     100,
+     105.9,
+     785,
+     40,
+     40
+    ],
+    [
+     412.5,
+     0,
+     395.9,
+     785,
+     40,
+     40
+    ],
+    [
+     412.5,
+     0,
+     105.9,
+     785,
+     40,
+     40
+    ],
+    [
+     412.5,
+     100,
+     395.9,
+     785,
+     40,
+     40
+    ],
+    [
+     475,
+     -165,
+     655.9,
+     184,
+     130,
+     40
+    ],
+    [
+     412.5,
+     87.8,
+     253.4,
+     765,
+     4.5,
+     245
+    ],
+    [
+     475,
+     -176.9,
+     710.9,
+     110,
+     100,
+     70
+    ],
+    [
+     725.5,
+     -13,
+     639.9,
+     357,
+     45,
+     38
+    ],
+    [
+     0,
+     0,
+     250.9,
+     40,
+     40,
+     330
+    ],
+    [
+     0,
+     100,
+     250.9,
+     40,
+     40,
+     330
+    ],
+    [
+     825,
+     100,
+     250.9,
+     40,
+     40,
+     330
+    ],
+    [
+     825,
+     0,
+     250.9,
+     40,
+     40,
+     330
+    ],
+    [
+     443.5,
+     556.3,
+     1331.6,
+     23,
+     62.5,
+     280
+    ],
+    [
+     503.5,
+     556.3,
+     1331.6,
+     23,
+     62.5,
+     280
+    ],
+    [
+     1113.1,
+     -13,
+     297.2,
+     33,
+     85,
+     139.1
+    ],
+    [
+     1149.4,
+     -13,
+     297.2,
+     33,
+     85,
+     139.1
+    ],
+    [
+     299.3,
+     61.5,
+     557.9,
+     28.5,
+     64,
+     190
+    ],
+    [
+     1036,
+     44.5,
+     298.3,
+     53,
+     57,
+     113
+    ],
+    [
+     -57,
+     100,
+     70.9,
+     50,
+     40,
+     140
+    ],
+    [
+     -57,
+     0,
+     70.9,
+     50,
+     40,
+     140
+    ],
+    [
+     882,
+     100,
+     70.9,
+     50,
+     40,
+     140
+    ],
+    [
+     882,
+     0,
+     70.9,
+     50,
+     40,
+     140
+    ],
+    [
+     475,
+     66.1,
+     712.5,
+     64,
+     30,
+     133
+    ],
+    [
+     296.9,
+     49.4,
+     351,
+     113.7,
+     73.2,
+     30.5
+    ],
+    [
+     466.9,
+     49.4,
+     351,
+     113.7,
+     73.2,
+     30.5
+    ],
+    [
+     126.9,
+     49.4,
+     351,
+     113.6,
+     73.2,
+     30.5
+    ],
+    [
+     126.7,
+     49.4,
+     192.7,
+     113.4,
+     73.2,
+     30
+    ],
+    [
+     296.7,
+     49.4,
+     192.7,
+     113.4,
+     73.2,
+     30
+    ],
+    [
+     466.7,
+     49.4,
+     192.7,
+     113.4,
+     73.2,
+     30
+    ],
+    [
+     979,
+     44.5,
+     279.5,
+     53,
+     52,
+     80.3
+    ],
+    [
+     133.6,
+     47.5,
+     163.6,
+     102.4,
+     76.5,
+     28.2
+    ],
+    [
+     303.6,
+     47.6,
+     163.6,
+     102.4,
+     76.5,
+     28.2
+    ],
+    [
+     473.6,
+     47.6,
+     163.6,
+     102.4,
+     76.5,
+     28.2
+    ],
+    [
+     369.5,
+     50,
+     458.4,
+     85,
+     170,
+     15
+    ],
+    [
+     35,
+     105,
+     253.4,
+     30,
+     30,
+     235
+    ],
+    [
+     790,
+     105,
+     253.4,
+     30,
+     30,
+     235
+    ],
+    [
+     1036,
+     40.6,
+     203.3,
+     45.5,
+     53.3,
+     76.9
+    ],
+    [
+     463.5,
+     281.5,
+     905.9,
+     60,
+     38,
+     80
+    ],
+    [
+     93.5,
+     -11.5,
+     661.2,
+     460,
+     20,
+     16.5
+    ],
+    [
+     93.5,
+     110.5,
+     661.2,
+     460,
+     20,
+     16.5
+    ],
+    [
+     205,
+     220.5,
+     975.2,
+     115,
+     105,
+     12.5
+    ],
+    [
+     369.5,
+     50,
+     820.9,
+     85,
+     170,
+     10
+    ],
+    [
+     212.5,
+     237.5,
+     798.4,
+     50,
+     30,
+     85
+    ],
+    [
+     212.5,
+     140.5,
+     798.4,
+     50,
+     30,
+     85
+    ],
+    [
+     205,
+     220.5,
+     982.7,
+     85.3,
+     90,
+     16.5
+    ],
+    [
+     681.5,
+     72.3,
+     187.5,
+     60,
+     26.5,
+     76
+    ],
+    [
+     687.8,
+     37,
+     187.5,
+     149.6,
+     44.1,
+     17.1
+    ],
+    [
+     687.8,
+     37,
+     171.5,
+     149.6,
+     44.1,
+     17.1
+    ],
+    [
+     0,
+     50,
+     423.4,
+     50,
+     150,
+     15
+    ],
+    [
+     825,
+     50,
+     423.4,
+     50,
+     150,
+     15
+    ],
+    [
+     1113.1,
+     7,
+     192.7,
+     32,
+     45,
+     77.9
+    ],
+    [
+     1149.4,
+     7,
+     192.7,
+     32,
+     45,
+     77.9
+    ],
+    [
+     875,
+     284,
+     891.7,
+     82,
+     82,
+     15.5
+    ],
+    [
+     0,
+     50,
+     105.9,
+     40,
+     60,
+     40
+    ]
+   ],
+   "tris": 63689
+  }
+ ]
+}

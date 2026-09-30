@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HMI</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #e9ebee; --panel: #ffffff; --ink: #1d2126; --muted: #6b7480; --line: #d9dde2;
+    --bezel: #2b2f35; --lcd: #f4f4f0; --lcdink: #111111; --btn: #cfd6de; --btnink: #10151b; --btnedge: #7c8792;
+    --on: #37c46a; --onink: #062b12; --lampoff: #3a4552; --warn: #e0a02c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15181c; --panel: #1d2126; --ink: #e6e9ed; --muted: #8e98a4; --line: #2c3238; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header b { font-size: 15px; }
+  header .sp { flex: 1; }
+  .mono { font: 12px ui-monospace, Consolas, monospace; }
+  button, select { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+  a { color: inherit; }
+  main { flex: 1; display: flex; gap: 12px; padding: 12px; min-height: 0; flex-wrap: wrap; align-items: flex-start; }
+  .bezel { background: var(--bezel); border-radius: 14px; padding: 18px 22px 26px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .bezel .brand { color: #aeb6c0; font: 600 11px system-ui, sans-serif; letter-spacing: .12em; margin-top: 8px; display: flex; justify-content: space-between; }
+  #lcd { position: relative; background: var(--lcd); overflow: hidden; border-radius: 2px; transform-origin: 0 0; }
+  #wrap { position: relative; }
+  .it { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line; overflow: hidden;
+        font: 10px/1.05 Arial, sans-serif; color: var(--lcdink); user-select: none; padding: 0 1px; }
+  .it.sw { background: var(--btn); color: var(--btnink); border: 1px solid var(--btnedge); border-radius: 2px; box-shadow: inset -1px -1px 0 rgba(0,0,0,.35), inset 1px 1px 0 rgba(255,255,255,.7); cursor: pointer; }
+  .it.sw.go { background: #d8dee6; }
+  .it.sw.dn { box-shadow: inset 1px 1px 0 rgba(0,0,0,.45); transform: translate(0.5px, 0.5px); }
+  .it.sw.lit { background: var(--on); color: var(--onink); }
+  .it.lamp { background: #9aa3ad; color: #111; border: 1px solid #2a323d; border-radius: 2px; }
+  .it.lamp.lit { background: var(--on); color: var(--onink); }
+  .it.lamp.lit.fault { background: #d9453b; color: #fff; }
+  .it.num { background: #07101c; color: #7fe0a0; border: 1px solid #294056; font-family: ui-monospace, Consolas, monospace; justify-content: flex-end; padding-right: 2px; }
+  .it.box { border: 1px solid rgba(40,48,60,.35); }
+  .it.text { color: var(--lcdink); }
+  .it.title { justify-content: flex-start; font-weight: 700; }
+  aside { flex: 1; min-width: 280px; max-width: 520px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: auto; max-height: calc(100vh - 80px); }
+  aside h3 { margin: 0; padding: 6px 10px; font-size: 13px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+  #screens div { padding: 2px 10px; cursor: pointer; display: flex; gap: 8px; }
+  #screens div span { color: var(--muted); font: 11px ui-monospace, Consolas, monospace; min-width: 3em; }
+  #screens div.cur { background: rgba(55,196,106,.15); font-weight: 600; }
+  #screens div:hover { background: rgba(0,0,0,.05); }
+  #devs { font: 11px ui-monospace, Consolas, monospace; padding: 4px 10px; color: var(--muted); }
+  #devs b { color: var(--ink); }
+  #note { padding: 6px 10px; color: var(--muted); font-size: 12px; }
+  #warn { color: var(--warn); padding: 4px 10px; }
+</style>
+</head>
+<body>
+<header>
+  <b>HMI</b>
+  <select id="file" title="Touch panel file (plc/*.vs4)"></select>
+  <span id="where" class="mono"></span>
+  <span class="sp"></span>
+  <label title="Screen scale"><input type="range" id="zoom" min="2" max="5" step="0.5" value="3"> zoom</label>
+  <a href="/" target="mio3d"><button>3D view ↗</button></a>
+  <a href="/ladder" target="mioladder"><button>Ladder ↗</button></a>
+  <a href="/twin" target="miotwin"><button>Twin ↗</button></a>
+</header>
+<main>
+  <div class="bezel">
+    <div id="wrap"><div id="lcd"></div></div>
+    <div class="brand"><span>KEYENCE VT3</span><span id="scrno"></span></div>
+  </div>
+  <aside>
+    <h3>Screens</h3>
+    <div id="screens"></div>
+    <h3>This screen's PLC bits</h3>
+    <div id="devs"></div>
+    <div id="warn"></div>
+    <div id="note">Drawn from the machine's own VT STUDIO file: every part is where the file puts it, says what it says,
+      lights from the bit it names and writes the bit it names (held while pressed). Colours and fonts are this page's,
+      not the panel's.</div>
+  </aside>
+</main>
+<script type="module" src="/web/hmi.js"></script>
+</body>
+</html>

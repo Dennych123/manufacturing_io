@@ -1,0 +1,3945 @@
+{
+  "format": "mio-scene/1",
+  "name": "final-caulking",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "ladder",
+    "mode": "sim",
+    "minPulseMs": 20,
+    "ladder": {
+      "cxp": "plc/final-caulking-mdf.cxp",
+      "hmi": "plc/final-caulking-mdf.vs4",
+      "map": {
+        "CR_OIL_DISP_SHUT1_UP": "3205.07",
+        "SOL_SHUT1_DN": "3205.08",
+        "AS_SHUT1_UP": "3301.00",
+        "AS_SHUT1_DN": "3301.01",
+        "SOL_SHUT2_DN": "3205.10",
+        "SOL_SHUT2_UP": "3205.09",
+        "AS_SHUT2_DN": "3301.03",
+        "AS_SHUT2_UP": "3301.02",
+        "PH_DIAPH_LOADIN": "3304.10",
+        "PH_ST_DIAPH_VAC": "3304.11",
+        "PH_ST_BUFFER_DIAPH": "3304.12",
+        "SOL_OIL_ADV": "3207.01",
+        "SOL_OIL_RET": "3207.00",
+        "RS_OIL_ADV": "3307.02",
+        "RS_OIL_RET": "3307.03",
+        "SOL_OIL_DN": "3207.02",
+        "SOL_OIL_UP": "3207.03",
+        "RS_OIL_DN": "3307.00",
+        "RS_OIL_UP": "3307.01",
+        "EC4_FWD": "3.12",
+        "EC4_BWD": "3.13",
+        "EC4_FWD_END": "4.09",
+        "EC4_BWD_END": "4.10",
+        "EC4_ALM": "4.11",
+        "SOL_GU_UP": "3215.01",
+        "SOL_GU_DN": "3215.00",
+        "AS_GU_UP": "3301.05",
+        "AS_GU_DN": "3301.04",
+        "EC3_FWD": "3.08",
+        "EC3_BWD": "3.09",
+        "EC3_FWD_END": "4.06",
+        "EC3_BWD_END": "4.07",
+        "EC3_ALM": "4.08",
+        "SOL_G1_CHK": "3215.02",
+        "SOL_G1_UCHK": "3215.03",
+        "AS_G1_CHK": "3301.06",
+        "AS_G1_UCHK": "3301.07",
+        "SOL_G2_CHK": "3215.04",
+        "SOL_G2_UCHK": "3215.05",
+        "AS_G2_CHK": "3301.08",
+        "AS_G2_UCHK": "3301.09",
+        "SOL_FLIP_180": "3215.06",
+        "SOL_FLIP_0": "3215.07",
+        "AS_FLIP_180": "3301.12",
+        "AS_FLIP_0": "3301.13",
+        "SOL_G3_CHK": "3215.08",
+        "SOL_G3_UCHK": "3215.09",
+        "AS_G3_CHK": "3301.10",
+        "AS_G3_UCHK": "3301.11",
+        "SOL_TSLIDE_ADV": "3213.02",
+        "SOL_TSLIDE_RET": "3213.03",
+        "AS_TSLIDE_ADV": "3303.10",
+        "AS_TSLIDE_RET": "3303.11",
+        "PH_TS_DIAPH_SIDE": "3302.10",
+        "PH_TS_WORK_LOW": "3302.12",
+        "PH_TS_WORK_HIGH": "3302.11",
+        "MTD1_FWD": "3205.00",
+        "MTD1_REV": "3205.01",
+        "PH_ROT_PRE_END": "3304.08",
+        "PH_TERM_IN_POS": "3304.09",
+        "PH_WORK_IN_ROT": "3302.15",
+        "SOL_PIN_UP": "3211.08",
+        "SOL_PIN_DN": "3211.09",
+        "AS_PIN_UP": "3303.08",
+        "AS_PIN_DN": "3303.09",
+        "PH_MB_VAC": "3302.08",
+        "SOL_MBS_ADV": "3211.00",
+        "SOL_MBS_RET": "3211.01",
+        "AS_MBS_ADV": "3303.06",
+        "AS_MBS_RET": "3303.07",
+        "SOL_MBIN_DN": "3211.02",
+        "SOL_MBIN_UP": "3211.03",
+        "AS_MBIN_DN": "3303.00",
+        "AS_MBIN_UP": "3303.01",
+        "SOL_LOAD_FWD": "3211.15",
+        "SOL_LOAD_BWD": "3211.14",
+        "AS_LOAD_FWD": "3303.15",
+        "AS_LOAD_BWD": "3303.14",
+        "PH_MB_LOADER_1": "3302.13",
+        "SOL_MBOUTU_DN": "3211.04",
+        "SOL_MBOUTU_UP": "3211.05",
+        "AS_MBOUTU_DN": "3303.04",
+        "AS_MBOUTU_UP": "3303.05",
+        "SOL_MBOUT_DN": "3211.06",
+        "SOL_MBOUT_UP": "3211.07",
+        "AS_MBOUT_DN": "3303.02",
+        "AS_MBOUT_UP": "3303.03",
+        "PH_MB_LOADER_2": "3302.14",
+        "EC1_DN": "3.00",
+        "EC1_UP": "3.01",
+        "EC1_DN_END": "4.01",
+        "EC1_UP_END": "4.00",
+        "EC1_ALM": "4.02",
+        "EC2_FWD": "3.04",
+        "EC2_BWD": "3.05",
+        "EC2_FWD_END": "4.03",
+        "EC2_BWD_END": "4.04",
+        "EC2_ALM": "4.05",
+        "SOL_GP1S_ADV": "3213.04",
+        "SOL_GP1S_RET": "3213.05",
+        "AS_GP1S_ADV": "3302.04",
+        "AS_GP1S_RET": "3302.05",
+        "SOL_GP1_CHK": "3213.08",
+        "SOL_GP1_UCHK": "3213.09",
+        "AS_GP1_CHK": "3302.00",
+        "AS_GP1_UCHK": "3302.01",
+        "SOL_GP2S_ADV": "3213.06",
+        "SOL_GP2S_RET": "3213.07",
+        "AS_GP2S_ADV": "3302.06",
+        "AS_GP2S_RET": "3302.07",
+        "SOL_GP2_CHK": "3213.10",
+        "SOL_GP2_UCHK": "3213.11",
+        "AS_GP2_CHK": "3302.02",
+        "AS_GP2_UCHK": "3302.03",
+        "SOL_TRAY_UP": "3213.01",
+        "SOL_TRAY_DN": "3213.00",
+        "AS_TRAY_UP": "3304.01",
+        "AS_TRAY_DN": "3304.00",
+        "SOL_OK_UP": "3211.12",
+        "SOL_OK_DN": "3211.13",
+        "AS_OK_UP": "3304.02",
+        "AS_OK_DN": "3304.03",
+        "SOL_NG_DN": "3211.10",
+        "SOL_NG_UP": "3211.11",
+        "AS_NG_DN": "3304.04",
+        "AS_NG_UP": "3304.05",
+        "PH_WORK_IN_TRAY": "3303.12",
+        "PH_WORK_NG": "3304.13",
+        "SS_AUTO": "0.02",
+        "PB_MASTER": "0.03",
+        "PL_MASTER": "1.02",
+        "PB_AUTO": "0.04",
+        "PL_AUTO": "1.01",
+        "PB_CSTOP": "0.05",
+        "PB_DUMMY": "0.06",
+        "PL_DUMMY_EN": "1.04",
+        "PL_TOWER_R": "1.13",
+        "PL_TOWER_Y": "1.14",
+        "PL_TOWER_G": "1.15",
+        "BZ": "1.06",
+        "PL_FEED_DIAPH": "1.03",
+        "PL_LOAD_EN": "3205.15",
+        "CR_SAFETY_MUTE": "1.10",
+        "HMI_FAULT_RESET": "W450.08",
+        "HMI_BZ_RESET": "W450.09",
+        "HMI_ALL_HOME": "W478.15"
+      },
+      "init": { "H415.07": 1 },
+      "patches": [
+        {
+          "prog": "P10_MAIN",
+          "sec": "INPUT",
+          "rung": 28,
+          "expect": ["LD sim_mch", "AND 3303.13", "OUT E0_3300.12"],
+          "il": [
+            "LD sim_mch",
+            "AND 3303.13",
+            "LDNOT sim_mch",
+            "AND E0_3300.12",
+            "ORLD",
+            "OUT E0_3300.12"
+          ],
+          "why": "with sim_mch off this OUT cleared the Final Caulking ST1 detect (E0_3300.12) every scan, so P16 R31 never confirmed"
+        },
+        {
+          "prog": "P16_ROTARY_TRANSFER",
+          "sec": "Condition",
+          "rung": 6,
+          "expect": ["LD sim_mch", "OUT E0_3301.06"],
+          "il": ["LD sim_mch", "OR E0_3301.06", "OUT E0_3301.06"],
+          "why": "with sim_mch off this OUT cleared Loading OK (E0_3301.06) every scan, so Take Out / Take In Finish Work (R5, R7) were never true"
+        }
+      ]
+    }
+  },
+  "stations": [
+    {
+      "id": "DIAPH",
+      "name": "P13/P14 Diaphragm shutter + loader",
+      "members": [
+        "shut1",
+        "shut2",
+        "dS0",
+        "dS1",
+        "dS2",
+        "oilAR",
+        "oilUD",
+        "ec4",
+        "gu",
+        "ec3",
+        "g1",
+        "g2",
+        "flip",
+        "g3",
+        "emD"
+      ]
+    },
+    {
+      "id": "MB",
+      "name": "P11/P12 M&B loader + positioning",
+      "members": [
+        "rot",
+        "pin",
+        "m2",
+        "mbs",
+        "mbIn",
+        "mbLoad",
+        "mag1",
+        "phMag1",
+        "mbOutU",
+        "mbOut",
+        "mag2",
+        "phMag2",
+        "emM"
+      ]
+    },
+    {
+      "id": "SLIDE",
+      "name": "P15 Transfer slide",
+      "members": ["tslide", "tsNest", "jStack", "phSide", "phStD", "phStM"]
+    },
+    {
+      "id": "ROTARY",
+      "name": "P16 Rotary transfer",
+      "members": ["ec1", "ec2", "gp1s", "gp1", "gp2s", "gp2"]
+    },
+    {
+      "id": "DISCH",
+      "name": "P17 OK/NG discharge",
+      "members": ["tray", "okTilt", "ngTilt", "trayNest", "trayFloor", "ngBox", "phNg"]
+    },
+    {
+      "id": "FINAL",
+      "name": "Final Caulking MC (model)",
+      "members": [
+        "cv",
+        "phCv",
+        "cvEnd",
+        "fcTable",
+        "fcN0",
+        "fcN1",
+        "phSt1",
+        "phSt2",
+        "fcPress",
+        "jCaulk"
+      ]
+    }
+  ],
+  "cycle": { "countTag": "CYCLE_CNT", "avgN": 10 },
+  "components": [
+    {
+      "id": "diaph",
+      "type": "workpiece",
+      "label": "DIAPHRAGM TEMPLATE",
+      "at": [0, -2000, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [72, 72, 12],
+        "color": "#c9cfd6",
+        "material": "steel",
+        "meshes": [
+          { "asset": "assets/cad/final-caulking/prod_diaph_ffffff.stl", "color": "#c9cfd6" }
+        ]
+      }
+    },
+    {
+      "id": "mb",
+      "type": "workpiece",
+      "label": "M&B TEMPLATE",
+      "at": [200, -2000, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [100, 100, 27],
+        "color": "#3b4048",
+        "material": "steel",
+        "meshes": [
+          { "asset": "assets/cad/final-caulking/prod_mb_ffe300.stl", "color": "#ffe300" },
+          { "asset": "assets/cad/final-caulking/prod_mb_a41c1c.stl", "color": "#a41c1c" },
+          { "asset": "assets/cad/final-caulking/prod_mb_6363f1.stl", "color": "#6363f1" }
+        ]
+      }
+    },
+    {
+      "id": "unit",
+      "type": "workpiece",
+      "label": "UNIT (NOT CAULKED) TEMPLATE",
+      "at": [400, -2000, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [100, 100, 39],
+        "color": "#7d8894",
+        "material": "steel",
+        "meshes": [
+          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#ffe300" },
+          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
+          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+        ]
+      }
+    },
+    {
+      "id": "unitOk",
+      "type": "workpiece",
+      "label": "HORN OK TEMPLATE",
+      "at": [600, -2000, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [100, 100, 39],
+        "color": "#5fa27a",
+        "material": "steel",
+        "meshes": [
+          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#5fa27a" },
+          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
+          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+        ]
+      }
+    },
+    {
+      "id": "unitNg",
+      "type": "workpiece",
+      "label": "HORN NG TEMPLATE",
+      "at": [800, -2000, 0],
+      "params": {
+        "kind": "cyl",
+        "size": [100, 100, 39],
+        "color": "#c0504d",
+        "material": "steel",
+        "meshes": [
+          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#c0504d" },
+          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
+          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+        ]
+      }
+    },
+    {
+      "id": "shut1",
+      "type": "cylinder",
+      "label": "SHUTTER 1 (wired, not installed) / OIL DISPENSER",
+      "station": "DIAPH",
+      "at": [-900, -850, -203],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 200,
+        "valve": "5/2-double",
+        "extendMs": 700,
+        "retractMs": 700,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "CR_OIL_DISP_SHUT1_UP",
+        "solRet": "SOL_SHUT1_DN",
+        "sw.ret": "AS_SHUT1_DN",
+        "sw.ext": "AS_SHUT1_UP"
+      }
+    },
+    {
+      "id": "shut2",
+      "type": "cylinder",
+      "label": "SHUTTER 2 INNER COVER (MGPM16-200)",
+      "station": "DIAPH",
+      "at": [-40, 214, 1703],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 200,
+        "valve": "5/2-double",
+        "extendMs": 700,
+        "retractMs": 700,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "hidden": true,
+        "start": "ext"
+      },
+      "io": {
+        "solExt": "SOL_SHUT2_DN",
+        "solRet": "SOL_SHUT2_UP",
+        "sw.ret": "AS_SHUT2_UP",
+        "sw.ext": "AS_SHUT2_DN"
+      }
+    },
+    {
+      "id": "dS0",
+      "type": "nest",
+      "label": "DIAPH FEED IN (S0)",
+      "station": "DIAPH",
+      "at": [-145, 222, 977],
+      "params": { "size": [80, 80, 16], "wall": 6, "hidden": true },
+      "io": { "present": "PH_DIAPH_LOADIN" }
+    },
+    {
+      "id": "dS1",
+      "type": "nest",
+      "label": "DIAPH VACUUM STATION (S1)",
+      "station": "DIAPH",
+      "at": [55, 222, 977],
+      "params": { "size": [80, 80, 16], "wall": 6, "hidden": true },
+      "io": { "present": "PH_ST_DIAPH_VAC" }
+    },
+    {
+      "id": "dS2",
+      "type": "nest",
+      "label": "DIAPH BUFFER / OILING (S2)",
+      "station": "DIAPH",
+      "at": [205, 222, 977],
+      "params": { "size": [80, 80, 16], "wall": 6, "hidden": true },
+      "io": { "present": "PH_ST_BUFFER_DIAPH" }
+    },
+    {
+      "id": "oilAR",
+      "type": "cylinder",
+      "label": "OIL APPLY ADV/RET (not in CAD)",
+      "station": "DIAPH",
+      "at": [-900, -1000, -103],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 100,
+        "valve": "5/2-double",
+        "extendMs": 500,
+        "retractMs": 500,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "ADV",
+        "retWord": "RET",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_OIL_ADV",
+        "solRet": "SOL_OIL_RET",
+        "sw.ret": "RS_OIL_RET",
+        "sw.ext": "RS_OIL_ADV"
+      }
+    },
+    {
+      "id": "oilUD",
+      "type": "cylinder",
+      "label": "OIL APPLY DOWN/UP (not in CAD)",
+      "station": "DIAPH",
+      "at": [-900, -1150, -33],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 30,
+        "valve": "5/2-double",
+        "extendMs": 250,
+        "retractMs": 250,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_OIL_DN",
+        "solRet": "SOL_OIL_UP",
+        "sw.ret": "RS_OIL_UP",
+        "sw.ext": "RS_OIL_DN"
+      }
+    },
+    {
+      "id": "ec4",
+      "type": "elecylinder",
+      "label": "1EC4 LOADER UNIT (EC-S8HR)",
+      "station": "DIAPH",
+      "at": [78, 63.5, 568],
+      "params": {
+        "kind": "linear",
+        "stroke": 150,
+        "vmax": 400,
+        "acc": 3000,
+        "body": [470, 68, 90],
+        "hidden": true,
+        "start": "fwd"
+      },
+      "io": {
+        "fwd": "EC4_FWD",
+        "bwd": "EC4_BWD",
+        "fwdEnd": "EC4_FWD_END",
+        "bwdEnd": "EC4_BWD_END",
+        "alarm": "EC4_ALM"
+      }
+    },
+    {
+      "id": "gu",
+      "type": "cylinder",
+      "label": "DIAPH GRIPPER UNIT (CDQ2LC40-100)",
+      "station": "DIAPH",
+      "parent": "ec4",
+      "socket": "slider",
+      "at": [178.5, -83.5, 178],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 40,
+        "stroke": 100,
+        "valve": "5/2-double",
+        "extendMs": 400,
+        "retractMs": 400,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "hidden": true,
+        "start": "ext"
+      },
+      "io": {
+        "solExt": "SOL_GU_UP",
+        "solRet": "SOL_GU_DN",
+        "sw.ret": "AS_GU_DN",
+        "sw.ext": "AS_GU_UP"
+      }
+    },
+    {
+      "id": "ec3",
+      "type": "elecylinder",
+      "label": "1EC3 GRIPPER 1 (EC-TC5M)",
+      "station": "DIAPH",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "at": [-176.5, 242, 24],
+      "rot": [0, 0, 180],
+      "params": {
+        "kind": "linear",
+        "stroke": 50,
+        "vmax": 250,
+        "acc": 2500,
+        "body": [120, 40, 30],
+        "hidden": true
+      },
+      "io": {
+        "fwd": "EC3_FWD",
+        "bwd": "EC3_BWD",
+        "fwdEnd": "EC3_FWD_END",
+        "bwdEnd": "EC3_BWD_END",
+        "alarm": "EC3_ALM"
+      }
+    },
+    {
+      "id": "g1",
+      "type": "gripper",
+      "label": "DIAPH GRIPPER 1 (MHF2)",
+      "station": "DIAPH",
+      "parent": "ec3",
+      "socket": "slider",
+      "at": [0, 0, -76],
+      "rot": [180, 0, 180],
+      "params": {
+        "span": 90,
+        "fingerLen": 30,
+        "fingerW": 8,
+        "closeMs": 180,
+        "openMs": 180,
+        "band": 1,
+        "valve": "double",
+        "confirm": "part",
+        "hidden": true
+      },
+      "io": {
+        "close": "SOL_G1_CHK",
+        "unclose": "SOL_G1_UCHK",
+        "open": "AS_G1_UCHK",
+        "closed": "AS_G1_CHK"
+      }
+    },
+    {
+      "id": "g2",
+      "type": "gripper",
+      "label": "DIAPH GRIPPER 2 (MHZ2)",
+      "station": "DIAPH",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "at": [3.5, 242, -22],
+      "rot": [180, 0, 90],
+      "params": {
+        "span": 90,
+        "fingerLen": 30,
+        "fingerW": 8,
+        "closeMs": 180,
+        "openMs": 180,
+        "band": 1,
+        "valve": "double",
+        "confirm": "part",
+        "hidden": true
+      },
+      "io": {
+        "close": "SOL_G2_CHK",
+        "unclose": "SOL_G2_UCHK",
+        "open": "AS_G2_UCHK",
+        "closed": "AS_G2_CHK"
+      }
+    },
+    {
+      "id": "flip",
+      "type": "elecylinder",
+      "label": "FLIP DIAPH 0/180 (MRHQ25)",
+      "station": "DIAPH",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "at": [153.5, 87, -53.5],
+      "rot": [-90, 0, 0],
+      "params": {
+        "kind": "rotary",
+        "stroke": 180,
+        "vmax": 540,
+        "acc": 5000,
+        "band": 1,
+        "body": [36, 36, 40],
+        "hidden": true
+      },
+      "io": {
+        "fwd": "SOL_FLIP_180",
+        "bwd": "SOL_FLIP_0",
+        "fwdEnd": "AS_FLIP_180",
+        "bwdEnd": "AS_FLIP_0"
+      }
+    },
+    {
+      "id": "g3",
+      "type": "gripper",
+      "label": "DIAPH GRIPPER 3 (MRHQ25)",
+      "station": "DIAPH",
+      "parent": "flip",
+      "socket": "slider",
+      "at": [0, -31.5, 115],
+      "rot": [0, -90, -90],
+      "params": {
+        "span": 90,
+        "fingerLen": 30,
+        "fingerW": 8,
+        "closeMs": 180,
+        "openMs": 180,
+        "band": 1,
+        "valve": "double",
+        "confirm": "part",
+        "hidden": true
+      },
+      "io": {
+        "close": "SOL_G3_CHK",
+        "unclose": "SOL_G3_UCHK",
+        "open": "AS_G3_UCHK",
+        "closed": "AS_G3_CHK"
+      }
+    },
+    {
+      "id": "tslide",
+      "type": "cylinder",
+      "label": "TRANSFER SLIDE (CY3R20)",
+      "station": "SLIDE",
+      "at": [113, 300, 850],
+      "rot": [0, 90, 0],
+      "params": {
+        "bore": 20,
+        "stroke": 120,
+        "valve": "5/2-double",
+        "extendMs": 700,
+        "retractMs": 700,
+        "cushionMm": 8,
+        "valveMs": 12,
+        "extWord": "ADV",
+        "retWord": "RET",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_TSLIDE_ADV",
+        "solRet": "SOL_TSLIDE_RET",
+        "sw.ret": "AS_TSLIDE_RET",
+        "sw.ext": "AS_TSLIDE_ADV"
+      }
+    },
+    {
+      "id": "tsNest",
+      "type": "nest",
+      "label": "TRANSFER SLIDE NEST",
+      "station": "SLIDE",
+      "parent": "tslide",
+      "socket": "rodEnd",
+      "at": [-88, -78, 55],
+      "rot": [0, -90, 0],
+      "params": { "size": [104, 104, 30], "wall": 6, "hidden": true }
+    },
+    {
+      "id": "jStack",
+      "type": "joiner",
+      "label": "STACK DIAPH + M&B",
+      "station": "SLIDE",
+      "at": [475, 222, 938],
+      "params": {
+        "size": [110, 110, 70],
+        "template": "unit",
+        "mode": "auto",
+        "n": 2,
+        "settleMs": 120
+      }
+    },
+    {
+      "id": "phSide",
+      "type": "photoEye",
+      "label": "PH TRANSFER STATION DIAPH SIDE",
+      "station": "SLIDE",
+      "at": [355, 147, 944],
+      "rot": [0, 0, 90],
+      "params": { "range": 150, "offDelayMs": 30 },
+      "io": { "out": "PH_TS_DIAPH_SIDE" }
+    },
+    {
+      "id": "phStD",
+      "type": "photoEye",
+      "label": "PH TRANSFER STATION WORK (LOW)",
+      "station": "SLIDE",
+      "at": [475, 147, 944],
+      "rot": [0, 0, 90],
+      "params": { "range": 150, "offDelayMs": 30 },
+      "io": { "out": "PH_TS_WORK_LOW" }
+    },
+    {
+      "id": "phStM",
+      "type": "photoEye",
+      "label": "PH TRANSFER STATION DIAPH+M&B (HIGH)",
+      "station": "SLIDE",
+      "at": [475, 147, 971],
+      "rot": [0, 0, 90],
+      "params": { "range": 150, "offDelayMs": 30 },
+      "io": { "out": "PH_TS_WORK_HIGH" }
+    },
+    {
+      "id": "rot",
+      "type": "turntable",
+      "label": "M&B ROTATE UNIT (1MTD1)",
+      "station": "MB",
+      "at": [875, 285, 840],
+      "params": {
+        "size": [100, 100, 40],
+        "height": 60,
+        "speed": 120,
+        "accMs": 80,
+        "feature": 0,
+        "preDeg": 25,
+        "band": 2,
+        "hidden": true,
+        "cw": true
+      },
+      "io": {
+        "fwd": "MTD1_FWD",
+        "rev": "MTD1_REV",
+        "lock": "ROT_PIN_LOCK",
+        "pre": "PH_ROT_PRE_END",
+        "inPos": "PH_TERM_IN_POS",
+        "present": "PH_WORK_IN_ROT"
+      }
+    },
+    {
+      "id": "pin",
+      "type": "cylinder",
+      "label": "PIN POSITIONING (MGJ10-20)",
+      "station": "MB",
+      "at": [884, 333, 823],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 10,
+        "stroke": 20,
+        "valve": "5/2-double",
+        "extendMs": 150,
+        "retractMs": 150,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "reedBand": 1,
+        "reedHyst": 0.3,
+        "switches": [{ "id": "ret", "pos": 0.5 }, { "id": "ext", "pos": 19.5 }],
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_PIN_UP",
+        "solRet": "SOL_PIN_DN",
+        "sw.ret": "AS_PIN_DN",
+        "sw.ext": "AS_PIN_UP"
+      }
+    },
+    {
+      "id": "m2",
+      "type": "nest",
+      "label": "M&B VACUUM AREA (M2)",
+      "station": "MB",
+      "at": [675, 222, 900],
+      "params": { "size": [106, 106, 16], "wall": 6, "hidden": true },
+      "io": { "present": "PH_MB_VAC" }
+    },
+    {
+      "id": "mbs",
+      "type": "cylinder",
+      "label": "M&B LOAD UNIT SLIDE (CY3RG20)",
+      "station": "MB",
+      "at": [1111, -8, 700],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 20,
+        "stroke": 200,
+        "valve": "5/2-double",
+        "extendMs": 900,
+        "retractMs": 900,
+        "cushionMm": 10,
+        "valveMs": 12,
+        "extWord": "ADV",
+        "retWord": "RET",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_MBS_ADV",
+        "solRet": "SOL_MBS_RET",
+        "sw.ret": "AS_MBS_RET",
+        "sw.ext": "AS_MBS_ADV"
+      }
+    },
+    {
+      "id": "mbIn",
+      "type": "cylinder",
+      "label": "M&B LOAD IN (MXQ16L-50)",
+      "station": "MB",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "at": [375, 100, -43],
+      "rot": [0, 90, 180],
+      "params": {
+        "bore": 16,
+        "stroke": 30,
+        "valve": "5/2-double",
+        "extendMs": 300,
+        "retractMs": 300,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_MBIN_DN",
+        "solRet": "SOL_MBIN_UP",
+        "sw.ret": "AS_MBIN_UP",
+        "sw.ext": "AS_MBIN_DN"
+      }
+    },
+    {
+      "id": "mbLoad",
+      "type": "cylinder",
+      "label": "M&B LOAD FWD/BWD (MXQ8-75)",
+      "station": "MB",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "at": [-12, 25, -21],
+      "rot": [90, 0, 0],
+      "params": {
+        "bore": 10,
+        "stroke": 63,
+        "valve": "5/2-double",
+        "extendMs": 350,
+        "retractMs": 350,
+        "cushionMm": 4,
+        "valveMs": 12,
+        "extWord": "FWD",
+        "retWord": "BWD",
+        "hidden": true,
+        "start": "ext"
+      },
+      "io": {
+        "solExt": "SOL_LOAD_FWD",
+        "solRet": "SOL_LOAD_BWD",
+        "sw.ret": "AS_LOAD_BWD",
+        "sw.ext": "AS_LOAD_FWD"
+      }
+    },
+    {
+      "id": "mag1",
+      "type": "vacuumCup",
+      "label": "MAGNET 1 (KE-4E)",
+      "station": "MB",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "at": [0, 46, 35],
+      "rot": [-90, 0, 0],
+      "params": { "d": 60, "reach": 4, "buildMs": 60, "dropMs": 60, "hidden": true },
+      "io": { "on": "MAG1_ON", "vac": "MAG1_HOLDS" }
+    },
+    {
+      "id": "phMag1",
+      "type": "photoEye",
+      "label": "PH M&B LOADER WORK CONF 1",
+      "station": "MB",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "at": [-65, 58, 35],
+      "rot": [90, 0, 0],
+      "params": { "range": 130, "offDelayMs": 30 },
+      "io": { "out": "PH_MB_LOADER_1" }
+    },
+    {
+      "id": "mbOutU",
+      "type": "cylinder",
+      "label": "M&B LOAD OUT UNIT (MXQ20L-125)",
+      "station": "MB",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "at": [526, 92, 47],
+      "rot": [0, 90, 180],
+      "params": {
+        "bore": 20,
+        "stroke": 50,
+        "valve": "5/2-double",
+        "extendMs": 350,
+        "retractMs": 350,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_MBOUTU_DN",
+        "solRet": "SOL_MBOUTU_UP",
+        "sw.ret": "AS_MBOUTU_UP",
+        "sw.ext": "AS_MBOUTU_DN"
+      }
+    },
+    {
+      "id": "mbOut",
+      "type": "cylinder",
+      "label": "M&B LOAD OUT (MXQ16L-40)",
+      "station": "MB",
+      "parent": "mbOutU",
+      "socket": "rodEnd",
+      "at": [-49, 0, -8],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 26,
+        "valve": "5/2-double",
+        "extendMs": 250,
+        "retractMs": 250,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_MBOUT_DN",
+        "solRet": "SOL_MBOUT_UP",
+        "sw.ret": "AS_MBOUT_UP",
+        "sw.ext": "AS_MBOUT_DN"
+      }
+    },
+    {
+      "id": "mag2",
+      "type": "vacuumCup",
+      "label": "MAGNET 2 (KE-4E)",
+      "station": "MB",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "at": [-73, -138, 25],
+      "rot": [0, 0, 0],
+      "params": { "d": 60, "reach": 4, "buildMs": 60, "dropMs": 60, "hidden": true },
+      "io": { "on": "MAG2_ON", "vac": "MAG2_HOLDS" }
+    },
+    {
+      "id": "phMag2",
+      "type": "photoEye",
+      "label": "PH M&B LOADER WORK CONF 2",
+      "station": "MB",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "at": [-138, -138, 37],
+      "rot": [180, 0, 0],
+      "params": { "range": 130, "offDelayMs": 30 },
+      "io": { "out": "PH_MB_LOADER_2" }
+    },
+    {
+      "id": "ec1",
+      "type": "elecylinder",
+      "label": "1EC1 ROTARY LIFT (EC-S13L)",
+      "station": "ROTARY",
+      "at": [280, 540, 1221.5],
+      "rot": [0, 90, 0],
+      "params": {
+        "kind": "linear",
+        "stroke": 120,
+        "vmax": 400,
+        "acc": 3000,
+        "body": [300, 60, 60],
+        "hidden": true
+      },
+      "io": {
+        "fwd": "EC1_DN",
+        "bwd": "EC1_UP",
+        "fwdEnd": "EC1_DN_END",
+        "bwdEnd": "EC1_UP_END",
+        "alarm": "EC1_ALM"
+      }
+    },
+    {
+      "id": "ec2",
+      "type": "elecylinder",
+      "label": "1EC2 ROTARY (EC-RTC18M)",
+      "station": "ROTARY",
+      "parent": "ec1",
+      "socket": "slider",
+      "at": [120, -189, 135],
+      "rot": [0, -90, 180],
+      "params": {
+        "kind": "rotary",
+        "stroke": 180,
+        "vmax": 360,
+        "acc": 1500,
+        "band": 0.5,
+        "body": [120, 120, 60],
+        "hidden": true
+      },
+      "io": {
+        "fwd": "EC2_FWD",
+        "bwd": "EC2_BWD",
+        "fwdEnd": "EC2_FWD_END",
+        "bwdEnd": "EC2_BWD_END",
+        "alarm": "EC2_ALM"
+      }
+    },
+    {
+      "id": "gp1s",
+      "type": "cylinder",
+      "label": "GRIPPER TRANSFER UNIT 1 (MXQ16-125)",
+      "station": "ROTARY",
+      "parent": "ec2",
+      "socket": "slider",
+      "at": [-26, -81, 30],
+      "rot": [-90, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 125,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "cushionMm": 6,
+        "valveMs": 12,
+        "extWord": "ADV",
+        "retWord": "RET",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_GP1S_ADV",
+        "solRet": "SOL_GP1S_RET",
+        "sw.ret": "AS_GP1S_RET",
+        "sw.ext": "AS_GP1S_ADV"
+      }
+    },
+    {
+      "id": "gp1",
+      "type": "gripper",
+      "label": "ROTARY GRIPPER 1 (MHSL3)",
+      "station": "ROTARY",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "at": [26, -30, 26],
+      "rot": [90, 0, 0],
+      "params": {
+        "span": 124,
+        "fingerLen": 40,
+        "fingerW": 10,
+        "closeMs": 180,
+        "openMs": 180,
+        "band": 1,
+        "valve": "double",
+        "confirm": "part",
+        "hidden": true,
+        "fingers3": true,
+        "radialDeg": 110
+      },
+      "io": {
+        "close": "SOL_GP1_CHK",
+        "unclose": "SOL_GP1_UCHK",
+        "open": "AS_GP1_UCHK",
+        "closed": "AS_GP1_CHK"
+      }
+    },
+    {
+      "id": "gp2s",
+      "type": "cylinder",
+      "label": "GRIPPER TRANSFER UNIT 2 (MXQ16-125)",
+      "station": "ROTARY",
+      "parent": "ec2",
+      "socket": "slider",
+      "at": [26, 80, 30],
+      "rot": [90, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 125,
+        "valve": "5/2-double",
+        "extendMs": 450,
+        "retractMs": 450,
+        "cushionMm": 6,
+        "valveMs": 12,
+        "extWord": "ADV",
+        "retWord": "RET",
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_GP2S_ADV",
+        "solRet": "SOL_GP2S_RET",
+        "sw.ret": "AS_GP2S_RET",
+        "sw.ext": "AS_GP2S_ADV"
+      }
+    },
+    {
+      "id": "gp2",
+      "type": "gripper",
+      "label": "ROTARY GRIPPER 2 (MHSL3)",
+      "station": "ROTARY",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "at": [-26, 30, 26],
+      "rot": [-90, 0, 0],
+      "params": {
+        "span": 124,
+        "fingerLen": 40,
+        "fingerW": 10,
+        "closeMs": 180,
+        "openMs": 180,
+        "band": 1,
+        "valve": "double",
+        "confirm": "part",
+        "hidden": true,
+        "fingers3": true,
+        "radialDeg": 49
+      },
+      "io": {
+        "close": "SOL_GP2_CHK",
+        "unclose": "SOL_GP2_UCHK",
+        "open": "AS_GP2_UCHK",
+        "closed": "AS_GP2_CHK"
+      }
+    },
+    {
+      "id": "tray",
+      "type": "cylinder",
+      "label": "WORK FINISH TRAY LIFT (MGPM16-100)",
+      "station": "DISCH",
+      "at": [475, 66, 629],
+      "rot": [0, 0, 0],
+      "params": {
+        "bore": 16,
+        "stroke": 100,
+        "valve": "5/2-double",
+        "extendMs": 500,
+        "retractMs": 500,
+        "cushionMm": 6,
+        "valveMs": 12,
+        "extWord": "UP",
+        "retWord": "DOWN",
+        "hidden": true,
+        "start": "ext"
+      },
+      "io": {
+        "solExt": "SOL_TRAY_UP",
+        "solRet": "SOL_TRAY_DN",
+        "sw.ret": "AS_TRAY_DN",
+        "sw.ext": "AS_TRAY_UP"
+      }
+    },
+    {
+      "id": "okTilt",
+      "type": "elecylinder",
+      "label": "OK PUSH (CDQ2B12, tilts to the conveyor)",
+      "station": "DISCH",
+      "parent": "tray",
+      "socket": "rodEnd",
+      "at": [20, -9, 32],
+      "rot": [0, -90, 0],
+      "params": {
+        "kind": "rotary",
+        "stroke": 28,
+        "vmax": 240,
+        "acc": 4000,
+        "band": 1,
+        "body": [12, 12, 20],
+        "hidden": true
+      },
+      "io": { "fwd": "SOL_OK_UP", "bwd": "SOL_OK_DN", "fwdEnd": "AS_OK_UP", "bwdEnd": "AS_OK_DN" }
+    },
+    {
+      "id": "ngTilt",
+      "type": "elecylinder",
+      "label": "NG PUSH (CDQ2B12, tilts to the NG box)",
+      "station": "DISCH",
+      "parent": "okTilt",
+      "socket": "slider",
+      "at": [0, 0, 20],
+      "rot": [180, 0, 180],
+      "params": {
+        "kind": "rotary",
+        "stroke": 28,
+        "vmax": 240,
+        "acc": 4000,
+        "band": 1,
+        "body": [12, 12, 20],
+        "hidden": true
+      },
+      "io": { "fwd": "SOL_NG_DN", "bwd": "SOL_NG_UP", "fwdEnd": "AS_NG_DN", "bwdEnd": "AS_NG_UP" }
+    },
+    {
+      "id": "trayNest",
+      "type": "nest",
+      "label": "FINISH TRAY",
+      "station": "DISCH",
+      "parent": "ngTilt",
+      "socket": "slider",
+      "at": [-14, 36, 0],
+      "rot": [0, -90, 0],
+      "params": { "size": [104, 104, 30], "wall": 5, "hidden": true },
+      "io": { "clamp": "TRAY_CLAMP", "present": "PH_WORK_IN_TRAY" }
+    },
+    {
+      "id": "trayFloor",
+      "type": "plate",
+      "label": "FINISH TRAY SHEET",
+      "station": "DISCH",
+      "parent": "ngTilt",
+      "socket": "slider",
+      "at": [-8, 7, 0],
+      "rot": [0, -90, 0],
+      "params": { "size": [100, 150, 6], "hidden": true }
+    },
+    {
+      "id": "ngBox",
+      "type": "remover",
+      "label": "NG CHUTE + BOX",
+      "station": "DISCH",
+      "at": [475, -165, 560],
+      "params": { "size": [170, 330, 240] },
+      "io": { "count": "NG_BOX_CNT" }
+    },
+    {
+      "id": "phNg",
+      "type": "photoEye",
+      "label": "PH WORK NG CONFIRM (PZ-M51)",
+      "station": "DISCH",
+      "at": [375, -30, 805],
+      "rot": [0, 0, 0],
+      "params": { "range": 200, "offDelayMs": 1500 },
+      "io": { "out": "PH_WORK_NG" }
+    },
+    {
+      "id": "cv",
+      "type": "conveyor",
+      "label": "LINE CONVEYOR (MMX2)",
+      "station": "FINAL",
+      "at": [-705, 175.5, 0],
+      "rot": [0, 0, 180],
+      "params": {
+        "length": 2500,
+        "width": 150,
+        "height": 796,
+        "speed": 200,
+        "guides": 0,
+        "hidden": true,
+        "centering": 150
+      },
+      "io": { "run": "FC_CV_RUN" }
+    },
+    {
+      "id": "phCv",
+      "type": "photoEye",
+      "label": "PH CONVEYOR (FINAL CAULKING)",
+      "station": "FINAL",
+      "at": [455, 85.5, 816],
+      "rot": [0, 0, 90],
+      "params": { "range": 180, "offDelayMs": 300 },
+      "io": { "out": "FC_CV_PH" }
+    },
+    {
+      "id": "cvEnd",
+      "type": "remover",
+      "label": "TO NEXT PROCESS",
+      "station": "FINAL",
+      "at": [-2015, 175.5, 696],
+      "params": { "size": [160, 260, 300] },
+      "io": { "count": "OUT_CNT" }
+    },
+    {
+      "id": "fcTable",
+      "type": "indexTable",
+      "label": "FINAL CAULKING TABLE (model)",
+      "station": "FINAL",
+      "at": [475, 685, 798],
+      "rot": [0, 0, -90],
+      "params": { "stations": 2, "camMs": 1600, "indexFrac": 0.6, "diameter": 526, "height": 120 },
+      "io": { "run": "FC_INDEX", "inPos": "FC_TBL_INPOS" }
+    },
+    {
+      "id": "fcN0",
+      "type": "nest",
+      "label": "FINAL CAULKING JIG 1",
+      "station": "FINAL",
+      "parent": "fcTable",
+      "socket": "s0",
+      "params": { "size": [106, 106, 30], "wall": 6, "hidden": true }
+    },
+    {
+      "id": "fcN1",
+      "type": "nest",
+      "label": "FINAL CAULKING JIG 2",
+      "station": "FINAL",
+      "parent": "fcTable",
+      "socket": "s1",
+      "params": { "size": [106, 106, 30], "wall": 6, "hidden": true }
+    },
+    {
+      "id": "phSt1",
+      "type": "photoEye",
+      "label": "PH FINAL CAULKING ST1",
+      "station": "FINAL",
+      "at": [400, 485, 948],
+      "rot": [0, 0, 0],
+      "params": { "range": 150, "offDelayMs": 30 },
+      "io": { "out": "FC_ST1_PH" }
+    },
+    {
+      "id": "phSt2",
+      "type": "photoEye",
+      "label": "PH FINAL CAULKING ST2",
+      "station": "FINAL",
+      "at": [400, 885, 948],
+      "rot": [0, 0, 0],
+      "params": { "range": 150, "offDelayMs": 30 },
+      "io": { "out": "FC_ST2_PH" }
+    },
+    {
+      "id": "fcPress",
+      "type": "cylinder",
+      "label": "CAULKING PRESS (model)",
+      "station": "FINAL",
+      "at": [475, 885, 1197],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 40,
+        "stroke": 60,
+        "valve": "5/2-double",
+        "extendMs": 400,
+        "retractMs": 400,
+        "cushionMm": 2,
+        "valveMs": 12,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "head": "plate",
+        "headSize": [80, 80, 10]
+      },
+      "io": {
+        "solExt": "FC_PRESS_DN",
+        "solRet": "FC_PRESS_UP",
+        "sw.ret": "FC_PRESS_UP_END",
+        "sw.ext": "FC_PRESS_DN_END"
+      }
+    },
+    {
+      "id": "jCaulk",
+      "type": "joiner",
+      "label": "CAULKING (OK / NG)",
+      "station": "FINAL",
+      "at": [475, 885, 938],
+      "params": {
+        "size": [110, 110, 70],
+        "template": "unitOk",
+        "templateAlt": "unitNg",
+        "mode": "tag",
+        "n": 1
+      },
+      "io": { "join": "FC_CAULK", "alt": "FC_NG", "count": "FC_CAULK_CNT" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SS_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbAuto",
+      "type": "pushbutton",
+      "label": "AUTO RUN",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_AUTO", "lamp": "PL_AUTO" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbDummy",
+      "type": "pushbutton",
+      "label": "DUMMY DOOR OPEN REQ",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_DUMMY", "lamp": "PL_DUMMY_EN" }
+    },
+    {
+      "id": "lampR",
+      "type": "lamp",
+      "label": "SIGNAL TOWER RED",
+      "params": { "color": "red" },
+      "io": { "lamp": "PL_TOWER_R" }
+    },
+    {
+      "id": "lampY",
+      "type": "lamp",
+      "label": "SIGNAL TOWER YELLOW",
+      "params": { "color": "yellow" },
+      "io": { "lamp": "PL_TOWER_Y" }
+    },
+    {
+      "id": "lampG",
+      "type": "lamp",
+      "label": "SIGNAL TOWER GREEN",
+      "params": { "color": "green" },
+      "io": { "lamp": "PL_TOWER_G" }
+    },
+    {
+      "id": "lampBz",
+      "type": "lamp",
+      "label": "BUZZER",
+      "params": { "color": "amber", "buzzer": true },
+      "io": { "lamp": "BZ" }
+    },
+    {
+      "id": "lampFeed",
+      "type": "lamp",
+      "label": "OK TO FEED DIAPHRAGM",
+      "params": { "color": "white" },
+      "io": { "lamp": "PL_FEED_DIAPH" }
+    },
+    {
+      "id": "lampLoad",
+      "type": "lamp",
+      "label": "LOAD WORK ENABLE",
+      "params": { "color": "white" },
+      "io": { "lamp": "PL_LOAD_EN" }
+    },
+    {
+      "id": "lampMute",
+      "type": "lamp",
+      "label": "LIGHT CURTAIN MUTED (1.10)",
+      "params": { "color": "white" },
+      "io": { "lamp": "CR_SAFETY_MUTE" }
+    },
+    {
+      "id": "hmiReset",
+      "type": "pushbutton",
+      "label": "HMI: FAULT RESET",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "HMI_FAULT_RESET" }
+    },
+    {
+      "id": "hmiBz",
+      "type": "pushbutton",
+      "label": "HMI: BUZZER RESET",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "HMI_BZ_RESET" }
+    },
+    {
+      "id": "hmiHome",
+      "type": "pushbutton",
+      "label": "HMI: ALL UNIT HOME",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "HMI_ALL_HOME" }
+    },
+    {
+      "id": "pbFeedD",
+      "type": "pushbutton",
+      "label": "PUT DIAPHRAGM (S0)",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "OP_PUT_DIAPH" }
+    },
+    {
+      "id": "pbNagaraD",
+      "type": "pushbutton",
+      "label": "NAGARA START: DIAPHRAGM",
+      "params": { "kind": "momentary", "color": "green", "lamp": false },
+      "io": { "pb": "OP_NAGARA_D" }
+    },
+    {
+      "id": "pbFeedM",
+      "type": "pushbutton",
+      "label": "PUT M&B (TURNTABLE)",
+      "params": { "kind": "momentary", "color": "blue", "lamp": false },
+      "io": { "pb": "OP_PUT_MB" }
+    },
+    {
+      "id": "pbNagaraM",
+      "type": "pushbutton",
+      "label": "NAGARA START: M&B",
+      "params": { "kind": "momentary", "color": "green", "lamp": false },
+      "io": { "pb": "OP_NAGARA_M" }
+    },
+    {
+      "id": "pbAutoFeed",
+      "type": "pushbutton",
+      "label": "OPERATOR KEEPS FEEDING",
+      "params": { "kind": "alternate", "color": "white", "lamp": false },
+      "io": { "pb": "OP_AUTO_FEED" }
+    },
+    {
+      "id": "pbLc",
+      "type": "pushbutton",
+      "label": "HAND IN LIGHT CURTAIN",
+      "params": { "kind": "alternate", "color": "yellow", "lamp": false },
+      "io": { "pb": "OP_LC_BREAK" }
+    },
+    {
+      "id": "pbSimOff",
+      "type": "pushbutton",
+      "label": "SIM_MCH OFF (line mode)",
+      "params": { "kind": "alternate", "color": "white", "lamp": false },
+      "io": { "pb": "SIM_MCH_OFF" }
+    },
+    {
+      "id": "pbNg",
+      "type": "pushbutton",
+      "label": "FINAL CAULKING: NEXT = NG",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "FC_FORCE_NG" }
+    },
+    {
+      "id": "emD",
+      "type": "emitter",
+      "label": "OPERATOR: DIAPHRAGM",
+      "station": "DIAPH",
+      "at": [-145, 222, 985],
+      "params": { "template": "diaph", "mode": "tag", "dropOnto": true },
+      "io": { "emit": "EM_DIAPH", "count": "EM_DIAPH_CNT" }
+    },
+    {
+      "id": "emM",
+      "type": "emitter",
+      "label": "OPERATOR: M&B",
+      "station": "MB",
+      "at": [875, 285, 906],
+      "params": { "template": "mb", "mode": "tag", "jitterDeg": 180, "dropOnto": true },
+      "io": { "emit": "EM_MB", "count": "EM_MB_CNT" }
+    },
+    {
+      "id": "mv_ec1_20df38",
+      "type": "shell",
+      "label": "CAD ec1 #20df38",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec1_63f175",
+      "type": "shell",
+      "label": "CAD ec1 #63f175",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_63f175.stl",
+        "scale": 1,
+        "color": "#63f175",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec1_dabeeb",
+      "type": "shell",
+      "label": "CAD ec1 #dabeeb",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_dabeeb.stl",
+        "scale": 1,
+        "color": "#dabeeb",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec1_df2222",
+      "type": "shell",
+      "label": "CAD ec1 #df2222",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_df2222.stl",
+        "scale": 1,
+        "color": "#df2222",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec1_ff9f00",
+      "type": "shell",
+      "label": "CAD ec1 #ff9f00",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_ff9f00.stl",
+        "scale": 1,
+        "color": "#ff9f00",
+        "boxes": [[-30.4, -168.5, 135, 12, 252, 120]]
+      }
+    },
+    {
+      "id": "mv_ec1_ffaaaa",
+      "type": "shell",
+      "label": "CAD ec1 #ffaaaa",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-85.4, -173.5, 105, 98, 242, 10], [-85.4, -173.5, 165, 98, 242, 10]]
+      }
+    },
+    {
+      "id": "mv_ec1_ffe300",
+      "type": "shell",
+      "label": "CAD ec1 #ffe300",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec1_ffffff",
+      "type": "shell",
+      "label": "CAD ec1 #ffffff",
+      "parent": "ec1",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec1_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [13.4, -152, 139.4, 75.5, 185, 214.3],
+          [-99.1, -4, 0, 120, 77, 134],
+          [-99.1, -47.5, 0, 120, 10, 134],
+          [-84.9, -47.5, 135, 97, 10, 120],
+          [-72.6, -62.5, 47.5, 50, 20, 95],
+          [-90.6, -29.8, 105, 79, 25.4, 44],
+          [-90.6, -29.8, 165, 79, 25.4, 44],
+          [35.1, -117.5, -17, 17, 34.2, 100],
+          [-46.6, -62.5, 20, 15, 20, 50],
+          [-90.1, -62.5, 20, 15, 20, 50],
+          [50.6, -264.5, 135, 8, 20, 50],
+          [-133.4, -36, 101.3, 16.6, 9.2, 15.3],
+          [-133.4, -36, 161.3, 16.6, 9.2, 15.3]
+        ]
+      }
+    },
+    {
+      "id": "mv_ec2_00aaaa",
+      "type": "shell",
+      "label": "CAD ec2 #00aaaa",
+      "parent": "ec2",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec2_00aaaa.stl",
+        "scale": 1,
+        "color": "#00aaaa",
+        "boxes": [[0, -0.5, -77.4, 17, 241, 70]]
+      }
+    },
+    {
+      "id": "mv_ec2_20df38",
+      "type": "shell",
+      "label": "CAD ec2 #20df38",
+      "parent": "ec2",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec2_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec2_a4a41c",
+      "type": "shell",
+      "label": "CAD ec2 #a4a41c",
+      "parent": "ec2",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec2_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[0, -0.5, -117.4, 77, 241, 10]]
+      }
+    },
+    {
+      "id": "mv_ec2_ffe300",
+      "type": "shell",
+      "label": "CAD ec2 #ffe300",
+      "parent": "ec2",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec2_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec2_ffffff",
+      "type": "shell",
+      "label": "CAD ec2 #ffffff",
+      "parent": "ec2",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec2_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-28.5, -3, -56.4, 34, 224, 49],
+          [28.5, 2, -56.4, 34, 224, 49],
+          [-0.4, -0.5, -131, 106.2, 106.7, 7.8],
+          [2, -0.5, -128.5, 79, 75, 12.3],
+          [0, -0.5, -121.4, 35, 35, 10],
+          [-27, -91.5, -90.4, 36, 11, 17],
+          [27, 90.5, -90.4, 36, 11, 17],
+          [38.5, -49.5, -87.4, 13, 21, 15],
+          [-38.5, 48.5, -87.4, 13, 21, 15],
+          [-36.5, -96.2, -90.4, 10, 24.5, 10],
+          [36.5, 95.2, -90.4, 10, 24.5, 10],
+          [-36.5, -99, -90.4, 16.2, 4, 14],
+          [36.5, 98, -90.4, 16.2, 4, 14],
+          [-22.5, -63.5, -31.1, 4, 32, 4.6],
+          [16.5, -61.7, -31.1, 4, 32, 4.6],
+          [-16.5, 60.7, -31.1, 4, 32, 4.6],
+          [22.5, 62.5, -31.1, 4, 32, 4.6]
+        ]
+      }
+    },
+    {
+      "id": "mv_ec3_20df38",
+      "type": "shell",
+      "label": "CAD ec3 #20df38",
+      "parent": "ec3",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec3_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec3_323232",
+      "type": "shell",
+      "label": "CAD ec3 #323232",
+      "parent": "ec3",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec3_323232.stl",
+        "scale": 1,
+        "color": "#323232",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec3_ffffff",
+      "type": "shell",
+      "label": "CAD ec3 #ffffff",
+      "parent": "ec3",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec3_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-105.1, 46.5, 27.4, 256.5, 40, 67],
+          [0, 1.5, -28.2, 50, 72, 28.3],
+          [-19.8, 16.5, -10.1, 89.7, 102.6, 8],
+          [23.1, -20.7, -18.7, 4.6, 27, 4],
+          [23.1, 23.7, -18.7, 4.6, 27, 4]
+        ]
+      }
+    },
+    {
+      "id": "mv_ec4_20df38",
+      "type": "shell",
+      "label": "CAD ec4 #20df38",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec4_323232",
+      "type": "shell",
+      "label": "CAD ec4 #323232",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_323232.stl",
+        "scale": 1,
+        "color": "#323232",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec4_34b7f8",
+      "type": "shell",
+      "label": "CAD ec4 #34b7f8",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[175.5, -26, 32.4, 230, 194, 15]]
+      }
+    },
+    {
+      "id": "mv_ec4_ff9f00",
+      "type": "shell",
+      "label": "CAD ec4 #ff9f00",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_ff9f00.stl",
+        "scale": 1,
+        "color": "#ff9f00",
+        "boxes": [[113, -42, -33.6, 135, 15, 113]]
+      }
+    },
+    {
+      "id": "mv_ec4_ffe300",
+      "type": "shell",
+      "label": "CAD ec4 #ffe300",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_ec4_ffffff",
+      "type": "shell",
+      "label": "CAD ec4 #ffffff",
+      "parent": "ec4",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ec4_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [175.5, -45.5, 277.9, 210, 15, 446],
+          [178, -86, 210.4, 57, 52, 139.5],
+          [83, -70.5, 267.9, 15, 35, 426],
+          [268, -70.5, 267.9, 15, 35, 426],
+          [175.5, -78, 47.4, 210, 70, 15],
+          [85.5, -27.7, -47.6, 165, 13.5, 85],
+          [175.5, -73.7, 510.4, 60, 76.5, 25],
+          [120.5, -80, 317.9, 30, 54, 65],
+          [230.5, -80, 317.9, 30, 54, 65],
+          [105, 47, 12.2, 79, 44, 25.4],
+          [105, -75, 12.2, 79, 44, 25.4],
+          [246, 47, 12.2, 79, 44, 25.4],
+          [246, -75, 12.2, 79, 44, 25.4],
+          [175.5, -92, 381.9, 140, 30, 20],
+          [83, -32.2, 385.9, 20, 16.5, 220],
+          [268, -32.2, 385.9, 20, 16.5, 220],
+          [175.5, -66.5, 370.9, 60, 88, 12],
+          [175.5, -62.2, 135.3, 52, 18.5, 30.7],
+          [175.5, -62.2, 285.5, 52, 18.5, 30.7],
+          [80.5, -20, 13.9, 20, 60, 22],
+          [200.5, -20, 13.9, 20, 60, 22],
+          [150.5, -64, 348.4, 6, 83, 33],
+          [200.5, -64, 348.4, 6, 83, 33],
+          [120.5, -92, 337.3, 14, 12.2, 79.3],
+          [230.5, -92, 337.3, 14, 12.2, 79.3],
+          [175.5, -97, 517.6, 14, 12.2, 79.3],
+          [175.5, -92, 396.9, 40, 20, 10],
+          [120.5, -92, 361.4, 21.9, 19, 11],
+          [230.5, -92, 361.4, 21.9, 19, 11],
+          [175.5, -97, 493.4, 21.9, 19, 11],
+          [175.5, -86, 309.6, 25.4, 22, 8],
+          [120.5, -92, 328.4, 21.9, 19, 6],
+          [120.5, -92, 352.9, 21.9, 19, 6],
+          [230.5, -92, 328.4, 21.9, 19, 6],
+          [230.5, -92, 352.9, 21.9, 19, 6],
+          [175.5, -97, 501.9, 21.9, 19, 6],
+          [175.5, -97, 525.9, 21.9, 19, 6],
+          [62.2, 50.7, 18.4, 16.6, 15.3, 9.2],
+          [62.2, -71.3, 18.4, 16.6, 15.3, 9.2],
+          [288.8, 50.7, 18.4, 16.6, 15.3, 9.2],
+          [288.8, -71.3, 18.4, 16.6, 15.3, 9.2],
+          [197.5, -73.7, 165.6, 4.6, 4, 27],
+          [197.5, -98.3, 250.6, 4.6, 4, 27]
+        ]
+      }
+    },
+    {
+      "id": "mv_flip_ffffff",
+      "type": "shell",
+      "label": "CAD flip #ffffff",
+      "parent": "flip",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_flip_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[0, 0, 15.1, 64, 64, 30.6]]
+      }
+    },
+    {
+      "id": "mv_g1_fingerL_20df38",
+      "type": "shell",
+      "label": "CAD g1 #20df38",
+      "parent": "g1",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerL_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_g1_fingerL_ffe300",
+      "type": "shell",
+      "label": "CAD g1 #ffe300",
+      "parent": "g1",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerL_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_g1_fingerL_ffffff",
+      "type": "shell",
+      "label": "CAD g1 #ffffff",
+      "parent": "g1",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerL_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [0, 8.5, -15.7, 30, 42, 26.5],
+          [0, 23.8, -36.2, 27, 43.4, 14.6],
+          [0, 0, 2.6, 60, 25, 10]
+        ]
+      }
+    },
+    {
+      "id": "mv_g1_fingerR_20df38",
+      "type": "shell",
+      "label": "CAD g1 #20df38",
+      "parent": "g1",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerR_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_g1_fingerR_ffe300",
+      "type": "shell",
+      "label": "CAD g1 #ffe300",
+      "parent": "g1",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerR_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_g1_fingerR_ffffff",
+      "type": "shell",
+      "label": "CAD g1 #ffffff",
+      "parent": "g1",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g1_fingerR_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [0, -5.5, -15.7, 30, 42, 26.5],
+          [0, -20.8, -36.2, 27, 43.4, 14.6],
+          [0, 3, 2.6, 60, 25, 10]
+        ]
+      }
+    },
+    {
+      "id": "mv_g2_fingerL_ffffff",
+      "type": "shell",
+      "label": "CAD g2 #ffffff",
+      "parent": "g2",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g2_fingerL_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-19, -0.7, 1.6, 95, 23, 12], [-58.4, 16.9, 1.6, 33.9, 23.8, 12]]
+      }
+    },
+    {
+      "id": "mv_g2_fingerR_ffffff",
+      "type": "shell",
+      "label": "CAD g2 #ffffff",
+      "parent": "g2",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g2_fingerR_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-19, 0.7, 1.6, 95, 23, 12], [-58.4, -17, 1.6, 33.9, 23.8, 12]]
+      }
+    },
+    {
+      "id": "mv_g3_fingerL_f1f163",
+      "type": "shell",
+      "label": "CAD g3 #f1f163",
+      "parent": "g3",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g3_fingerL_f1f163.stl",
+        "scale": 1,
+        "color": "#f1f163",
+        "boxes": [[-31.5, -2.1, 19.5, 100, 23, 37]]
+      }
+    },
+    {
+      "id": "mv_g3_fingerL_ffffff",
+      "type": "shell",
+      "label": "CAD g3 #ffffff",
+      "parent": "g3",
+      "socket": "fingerL",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g3_fingerL_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-73.2, 17, 31.5, 33.5, 23.8, 15.5]]
+      }
+    },
+    {
+      "id": "mv_g3_fingerR_f1f163",
+      "type": "shell",
+      "label": "CAD g3 #f1f163",
+      "parent": "g3",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g3_fingerR_f1f163.stl",
+        "scale": 1,
+        "color": "#f1f163",
+        "boxes": [[-31.5, 2.1, 19.5, 100, 23, 37]]
+      }
+    },
+    {
+      "id": "mv_g3_fingerR_ffffff",
+      "type": "shell",
+      "label": "CAD g3 #ffffff",
+      "parent": "g3",
+      "socket": "fingerR",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_g3_fingerR_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-73.2, -16.9, 31.5, 33.5, 23.8, 15.5]]
+      }
+    },
+    {
+      "id": "mv_gp1_f1_34b7f8",
+      "type": "shell",
+      "label": "CAD gp1 #34b7f8",
+      "parent": "gp1",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f1_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[14.5, -13.2, 6.1, 6.3, 12.9, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f1_a4a41c",
+      "type": "shell",
+      "label": "CAD gp1 #a4a41c",
+      "parent": "gp1",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f1_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[6.8, -21.3, 17.4, 24.1, 34.9, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp1_f1_beebc4",
+      "type": "shell",
+      "label": "CAD gp1 #beebc4",
+      "parent": "gp1",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f1_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[4, -13.4, 24.1, 12.6, 12.1, 18]]
+      }
+    },
+    {
+      "id": "mv_gp1_f1_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp1 #ffaaaa",
+      "parent": "gp1",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f1_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[12.3, -26.8, 6.1, 24.5, 41.5, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f1_ffffff",
+      "type": "shell",
+      "label": "CAD gp1 #ffffff",
+      "parent": "gp1",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f1_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[0.5, -3.9, 21.1, 11.1, 8.1, 14]]
+      }
+    },
+    {
+      "id": "mv_gp1_f2_34b7f8",
+      "type": "shell",
+      "label": "CAD gp1 #34b7f8",
+      "parent": "gp1",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f2_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[2, 15.4, 6.1, 9.9, 11.2, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f2_a4a41c",
+      "type": "shell",
+      "label": "CAD gp1 #a4a41c",
+      "parent": "gp1",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f2_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[12.9, 12.8, 17.4, 31.3, 33.5, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp1_f2_beebc4",
+      "type": "shell",
+      "label": "CAD gp1 #beebc4",
+      "parent": "gp1",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f2_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[7.5, 6.4, 24.1, 13.6, 13.5, 18]]
+      }
+    },
+    {
+      "id": "mv_gp1_f2_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp1 #ffaaaa",
+      "parent": "gp1",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f2_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[14.9, 20.3, 6.1, 34.5, 38, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f2_ffffff",
+      "type": "shell",
+      "label": "CAD gp1 #ffffff",
+      "parent": "gp1",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f2_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[1, -1.4, 21.1, 10.9, 10.3, 14]]
+      }
+    },
+    {
+      "id": "mv_gp1_f3_34b7f8",
+      "type": "shell",
+      "label": "CAD gp1 #34b7f8",
+      "parent": "gp1",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f3_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[-16.5, -9.7, 6.1, 13.1, 4.2, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f3_a4a41c",
+      "type": "shell",
+      "label": "CAD gp1 #a4a41c",
+      "parent": "gp1",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f3_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[-19.7, 1, 17.4, 33.9, 19.3, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp1_f3_beebc4",
+      "type": "shell",
+      "label": "CAD gp1 #beebc4",
+      "parent": "gp1",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f3_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[-11.5, -0.5, 24.1, 10.9, 11.5, 18]]
+      }
+    },
+    {
+      "id": "mv_gp1_f3_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp1 #ffaaaa",
+      "parent": "gp1",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f3_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-27.2, -1, 6.1, 41.4, 18.3, 7]]
+      }
+    },
+    {
+      "id": "mv_gp1_f3_ffffff",
+      "type": "shell",
+      "label": "CAD gp1 #ffffff",
+      "parent": "gp1",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1_f3_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-1.5, -2.2, 21.1, 6.7, 10.7, 14]]
+      }
+    },
+    {
+      "id": "mv_gp1s_20df38",
+      "type": "shell",
+      "label": "CAD gp1s #20df38",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gp1s_6363f1",
+      "type": "shell",
+      "label": "CAD gp1s #6363f1",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_6363f1.stl",
+        "scale": 1,
+        "color": "#6363f1",
+        "boxes": [[18.9, -28.6, -26.4, 6.7, 38, 6.7], [38.4, -28.6, -10.8, 6.7, 38, 6.7]]
+      }
+    },
+    {
+      "id": "mv_gp1s_aaaaaa",
+      "type": "shell",
+      "label": "CAD gp1s #aaaaaa",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [
+          [25.1, -7.1, 25.8, 64.4, 46, 61.8],
+          [11.2, -25.5, 5.9, 19, 15.3, 19.1],
+          [18.1, -25.5, 45.1, 17, 15.3, 17.6],
+          [48.7, -25.5, 19.5, 16, 15.3, 15.2]
+        ]
+      }
+    },
+    {
+      "id": "mv_gp1s_bc63f1",
+      "type": "shell",
+      "label": "CAD gp1s #bc63f1",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [
+          [41, 20.9, -4.5, 75, 10, 107],
+          [75.5, 65.9, -36, 12, 80, 60],
+          [44.5, 38.4, -19, 50, 25, 6],
+          [44.5, 38.4, -53, 50, 25, 6]
+        ]
+      }
+    },
+    {
+      "id": "mv_gp1s_ebebbe",
+      "type": "shell",
+      "label": "CAD gp1s #ebebbe",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_ebebbe.stl",
+        "scale": 1,
+        "color": "#ebebbe",
+        "boxes": [[30.5, -20.6, -23, 38, 3, 38]]
+      }
+    },
+    {
+      "id": "mv_gp1s_ffe300",
+      "type": "shell",
+      "label": "CAD gp1s #ffe300",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gp1s_ffffff",
+      "type": "shell",
+      "label": "CAD gp1s #ffffff",
+      "parent": "gp1s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp1s_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [2.8, 87.4, -100.5, 29.5, 58, 213],
+          [-1.2, 98.6, 12, 35.5, 33.5, 12],
+          [7.1, 0.9, 36.2, 16.3, 20, 13],
+          [3.9, 7.4, 18, 17.1, 20, 8.5],
+          [-11, 106.9, 17.2, 10, 10, 24.5],
+          [-11, 106.9, 20, 16.2, 14, 4]
+        ]
+      }
+    },
+    {
+      "id": "mv_gp2_f1_34b7f8",
+      "type": "shell",
+      "label": "CAD gp2 #34b7f8",
+      "parent": "gp2",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f1_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[-2.6, -14.9, 6.1, 9.9, 11.2, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f1_a4a41c",
+      "type": "shell",
+      "label": "CAD gp2 #a4a41c",
+      "parent": "gp2",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f1_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[-13.5, -12.3, 17.4, 31.3, 33.5, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp2_f1_beebc4",
+      "type": "shell",
+      "label": "CAD gp2 #beebc4",
+      "parent": "gp2",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f1_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[-8.3, -6.1, 24.8, 13.6, 13.5, 18]]
+      }
+    },
+    {
+      "id": "mv_gp2_f1_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp2 #ffaaaa",
+      "parent": "gp2",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f1_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-15.5, -19.7, 6.1, 34.5, 38, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f1_ffffff",
+      "type": "shell",
+      "label": "CAD gp2 #ffffff",
+      "parent": "gp2",
+      "socket": "f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f1_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[-1.6, 1.9, 21.1, 10.9, 10.3, 14]]
+      }
+    },
+    {
+      "id": "mv_gp2_f2_34b7f8",
+      "type": "shell",
+      "label": "CAD gp2 #34b7f8",
+      "parent": "gp2",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f2_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[16.3, 8.9, 6.1, 13.1, 4.2, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f2_a4a41c",
+      "type": "shell",
+      "label": "CAD gp2 #a4a41c",
+      "parent": "gp2",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f2_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[19.5, -1.8, 17.4, 33.9, 19.3, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp2_f2_beebc4",
+      "type": "shell",
+      "label": "CAD gp2 #beebc4",
+      "parent": "gp2",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f2_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[11.3, -0.4, 24.1, 10.9, 11.5, 18]]
+      }
+    },
+    {
+      "id": "mv_gp2_f2_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp2 #ffaaaa",
+      "parent": "gp2",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f2_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[27, 0.2, 6.1, 41.4, 18.3, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f2_ffffff",
+      "type": "shell",
+      "label": "CAD gp2 #ffffff",
+      "parent": "gp2",
+      "socket": "f2",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f2_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[1.3, 1.4, 21.1, 6.7, 10.7, 14]]
+      }
+    },
+    {
+      "id": "mv_gp2_f3_34b7f8",
+      "type": "shell",
+      "label": "CAD gp2 #34b7f8",
+      "parent": "gp2",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f3_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [[-13.7, 13.5, 6.1, 6.3, 12.9, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f3_a4a41c",
+      "type": "shell",
+      "label": "CAD gp2 #a4a41c",
+      "parent": "gp2",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f3_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[-6, 21.6, 17.4, 24.1, 34.9, 31.5]]
+      }
+    },
+    {
+      "id": "mv_gp2_f3_beebc4",
+      "type": "shell",
+      "label": "CAD gp2 #beebc4",
+      "parent": "gp2",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f3_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[-3.2, 13.7, 24.1, 12.6, 12.1, 18]]
+      }
+    },
+    {
+      "id": "mv_gp2_f3_ffaaaa",
+      "type": "shell",
+      "label": "CAD gp2 #ffaaaa",
+      "parent": "gp2",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f3_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-11.5, 27.1, 6.1, 24.5, 41.5, 7]]
+      }
+    },
+    {
+      "id": "mv_gp2_f3_ffffff",
+      "type": "shell",
+      "label": "CAD gp2 #ffffff",
+      "parent": "gp2",
+      "socket": "f3",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2_f3_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [[0.3, 4.2, 21.1, 11.1, 8.1, 14]]
+      }
+    },
+    {
+      "id": "mv_gp2s_20df38",
+      "type": "shell",
+      "label": "CAD gp2s #20df38",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gp2s_6363f1",
+      "type": "shell",
+      "label": "CAD gp2s #6363f1",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_6363f1.stl",
+        "scale": 1,
+        "color": "#6363f1",
+        "boxes": [[-38.4, 28.6, -10.8, 6.7, 38, 6.7], [-18.9, 28.6, -26.4, 6.7, 38, 6.7]]
+      }
+    },
+    {
+      "id": "mv_gp2s_aaaaaa",
+      "type": "shell",
+      "label": "CAD gp2s #aaaaaa",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [
+          [-25.1, 7.1, 25.8, 64.4, 46, 61.8],
+          [-11.2, 25.5, 5.9, 19, 15.3, 19.1],
+          [-18.1, 25.5, 45.1, 17, 15.3, 17.6],
+          [-48.7, 25.5, 19.5, 16, 15.3, 15.2]
+        ]
+      }
+    },
+    {
+      "id": "mv_gp2s_bc63f1",
+      "type": "shell",
+      "label": "CAD gp2s #bc63f1",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [
+          [-41, -20.9, -4.5, 75, 10, 107],
+          [-75.5, -65.9, -36, 12, 80, 60],
+          [-44.5, -38.4, -19, 50, 25, 6],
+          [-44.5, -38.4, -53, 50, 25, 6]
+        ]
+      }
+    },
+    {
+      "id": "mv_gp2s_ebebbe",
+      "type": "shell",
+      "label": "CAD gp2s #ebebbe",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_ebebbe.stl",
+        "scale": 1,
+        "color": "#ebebbe",
+        "boxes": [[-30.5, 20.6, -23, 38, 3, 38]]
+      }
+    },
+    {
+      "id": "mv_gp2s_ffe300",
+      "type": "shell",
+      "label": "CAD gp2s #ffe300",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gp2s_ffffff",
+      "type": "shell",
+      "label": "CAD gp2s #ffffff",
+      "parent": "gp2s",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gp2s_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-2.7, -87.4, -100.5, 29.5, 58, 213],
+          [1.3, -98.6, 12, 35.5, 33.5, 12],
+          [-7.1, -0.9, 36.2, 16.3, 20, 13],
+          [-3.9, -7.4, 18, 17.1, 20, 8.5],
+          [11, -106.9, 17.3, 10, 10, 24.5],
+          [11, -106.9, 20, 16.2, 14, 4]
+        ]
+      }
+    },
+    {
+      "id": "mv_gu_00aaaa",
+      "type": "shell",
+      "label": "CAD gu #00aaaa",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_00aaaa.stl",
+        "scale": 1,
+        "color": "#00aaaa",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gu_0bf4f4",
+      "type": "shell",
+      "label": "CAD gu #0bf4f4",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_0bf4f4.stl",
+        "scale": 1,
+        "color": "#0bf4f4",
+        "boxes": [[107, 105.3, -45, 37, 34.5, 97]]
+      }
+    },
+    {
+      "id": "mv_gu_20df38",
+      "type": "shell",
+      "label": "CAD gu #20df38",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gu_323232",
+      "type": "shell",
+      "label": "CAD gu #323232",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_323232.stl",
+        "scale": 1,
+        "color": "#323232",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gu_df2222",
+      "type": "shell",
+      "label": "CAD gu #df2222",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_df2222.stl",
+        "scale": 1,
+        "color": "#df2222",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gu_ffaaaa",
+      "type": "shell",
+      "label": "CAD gu #ffaaaa",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-5.5, 80.5, -28.6, 245, 15, 100]]
+      }
+    },
+    {
+      "id": "mv_gu_ffe300",
+      "type": "shell",
+      "label": "CAD gu #ffe300",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_gu_ffffff",
+      "type": "shell",
+      "label": "CAD gu #ffffff",
+      "parent": "gu",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_gu_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [24.9, 217.5, 96.9, 243.8, 88, 44],
+          [160.5, 66.2, -53.5, 84, 121.3, 70],
+          [17, 195.5, 87, 173, 45, 64.9],
+          [3.5, 93, 19.4, 160, 10, 196],
+          [-3, -2.5, -118.1, 40, 40, 153.5],
+          [3.5, 154.5, 123.4, 160, 127, 12],
+          [3.5, 135.1, -23.6, 63, 74.6, 33.6],
+          [3.5, 128, 10.7, 52, 80, 35],
+          [-95.5, 60.3, -20.6, 44, 25.4, 79],
+          [89.5, 60.3, -20.6, 44, 25.4, 79],
+          [195.5, 193.4, 86.7, 100, 34.2, 17],
+          [-3, -2.5, -21.4, 31, 31, 60],
+          [-43.5, 133, 52.4, 6, 70, 130],
+          [50.5, 133, 52.4, 6, 70, 130],
+          [-3, 67, -14.6, 60, 12, 47],
+          [-3, -2.5, -4.1, 29.5, 26.9, 8],
+          [186.1, 99.4, -57.5, 21.5, 20.2, 6],
+          [186.1, 90.4, -49.5, 21.5, 20.2, 6],
+          [164.3, 20.5, -64, 39, 7, 9],
+          [164.3, 20.5, -43, 39, 7, 9],
+          [-91.8, 66.5, 22.2, 15.3, 9.2, 16.6],
+          [93.2, 66.5, 22.2, 15.3, 9.2, 16.6],
+          [-6, 94.3, -37.2, 4, 37, 4.6],
+          [13, 99.3, -37.2, 4, 37, 4.6]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbIn_0bf4f4",
+      "type": "shell",
+      "label": "CAD mbIn #0bf4f4",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_0bf4f4.stl",
+        "scale": 1,
+        "color": "#0bf4f4",
+        "boxes": [[-3.7, -17.4, -4.4, 55, 139.1, 12]]
+      }
+    },
+    {
+      "id": "mv_mbIn_6363f1",
+      "type": "shell",
+      "label": "CAD mbIn #6363f1",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_6363f1.stl",
+        "scale": 1,
+        "color": "#6363f1",
+        "boxes": [[15.8, 55.1, -18.6, 16, 6, 36.4]]
+      }
+    },
+    {
+      "id": "mv_mbIn_aaaaaa",
+      "type": "shell",
+      "label": "CAD mbIn #aaaaaa",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [[-12.7, -20.2, -19.3, 36, 134.5, 17.7]]
+      }
+    },
+    {
+      "id": "mv_mbIn_ebebbe",
+      "type": "shell",
+      "label": "CAD mbIn #ebebbe",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_ebebbe.stl",
+        "scale": 1,
+        "color": "#ebebbe",
+        "boxes": [[13.8, -52, -17.6, 16, 18, 38.4]]
+      }
+    },
+    {
+      "id": "mv_mbIn_f16363",
+      "type": "shell",
+      "label": "CAD mbIn #f16363",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_f16363.stl",
+        "scale": 1,
+        "color": "#f16363",
+        "boxes": [[11.5, 30.8, -28.9, 20, 14.6, 9]]
+      }
+    },
+    {
+      "id": "mv_mbIn_ffaaaa",
+      "type": "shell",
+      "label": "CAD mbIn #ffaaaa",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-3.7, -25, 16.6, 55, 10, 30]]
+      }
+    },
+    {
+      "id": "mv_mbIn_ffffff",
+      "type": "shell",
+      "label": "CAD mbIn #ffffff",
+      "parent": "mbIn",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbIn_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-0.7, -3, 61.6, 49, 34, 124],
+          [-37, -66, -19.9, 21.5, 20, 4.6],
+          [-37, 9, -13.9, 21.5, 20, 4.6]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbLoad_20df38",
+      "type": "shell",
+      "label": "CAD mbLoad #20df38",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbLoad_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_mbLoad_a4a41c",
+      "type": "shell",
+      "label": "CAD mbLoad #a4a41c",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbLoad_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [[5, 2.6, 31.5, 50, 36, 69]]
+      }
+    },
+    {
+      "id": "mv_mbLoad_ff9f00",
+      "type": "shell",
+      "label": "CAD mbLoad #ff9f00",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbLoad_ff9f00.stl",
+        "scale": 1,
+        "color": "#ff9f00",
+        "boxes": [[0, 45.1, 33.5, 42, 11, 60]]
+      }
+    },
+    {
+      "id": "mv_mbLoad_ffffff",
+      "type": "shell",
+      "label": "CAD mbLoad #ffffff",
+      "parent": "mbLoad",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbLoad_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [26.6, -0.5, 1.3, 10.8, 89.5, 107.7],
+          [-1.7, -1.7, -70.5, 32, 21.5, 141],
+          [0, 33.1, 19, 40, 25, 69],
+          [24, 25.6, 33.5, 20, 38, 38],
+          [-0.5, 14.6, 66.8, 16, 20, 22.5],
+          [2, 26.1, 75.5, 33, 3, 27],
+          [12.5, 26.1, 55.2, 9.8, 27, 9.8],
+          [-12.5, 26.1, 55.2, 9.8, 27, 9.8],
+          [-12.5, 26.1, 11.8, 9.8, 27, 9.8],
+          [12.5, 26.1, 11.8, 9.8, 27, 9.8],
+          [-7.1, 38.1, 83.4, 6.7, 38, 6.7],
+          [12.4, 38.1, 67.8, 6.7, 38, 6.7],
+          [22, 9.6, 33.5, 16, 2, 38],
+          [24.6, 93.8, 33.3, 0.5, 100, 10.5],
+          [24.6, 93.8, 28.3, 0.5, 100, 0.5]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbOutU_f1f163",
+      "type": "shell",
+      "label": "CAD mbOutU #f1f163",
+      "parent": "mbOutU",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOutU_f1f163.stl",
+        "scale": 1,
+        "color": "#f1f163",
+        "boxes": [[-49.7, -11.5, 232.6, 42, 35, 15]]
+      }
+    },
+    {
+      "id": "mv_mbOutU_ffe300",
+      "type": "shell",
+      "label": "CAD mbOutU #ffe300",
+      "parent": "mbOutU",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOutU_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_mbOutU_ffffff",
+      "type": "shell",
+      "label": "CAD mbOutU #ffffff",
+      "parent": "mbOutU",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOutU_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [0.2, 0, 126.1, 42, 60, 253],
+          [-43.5, 0, 176.6, 29.5, 58, 97],
+          [-22.3, 2, 157.9, 13, 64, 130],
+          [-47.3, -39.7, 136.6, 36, 30.4, 11],
+          [-58.5, -38.5, 159.6, 13.5, 32, 23],
+          [-36.8, 26.3, 203.8, 4, 4.6, 32],
+          [-42.8, 26.3, 164.6, 4, 4.6, 32]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbOut_20df38",
+      "type": "shell",
+      "label": "CAD mbOut #20df38",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOut_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_mbOut_bc63f1",
+      "type": "shell",
+      "label": "CAD mbOut #bc63f1",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOut_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [[-41, -66.5, -4.9, 120, 189, 10]]
+      }
+    },
+    {
+      "id": "mv_mbOut_ff9f00",
+      "type": "shell",
+      "label": "CAD mbOut #ff9f00",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOut_ff9f00.stl",
+        "scale": 1,
+        "color": "#ff9f00",
+        "boxes": [[-73, -136.5, 24.6, 60, 42, 11]]
+      }
+    },
+    {
+      "id": "mv_mbOut_ffffff",
+      "type": "shell",
+      "label": "CAD mbOut #ffffff",
+      "parent": "mbOut",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbOut_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [0.2, 1, 54.1, 34, 49, 108],
+          [-105.2, -109.9, -19, 107.7, 10.8, 89.5],
+          [-58.5, -136.5, 12.6, 69, 40, 25],
+          [-73, -112.5, 7.1, 38, 20, 38],
+          [-76.5, -160.5, -5.9, 10, 35, 20],
+          [-71, -177, 5.6, 33, 30, 3],
+          [-94.7, -124, 5.6, 9.8, 9.8, 27],
+          [-94.7, -149, 5.6, 9.8, 9.8, 27],
+          [-51.3, -149, 5.6, 9.8, 9.8, 27],
+          [-51.3, -124, 5.6, 9.8, 9.8, 27],
+          [-80.1, -186.4, 17.6, 6.7, 6.7, 38],
+          [-60.6, -170.8, 17.6, 6.7, 6.7, 38],
+          [-73.2, -111.9, 75.3, 10.5, 0.5, 100],
+          [-78.2, -111.9, 75.3, 0.5, 0.5, 100]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbs_00aaaa",
+      "type": "shell",
+      "label": "CAD mbs #00aaaa",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_00aaaa.stl",
+        "scale": 1,
+        "color": "#00aaaa",
+        "boxes": [
+          [130.9, 94, 17.8, 296, 70, 12],
+          [-22.1, 94, 29.3, 10, 70, 75],
+          [22.9, 94, 4.3, 80, 6, 15],
+          [-3.1, 94, 40.3, 28, 6, 33]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbs_20df38",
+      "type": "shell",
+      "label": "CAD mbs #20df38",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_mbs_beebc4",
+      "type": "shell",
+      "label": "CAD mbs #beebc4",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [
+          [86.3, -4.5, 168.3, 30, 60, 165],
+          [-1.6, -36, 220.8, 185, 3, 20],
+          [-1.6, -36, 115.8, 185, 3, 20],
+          [66.3, -14.5, 220.8, 10, 40, 3],
+          [66.3, -14.5, 115.8, 10, 40, 3]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbs_dabeeb",
+      "type": "shell",
+      "label": "CAD mbs #dabeeb",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_dabeeb.stl",
+        "scale": 1,
+        "color": "#dabeeb",
+        "boxes": [
+          [102.9, 78, -43.2, 240, 10, 60],
+          [90.9, 53, -43.2, 216, 40, 6],
+          [-22.1, 58.5, -43.2, 10, 65, 60]
+        ]
+      }
+    },
+    {
+      "id": "mv_mbs_f16363",
+      "type": "shell",
+      "label": "CAD mbs #f16363",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_f16363.stl",
+        "scale": 1,
+        "color": "#f16363",
+        "boxes": [[152.9, 129.5, 34, 13, 61, 68.5]]
+      }
+    },
+    {
+      "id": "mv_mbs_ff9f00",
+      "type": "shell",
+      "label": "CAD mbs #ff9f00",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_ff9f00.stl",
+        "scale": 1,
+        "color": "#ff9f00",
+        "boxes": [[165.4, 61, -4.5, 75, 24, 52.5]]
+      }
+    },
+    {
+      "id": "mv_mbs_ffaaaa",
+      "type": "shell",
+      "label": "CAD mbs #ffaaaa",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-32.1, 48.5, 11.8, 10, 161, 170]]
+      }
+    },
+    {
+      "id": "mv_mbs_ffe300",
+      "type": "shell",
+      "label": "CAD mbs #ffe300",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_mbs_ffffff",
+      "type": "shell",
+      "label": "CAD mbs #ffffff",
+      "parent": "mbs",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_mbs_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [159.7, 94, 39.8, 238.5, 70, 36],
+          [-9.7, -4.5, 8.3, 30, 58, 145],
+          [163.9, 97.8, -43.2, 113, 29.5, 58],
+          [-58.1, -0.2, -0.2, 36, 37.5, 62],
+          [-32.6, -2, -0.2, 15, 37, 50],
+          [269.9, 141.5, 45.3, 13, 37, 46],
+          [180.4, 112.8, -81.7, 40, 13.5, 32],
+          [237.9, 139, 58.8, 27, 37, 17],
+          [211.9, 101.5, -82.9, 11, 36, 30.4],
+          [103.9, 104.8, -54.5, 7, 41.5, 33.5],
+          [-19.6, 109, 90.8, 15, 23, 12],
+          [-19.6, 109, -47.2, 15, 23, 12],
+          [-32.1, -2, -34.2, 10, 25, 8],
+          [123.9, 97, -17, 32, 4, 4.6],
+          [184.7, 91, -17, 32, 4, 4.6],
+          [115.7, 61.5, 32.8, 32, 4.6, 4],
+          [239.9, 61.5, 38.8, 32, 4.6, 4]
+        ]
+      }
+    },
+    {
+      "id": "mv_ngTilt_ff6aff",
+      "type": "shell",
+      "label": "CAD ngTilt #ff6aff",
+      "parent": "ngTilt",
+      "socket": "slider",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_ngTilt_ff6aff.stl",
+        "scale": 1,
+        "color": "#ff6aff",
+        "boxes": [[-21.3, 6.6, 0, 15, 150, 100], [1.2, -0.4, 0, 30, 20, 40]]
+      }
+    },
+    {
+      "id": "mv_pin_ebbebe",
+      "type": "shell",
+      "label": "CAD pin #ebbebe",
+      "parent": "pin",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_pin_ebbebe.stl",
+        "scale": 1,
+        "color": "#ebbebe",
+        "boxes": [[0, 0, -26.6, 40, 25, 29], [0, 0, -38.6, 10, 10, 77]]
+      }
+    },
+    {
+      "id": "mv_rot_20df38",
+      "type": "shell",
+      "label": "CAD rot #20df38",
+      "parent": "rot",
+      "socket": "top",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_rot_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_rot_aaaaaa",
+      "type": "shell",
+      "label": "CAD rot #aaaaaa",
+      "parent": "rot",
+      "socket": "top",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_rot_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [[0, -1, -48.1, 20, 20, 70]]
+      }
+    },
+    {
+      "id": "mv_rot_ebbebe",
+      "type": "shell",
+      "label": "CAD rot #ebbebe",
+      "parent": "rot",
+      "socket": "top",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_rot_ebbebe.stl",
+        "scale": 1,
+        "color": "#ebbebe",
+        "boxes": [[0, -1, -54.6, 16, 16, 7]]
+      }
+    },
+    {
+      "id": "mv_rot_ffe300",
+      "type": "shell",
+      "label": "CAD rot #ffe300",
+      "parent": "rot",
+      "socket": "top",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_rot_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_shut2_0bf4f4",
+      "type": "shell",
+      "label": "CAD shut2 #0bf4f4",
+      "parent": "shut2",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_shut2_0bf4f4.stl",
+        "scale": 1,
+        "color": "#0bf4f4",
+        "boxes": [[-23.5, 0.5, 90.1, 5, 133, 360]]
+      }
+    },
+    {
+      "id": "mv_shut2_aaaaaa",
+      "type": "shell",
+      "label": "CAD shut2 #aaaaaa",
+      "parent": "shut2",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_shut2_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [[0, 0.5, -146.1, 25, 62, 292.5], [0, 0.5, -346.1, 25, 62, 292.5]]
+      }
+    },
+    {
+      "id": "mv_shut2_bc63f1",
+      "type": "shell",
+      "label": "CAD shut2 #bc63f1",
+      "parent": "shut2",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_shut2_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [[-2.7, 0.5, 40.9, 36.5, 68, 81.5]]
+      }
+    },
+    {
+      "id": "mv_shut2_ffaaaa",
+      "type": "shell",
+      "label": "CAD shut2 #ffaaaa",
+      "parent": "shut2",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_shut2_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[-38.3, 51.5, 238.6, 20.5, 77.4, 63]]
+      }
+    },
+    {
+      "id": "mv_tray_20df38",
+      "type": "shell",
+      "label": "CAD tray #20df38",
+      "parent": "tray",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tray_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_tray_ffffff",
+      "type": "shell",
+      "label": "CAD tray #ffffff",
+      "parent": "tray",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tray_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [0, -6.4, -77.5, 70, 40, 175],
+          [0, 0.1, -82.3, 62, 25, 164.5],
+          [24.5, 2.6, -38.6, 49, 65, 15],
+          [0, -7.4, -192.1, 40, 45, 25],
+          [0, -49.4, -78, 25, 25, 48],
+          [0, -49.4, -24, 25, 25, 48],
+          [0, -9.4, 25, 50, 20, 30],
+          [0, -40.9, -156, 40, 29, 12],
+          [0, -49.4, -111.5, 12, 12, 49],
+          [0, -49.4, -10.5, 12, 12, 49],
+          [0, -49.4, -51, 25, 25, 6],
+          [-9.8, -55.4, -74.5, 6.1, 6.1, 27],
+          [-6, -59.2, -82.5, 6.1, 6.1, 27],
+          [6, -59.2, -19.5, 6.1, 6.1, 27],
+          [9.8, -55.4, -27.5, 6.1, 6.1, 27],
+          [0, -49.4, -129, 9.2, 8, 4],
+          [0, -49.4, 7, 9.2, 8, 4]
+        ]
+      }
+    },
+    {
+      "id": "mv_tslide_20df38",
+      "type": "shell",
+      "label": "CAD tslide #20df38",
+      "parent": "tslide",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tslide_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "mv_tslide_ebbebe",
+      "type": "shell",
+      "label": "CAD tslide #ebbebe",
+      "parent": "tslide",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tslide_ebbebe.stl",
+        "scale": 1,
+        "color": "#ebbebe",
+        "boxes": [[-51.9, -31.7, 55, 36, 37.5, 62]]
+      }
+    },
+    {
+      "id": "mv_tslide_f16363",
+      "type": "shell",
+      "label": "CAD tslide #f16363",
+      "parent": "tslide",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tslide_f16363.stl",
+        "scale": 1,
+        "color": "#f16363",
+        "boxes": [[-98.4, -36, 63, 31, 13, 32]]
+      }
+    },
+    {
+      "id": "mv_tslide_ffffff",
+      "type": "shell",
+      "label": "CAD tslide #ffffff",
+      "parent": "tslide",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/final-caulking/mv_tslide_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-76.9, -70, 55, 12, 99, 100],
+          [-89.4, -79.5, 55, 13, 80, 100],
+          [-76.4, -31, 55, 13, 35, 54],
+          [-98.9, -26.3, 27.7, 6, 25.5, 29.2]
+        ]
+      }
+    },
+    {
+      "id": "shl_00aaaa",
+      "type": "shell",
+      "label": "CAD #00aaaa",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_00aaaa.stl",
+        "scale": 1,
+        "color": "#00aaaa",
+        "boxes": [[735, 217.8, 730.4, 10, 122.5, 183], [755, 191.5, 640.9, 30, 70, 10]]
+      }
+    },
+    {
+      "id": "shl_00ff9f",
+      "type": "shell",
+      "label": "CAD #00ff9f",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_00ff9f.stl",
+        "scale": 1,
+        "color": "#00ff9f",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_0bf4f4",
+      "type": "shell",
+      "label": "CAD #0bf4f4",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_0bf4f4.stl",
+        "scale": 1,
+        "color": "#0bf4f4",
+        "boxes": [[494.6, 189, 806, 99.9, 107, 11.7]]
+      }
+    },
+    {
+      "id": "shl_2020df",
+      "type": "shell",
+      "label": "CAD #2020df",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_2020df.stl",
+        "scale": 1,
+        "color": "#2020df",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_20df38",
+      "type": "shell",
+      "label": "CAD #20df38",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_20df38.stl",
+        "scale": 1,
+        "color": "#20df38",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_323232",
+      "type": "shell",
+      "label": "CAD #323232",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_323232.stl",
+        "scale": 1,
+        "color": "#323232",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_34b7f8",
+      "type": "shell",
+      "label": "CAD #34b7f8",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_34b7f8.stl",
+        "scale": 1,
+        "color": "#34b7f8",
+        "boxes": [
+          [416.5, 227.5, 875.9, 284, 140, 10],
+          [369.5, 50, 830.9, 85, 170, 10],
+          [402, 121.3, 853.4, 10, 312.5, 35],
+          [337, 121.3, 853.4, 10, 312.5, 35],
+          [416.5, 282.5, 858.4, 284, 10, 25],
+          [369.5, 100, 853.4, 55, 10, 35]
+        ]
+      }
+    },
+    {
+      "id": "shl_6363f1",
+      "type": "shell",
+      "label": "CAD #6363f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_6363f1.stl",
+        "scale": 1,
+        "color": "#6363f1",
+        "boxes": [
+          [475, 86.1, 620.9, 64, 10, 320],
+          [475, 80.1, 455.9, 64, 62, 10],
+          [475, 101.1, 595.9, 6, 20, 270]
+        ]
+      }
+    },
+    {
+      "id": "shl_9d0bf4",
+      "type": "shell",
+      "label": "CAD #9d0bf4",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_9d0bf4.stl",
+        "scale": 1,
+        "color": "#9d0bf4",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_a41c1c",
+      "type": "shell",
+      "label": "CAD #a41c1c",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_a41c1c.stl",
+        "scale": 1,
+        "color": "#a41c1c",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_a4a41c",
+      "type": "shell",
+      "label": "CAD #a4a41c",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_a4a41c.stl",
+        "scale": 1,
+        "color": "#a4a41c",
+        "boxes": [
+          [83.5, 187.3, 619.4, 90, 105.5, 157],
+          [475, -81.7, 786.5, 120, 126.3, 73.1],
+          [730, 213.5, 628.4, 340, 154, 15],
+          [68, 191.3, 440.9, 340, 112.5, 20],
+          [475, -101.9, 746.1, 120, 30.2, 39.8]
+        ]
+      }
+    },
+    {
+      "id": "shl_aaaaaa",
+      "type": "shell",
+      "label": "CAD #aaaaaa",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [
+          [-705, 189, 731.1, 2497, 75, 129.6],
+          [-705, 189, 776.4, 2436, 107, 34],
+          [-1516, 175.1, 710.4, 322, 157.2, 134],
+          [-145, 165.5, 838.4, 124, 220, 175],
+          [55, 165.5, 838.4, 124, 220, 175],
+          [-1463.5, 194, 699.7, 80, 117, 80],
+          [-1282, 173.8, 725.4, 100, 99.3, 60],
+          [-145, 220.5, 945.9, 115, 105, 40],
+          [55, 220.5, 945.9, 115, 105, 40],
+          [-40, 213.5, 1569.4, 30, 64, 233],
+          [-145, 220.5, 975.9, 115, 105, 20],
+          [55, 220.5, 975.9, 115, 105, 20],
+          [-1927.5, 189, 777.2, 55, 107, 35.6],
+          [517.5, 189, 777.2, 55, 107, 35.6],
+          [-1282, 128, 737.9, 106, 15, 85],
+          [-505, 189, 763.9, 37, 124.6, 25],
+          [475, 207.5, 910.4, 64.4, 47, 21],
+          [426.5, 207.5, 903.4, 230, 15, 13],
+          [-267, 261, 953.3, 28, 50, 25],
+          [-198, 360, 953.3, 50, 28, 25],
+          [-123, 360, 953.3, 50, 28, 25],
+          [-267, 9, 953.3, 28, 50, 25],
+          [-198, 360, 1338.5, 50, 28, 25],
+          [-123, 360, 1338.5, 50, 28, 25],
+          [-267, 261, 1338.5, 28, 50, 25],
+          [-267, 9, 1338.5, 28, 50, 25],
+          [875, 284, 867.4, 45, 40, 5]
+        ]
+      }
+    },
+    {
+      "id": "shl_baf40b",
+      "type": "shell",
+      "label": "CAD #baf40b",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_baf40b.stl",
+        "scale": 1,
+        "color": "#baf40b",
+        "boxes": []
+      }
+    },
+    {
+      "id": "shl_bc63f1",
+      "type": "shell",
+      "label": "CAD #bc63f1",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [
+          [615, 217.8, 730.4, 10, 122.5, 183],
+          [723, 34, 630.9, 380, 18, 20],
+          [723, 94, 630.9, 380, 18, 20],
+          [595, 191.5, 640.9, 30, 70, 10]
+        ]
+      }
+    },
+    {
+      "id": "shl_bebeeb",
+      "type": "shell",
+      "label": "CAD #bebeeb",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_bebeeb.stl",
+        "scale": 1,
+        "color": "#bebeeb",
+        "boxes": [
+          [383, 50, 440.9, 1060, 170, 20],
+          [475, -108.9, 791.5, 126, 94.8, 74],
+          [472.5, 244, 797.9, 155, 3, 77],
+          [497.5, 134, 787.9, 105, 3, 57]
+        ]
+      }
+    },
+    {
+      "id": "shl_beebc4",
+      "type": "shell",
+      "label": "CAD #beebc4",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [
+          [93.5, 109, 552.9, 460, 25, 204],
+          [402.5, 595, 1348.1, 255, 15, 315],
+          [402.5, 645.5, 1331.6, 255, 15, 210],
+          [316, 620.3, 1343.1, 12, 35.5, 233],
+          [489, 620.3, 1343.1, 12, 35.5, 233]
+        ]
+      }
+    },
+    {
+      "id": "shl_dabeeb",
+      "type": "shell",
+      "label": "CAD #dabeeb",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_dabeeb.stl",
+        "scale": 1,
+        "color": "#dabeeb",
+        "boxes": [[875, 284.5, 894.9, 118, 114, 10]]
+      }
+    },
+    {
+      "id": "shl_df2222",
+      "type": "shell",
+      "label": "CAD #df2222",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_df2222.stl",
+        "scale": 1,
+        "color": "#df2222",
+        "boxes": [
+          [875, 405, 893.9, 130, 125, 6],
+          [901, 402, 900.9, 8, 131, 8],
+          [849, 402, 900.9, 8, 131, 8],
+          [837.5, 387.5, 904.4, 3, 160, 15],
+          [912.5, 392.5, 904.4, 3, 150, 15]
+        ]
+      }
+    },
+    {
+      "id": "shl_ebbebe",
+      "type": "shell",
+      "label": "CAD #ebbebe",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ebbebe.stl",
+        "scale": 1,
+        "color": "#ebbebe",
+        "boxes": [
+          [427, 273, 899.9, 257, 45, 38],
+          [875, 289.5, 728.4, 60, 91, 55],
+          [875, 274, 773.9, 60, 60, 66],
+          [723, 35.5, 645.4, 380, 15, 13],
+          [723, 95.5, 645.4, 380, 15, 13],
+          [-140.6, 199.5, 1251, 33.3, 54.8, 39.7],
+          [783.9, 95.5, 652.4, 64.4, 47, 21],
+          [783.9, 35.5, 652.4, 64.4, 47, 21],
+          [870.8, 95.5, 652.4, 64.4, 47, 21],
+          [870.8, 35.5, 652.4, 64.4, 47, 21],
+          [875, 284, 811.4, 32, 32, 41]
+        ]
+      }
+    },
+    {
+      "id": "shl_ebebbe",
+      "type": "shell",
+      "label": "CAD #ebebbe",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ebebbe.stl",
+        "scale": 1,
+        "color": "#ebebbe",
+        "boxes": [
+          [683, 99.5, 535.9, 300, 174, 140],
+          [93.5, -10, 552.9, 460, 25, 204],
+          [723, 72, 613.4, 400, 229, 15],
+          [683, 50, 458.4, 340, 157, 15],
+          [875, 287, 712.9, 86, 70, 124],
+          [875, 274.5, 782.4, 114, 95, 15],
+          [853.5, 264.5, 643.4, 137, 70, 15]
+        ]
+      }
+    },
+    {
+      "id": "shl_f16363",
+      "type": "shell",
+      "label": "CAD #f16363",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_f16363.stl",
+        "scale": 1,
+        "color": "#f16363",
+        "boxes": [[475, -147.7, 770.6, 126, 22.6, 43.9]]
+      }
+    },
+    {
+      "id": "shl_ff6aff",
+      "type": "shell",
+      "label": "CAD #ff6aff",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ff6aff.stl",
+        "scale": 1,
+        "color": "#ff6aff",
+        "boxes": [
+          [675, 285.5, 763.9, 110, 255, 108],
+          [675, 220.5, 851.4, 110, 105, 67],
+          [675.3, 323, 681.4, 70, 70, 57],
+          [615, 358, 763.9, 10, 110, 108],
+          [675, 220.5, 889.9, 110, 105, 10]
+        ]
+      }
+    },
+    {
+      "id": "shl_ffaaaa",
+      "type": "shell",
+      "label": "CAD #ffaaaa",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ffaaaa.stl",
+        "scale": 1,
+        "color": "#ffaaaa",
+        "boxes": [[426.5, 206, 889.9, 230, 18, 18]]
+      }
+    },
+    {
+      "id": "shl_ffe300",
+      "type": "shell",
+      "label": "CAD #ffe300",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": [
+          [-271, 122.4, 982.7, 31.6, 425.1, 42.1],
+          [-270.9, 122.4, 1309.1, 31.6, 425.1, 42.1],
+          [-156.4, 364, 982.3, 265.1, 31.6, 42.1],
+          [-156.4, 363.9, 1309.4, 265.1, 31.6, 42.1]
+        ]
+      }
+    },
+    {
+      "id": "shl_ffffff",
+      "type": "shell",
+      "label": "CAD #ffffff",
+      "params": {
+        "asset": "assets/cad/final-caulking/shl_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [49.9, 191, 506.8, 316.2, 99, 145.8],
+          [340, 544.9, 1362.4, 132, 85.2, 365.3],
+          [63.3, 63, 610.4, 443.5, 67, 85],
+          [340, 538.6, 1632.2, 132, 95.7, 185.3],
+          [369.5, 48.5, 640.9, 75, 75, 350],
+          [154.9, 61.5, 505.4, 260.3, 64, 85],
+          [412.5, 100, 105.9, 785, 40, 40],
+          [412.5, 0, 395.9, 785, 40, 40],
+          [412.5, 0, 105.9, 785, 40, 40],
+          [412.5, 100, 395.9, 785, 40, 40],
+          [475, -165, 655.9, 184, 130, 40],
+          [412.5, 87.8, 253.4, 765, 4.5, 245],
+          [475, -176.9, 710.9, 110, 100, 70],
+          [725.5, -13, 639.9, 357, 45, 38],
+          [0, 0, 250.9, 40, 40, 330],
+          [0, 100, 250.9, 40, 40, 330],
+          [825, 100, 250.9, 40, 40, 330],
+          [825, 0, 250.9, 40, 40, 330],
+          [443.5, 556.3, 1331.6, 23, 62.5, 280],
+          [503.5, 556.3, 1331.6, 23, 62.5, 280],
+          [1113.1, -13, 297.2, 33, 85, 139.1],
+          [1149.4, -13, 297.2, 33, 85, 139.1],
+          [299.3, 61.5, 557.9, 28.5, 64, 190],
+          [1036, 44.5, 298.3, 53, 57, 113],
+          [-57, 100, 70.9, 50, 40, 140],
+          [-57, 0, 70.9, 50, 40, 140],
+          [882, 100, 70.9, 50, 40, 140],
+          [882, 0, 70.9, 50, 40, 140],
+          [475, 66.1, 712.5, 64, 30, 133],
+          [296.9, 49.4, 351, 113.7, 73.2, 30.5],
+          [466.9, 49.4, 351, 113.7, 73.2, 30.5],
+          [126.9, 49.4, 351, 113.6, 73.2, 30.5],
+          [126.7, 49.4, 192.7, 113.4, 73.2, 30],
+          [296.7, 49.4, 192.7, 113.4, 73.2, 30],
+          [466.7, 49.4, 192.7, 113.4, 73.2, 30],
+          [979, 44.5, 279.5, 53, 52, 80.3],
+          [133.6, 47.5, 163.6, 102.4, 76.5, 28.2],
+          [303.6, 47.6, 163.6, 102.4, 76.5, 28.2],
+          [473.6, 47.6, 163.6, 102.4, 76.5, 28.2],
+          [369.5, 50, 458.4, 85, 170, 15],
+          [35, 105, 253.4, 30, 30, 235],
+          [790, 105, 253.4, 30, 30, 235],
+          [1036, 40.6, 203.3, 45.5, 53.3, 76.9],
+          [463.5, 281.5, 905.9, 60, 38, 80],
+          [93.5, -11.5, 661.2, 460, 20, 16.5],
+          [93.5, 110.5, 661.2, 460, 20, 16.5],
+          [205, 220.5, 975.2, 115, 105, 12.5],
+          [369.5, 50, 820.9, 85, 170, 10],
+          [212.5, 237.5, 798.4, 50, 30, 85],
+          [212.5, 140.5, 798.4, 50, 30, 85],
+          [205, 220.5, 982.7, 85.3, 90, 16.5],
+          [681.5, 72.3, 187.5, 60, 26.5, 76],
+          [687.8, 37, 187.5, 149.6, 44.1, 17.1],
+          [687.8, 37, 171.5, 149.6, 44.1, 17.1],
+          [0, 50, 423.4, 50, 150, 15],
+          [825, 50, 423.4, 50, 150, 15],
+          [1113.1, 7, 192.7, 32, 45, 77.9],
+          [1149.4, 7, 192.7, 32, 45, 77.9],
+          [875, 284, 891.7, 82, 82, 15.5],
+          [0, 50, 105.9, 40, 60, 40]
+        ]
+      }
+    }
+  ]
+}

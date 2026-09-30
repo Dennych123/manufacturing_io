@@ -7,16 +7,20 @@
 //   GET  /api/stream           SSE: scene, state (30 Hz deltas, full every 5 s), status (1 Hz), warn
 //   GET  /api/ping /api/scenes /api/tags
 //   POST /api/cmd {op: run|stop|reset}   /api/press {id, key, down}   /api/dial {id, key, value}
-//        /api/scale {value}   /api/force {tag, value|null}
+//        /api/scale {value}   /api/force {tag, value|null}   /api/tune {id, key, value|null} (GET lists them)
 //   GET  /api/scene/:name -> {version, scene}   PUT /api/scene/:name {baseVersion, scene} (409 when stale)
+//   GET  /ladder               web/ladder.html: the ladder soft-PLC's program, live (server/ladderctl.js, /api/ladder/*)
+//   GET  /twin                 web/twin.html: why AUTO will not start, and where the cycle time goes (server/twin.js)
+//   GET  /hmi                  web/hmi.html: the machine's touch panel, drawn from its own VT STUDIO file
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { validate, bindings, tags as sceneTags, NAME_RE } from '../lib/scene.js';
+import { validate, bindings, tags as sceneTags, NAME_RE, params as paramsOf } from '../lib/scene.js';
 import { createPlant, createRecorder } from './plant.js';
 import { createDriver } from './opcua.js';
 import { readScene, saveScene, SceneError } from './scenes.js';
+import { ladderApi } from './ladderctl.js';
 
 const MIME = /** @type {Record<string, string>} */ ({
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -36,6 +40,9 @@ export function staticPath(root, urlPath) {
   let p;
   try { p = decodeURIComponent(urlPath); } catch { return null; }
   if (p === '/') p = '/web/index.html';
+  if (p === '/ladder') p = '/web/ladder.html';
+  if (p === '/twin') p = '/web/twin.html';
+  if (p === '/hmi') p = '/web/hmi.html';
   if (p.includes('\0') || p.includes('\\')) return null;
   const pre = Object.keys(STATIC).find(k => p.startsWith(k));
   if (!pre) return null;
@@ -99,7 +106,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
     const plc = !internal && sc.io?.driver === 'opcua';
     let controller = null;
     const ctlFile = path.join(root, 'scenes', sceneName + '.ctl.js');
-    if (!plc && fs.existsSync(ctlFile)) controller = (await import(pathToFileURL(ctlFile).href)).create(sc);
+    if (!plc && fs.existsSync(ctlFile)) controller = await (await import(pathToFileURL(ctlFile).href)).create(sc, { root, log });
     const t = [...sceneTags(sc)];
     /** @type {any} */
     let p = null;
@@ -113,13 +120,25 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       warn: msg => p?.warn(msg),
     }) : null;
     const rec = createRecorder(path.join(root, 'runs'), sc, plc ? 'opcua' : 'internal');
-    p = await createPlant(sc, { driver: drv, controller, recorder: rec });
+    p = await createPlant(withTune(sc), { driver: drv, controller, recorder: rec });
     p.warnListeners.push((/** @type {string} */ msg, /** @type {number} */ tt) => { log('warn  ' + msg); broadcast('warn', { t: tt, msg }); });
-    return { plant: p, driver: drv, recorder: rec, usePlc: plc };
+    return { plant: p, driver: drv, recorder: rec, usePlc: plc, ctl: controller };
+  }
+  // What-if actuator speeds (/api/tune), kept beside the scene in scenes/<name>.tune.json and laid
+  // over its params when the plant is built. The scene file itself is never touched: it is a
+  // generator's output, and a tuned speed is a question asked of the model, not its design.
+  const TUNE = /** @type {Record<string, string[]>} */ ({ cylinder: ['extendMs', 'retractMs'], elecylinder: ['vmax', 'acc'], turntable: ['speed'],
+    conveyor: ['speed'], indexTable: ['camMs'], gripper: ['closeMs', 'openMs'], vacuumCup: ['buildMs', 'dropMs'] });
+  const tuneFile = () => path.join(root, 'scenes', sceneName + '.tune.json');
+  const readTune = () => { try { return JSON.parse(fs.readFileSync(tuneFile(), 'utf8')); } catch { return {}; } };
+  /** @param {any} sc */
+  function withTune(sc) {
+    const t = readTune();
+    return { ...sc, components: sc.components.map((/** @type {any} */ c) => (t[c.id] ? { ...c, params: { ...c.params, ...t[c.id] } } : c)) };
   }
   /** @type {any} */
-  let plant, driver, recorder, usePlc;
-  ({ plant, driver, recorder, usePlc } = await build(scene));
+  let plant, driver, recorder, usePlc, ctl;
+  ({ plant, driver, recorder, usePlc, ctl } = await build(scene));
 
   // ------------------------------------------------------------ SSE
   /** @type {Set<http.ServerResponse>} */
@@ -197,7 +216,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
       const wasRunning = plant.mode === 'run';
       const old = plant, oldRec = recorder;
       old.stop();
-      ({ plant, driver, recorder, usePlc } = next);
+      ({ plant, driver, recorder, usePlc, ctl } = next);
       scene = sc;
       lastFull = 0;
       broadcast('scene', sceneMsg());
@@ -247,8 +266,12 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
         }
         return json(res, 200, { ok: true, ...r, rebuilt: true });
       }
+      if (req.method === 'POST' && url.pathname.startsWith('/api/') && !postAllowed(req, { lanControl })) {
+        return json(res, 403, { error: 'POST only from this PC (start with --lan-control to allow the LAN)' });
+      }
+      // The ladder soft-PLC's program: view, monitor, force, edit online (server/ladderctl.js).
+      if (await ladderApi(req, res, url, ctl?.ladder ?? null, { json, body: () => body(req), t: () => plant.t })) return;
       if (req.method === 'POST' && url.pathname.startsWith('/api/')) {
-        if (!postAllowed(req, { lanControl })) return json(res, 403, { error: 'POST only from this PC (start with --lan-control to allow the LAN)' });
         const b = await body(req);
         if (url.pathname === '/api/cmd') {
           if (b.op === 'run') plant.start(); else if (b.op === 'stop') plant.stop(); else if (b.op === 'reset') plant.reset();
@@ -278,7 +301,27 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
         // The hand: hold a loose part still to jam the line on purpose (docs/PLAN.md §3).
         if (url.pathname === '/api/hold') { plant.holdPart(String(b.uid), !!b.down, b.at); return json(res, 200, { ok: true }); }
         if (url.pathname === '/api/force') { plant.force(String(b.tag), b.value ?? null); return json(res, 200, { ok: true }); }
+        if (url.pathname === '/api/tune') {
+          const id = String(b.id), key = String(b.key), c = scene.components.find((/** @type {any} */ x) => x.id === id);
+          if (!c || !(TUNE[c.type] || []).includes(key)) return json(res, 400, { error: id + '.' + key + ' is not a tunable speed' });
+          const t = readTune();
+          const base = paramsOf(c)[key];
+          const v = b.value == null ? base : Number(b.value);
+          try { plant.tune(id, key, v); } catch (e) { return json(res, 400, { error: String(/** @type {any} */ (e).message) }); }
+          if (b.value == null) { if (t[id]) { delete t[id][key]; if (!Object.keys(t[id]).length) delete t[id]; } }
+          else (t[id] ||= {})[key] = v;
+          fs.writeFileSync(tuneFile(), JSON.stringify(t, null, 1) + String.fromCharCode(10));
+          return json(res, 200, { ok: true, value: v });
+        }
         return json(res, 404, { error: 'no such endpoint' });
+      }
+      if (req.method === 'GET' && url.pathname === '/api/tune') {
+        const t = readTune();
+        const items = scene.components.filter((/** @type {any} */ c) => TUNE[c.type] && !c.params?.template).map((/** @type {any} */ c) => {
+          const p = paramsOf(c);
+          return { id: c.id, label: c.label || c.id, type: c.type, station: c.station || '', keys: Object.fromEntries(TUNE[c.type].map(k => [k, { value: t[c.id]?.[k] ?? p[k], base: p[k] }])) };
+        });
+        return json(res, 200, { file: path.relative(root, tuneFile()).split(path.sep).join('/'), items });
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') return json(res, 405, { error: 'method not allowed' });
       const file = staticPath(root, url.pathname);
@@ -302,7 +345,7 @@ export async function serve({ root, sceneName = 'cyl-on-slide', port = 7660, int
   // returns quickly and retries on its own.
   await driver?.start();
   plant.start();
-  log('manufacturing_io  http://127.0.0.1:' + port + '/   scene ' + scene.name + '   ' + (usePlc ? 'PLC ' + scene.io.endpoint : 'INTERNAL CONTROLLER - not a PLC'));
+  log('manufacturing_io  http://127.0.0.1:' + port + '/   scene ' + scene.name + '   ' + (usePlc ? 'PLC ' + scene.io.endpoint : ctl?.ladder ? 'LADDER SOFT-PLC ' + ctl.ladder.file + '   ladder view http://127.0.0.1:' + port + '/ladder' : 'INTERNAL CONTROLLER - not a PLC'));
   log('recording ' + path.relative(root, recorder.file));
 
   return {
