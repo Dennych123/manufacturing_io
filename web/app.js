@@ -22,7 +22,10 @@ const $ = id => document.getElementById(id);
 
 // ------------------------------------------------------------------ three
 const view = $('view');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// high-performance: a laptop with a discrete GPU otherwise renders this on the integrated one
+// (measured on Denny's: Intel UHD at 98% while the RTX 3050 sat idle). Windows can still overrule
+// it per application (Settings > Display > Graphics).
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;          // PCFSoftShadowMap is gone since r18x
@@ -98,7 +101,8 @@ function material(s, own) {
 function geometry(s) {
   if (s.kind === 'box') return new THREE.BoxGeometry(s.size[0], s.size[1], s.size[2]);
   if (s.kind === 'sphere') return new THREE.SphereGeometry(s.r, 24, 16);
-  const g = new THREE.CylinderGeometry(s.r, s.r, s.h, 32);
+  // A 2 mm pin does not need 32 facets: hundreds of them are what a pin track draws.
+  const g = new THREE.CylinderGeometry(s.r, s.r, s.h, s.r < 5 ? 10 : 32);
   g.rotateX(Math.PI / 2);                          // three cylinders run along Y; shapes run along Z
   return g;
 }
@@ -206,7 +210,7 @@ function build(sc) {
     }
   }
   model = { scene: sc, links, glows, pick, meshes, defs };
-  for (const uid of [...partObjs.keys()]) dropPart(uid);          // templates may have changed
+  dropAllParts();                                                  // templates may have changed
   partsGroup.visible = !editorRef?.active;
   place(curDof);
   fitLight();
@@ -235,54 +239,101 @@ function fitCamera() {
 }
 
 // ------------------------------------------------------------------ loose parts (streamed transforms)
+// Drawn INSTANCED: one InstancedMesh per shape of each template, so a machine carrying 400 pins
+// costs a handful of draw calls instead of 800 meshes (measured on ce-insert: the integrated GPU
+// sat at 98% drawing them one by one). A part is a slot in its template's batch.
 const partsGroup = new THREE.Group();
 scene3.add(partsGroup);
-const partObjs = new Map();                                     // uid -> Group of the template's meshes
+/** template id -> { meshes: [{mesh, local}], uids: [], cap } */
+const batches = new Map();
+/** uid -> { tpl, slot, a (last pose) } */
+const partObjs = new Map();
 let pins = new Set();                                           // uids the hand is holding (highlighted)
-const LIT = new THREE.Color('#2a6fdb');
-const litMats = new Map();                                      // base material -> its highlighted copy
-function litOf(base) {
-  let m = litMats.get(base);
-  if (!m) { m = base.clone(); m.emissive = LIT.clone(); m.emissiveIntensity = 0.7; litMats.set(base, m); }
-  return m;
-}
-function dropPart(uid) {
-  const g = partObjs.get(uid);
-  if (!g) return;
-  partsGroup.remove(g);
-  g.traverse(o => o.geometry?.dispose());
-  partObjs.delete(uid);
-}
-function placeParts(ps) {
-  for (const uid of partObjs.keys()) if (!(uid in ps)) dropPart(uid);
-  if (!model) return;
-  const defs = model.defs;                                      // compiled once per build, NOT per frame
-  for (const [uid, a] of Object.entries(ps)) {
-    let g = partObjs.get(uid);
-    if (!g) {
-      const d = defs.get(partTpl[uid]);
-      if (!d) continue;
-      g = new THREE.Group();
-      // Shared materials: a pile of parts is the case that has to stay cheap. A held part swaps
-      // to its own lit copy instead (litOf), and swaps back when it is let go.
-      for (const s of d.shapes) { const m = shapeMesh(s, false); m.userData.part = uid; g.add(m); }
-      partsGroup.add(g);
-      partObjs.set(uid, g);
-    }
-    // A part in the hand glows, so it is obvious which one is being held or dragged.
-    const lit = pins.has(uid);
-    if (g.userData.lit !== lit) {
-      g.userData.lit = lit;
-      g.traverse(o => {
-        if (!o.material) return;
-        if (lit) { o.userData.base ??= o.material; o.material = litOf(o.userData.base); }
-        else if (o.userData.base) o.material = o.userData.base;
+const LIT = new THREE.Color('#2a6fdb'), PLAIN = new THREE.Color(1, 1, 1);
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
+function batchOf(tpl, cap) {
+  let b = batches.get(tpl);
+  if (b && b.cap >= cap) return b;
+  const d = model?.defs.get(tpl);
+  if (!d) return null;
+  const n = Math.max(16, cap * 2, b ? b.cap * 2 : 0);
+  if (b) for (const x of b.meshes) { partsGroup.remove(x.mesh); x.mesh.dispose(); }
+  // A part drawn from the maker's CAD (`meshes` on the template) draws those and not its primitive;
+  // the geometry arrives asynchronously and is swapped into the batch when it does. If it never
+  // does, the primitive is drawn instead - an invisible part is worse than a plain one.
+  const drawn = d.shapes.filter(sh => sh.draw !== false);
+  const meshes = drawn.map(sh => {
+    // White base colour: the instance colour carries the highlight, the material the part's own.
+    const mesh = new THREE.InstancedMesh(sh.kind === 'mesh' ? new THREE.BufferGeometry() : geometry(sh), material(sh, false), n);
+    if (sh.kind === 'mesh') {
+      meshAsset(sh.asset).then(proto => {
+        if (proto?.geometry) { mesh.geometry = proto.geometry; mesh.userData.shared = true; return; }
+        const prim = d.shapes.find(x => x.draw === false && x.kind !== 'mesh');
+        if (prim) { mesh.geometry = geometry(prim); mesh.position.set(prim.at[0], prim.at[1], prim.at[2]); }
       });
     }
-    g.position.set(a[0], a[1], a[2]);
-    g.quaternion.set(a[3], a[4], a[5], a[6]);
+    mesh.count = 0;
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.frustumCulled = false;                                 // instances move: the base box says nothing
+    mesh.userData.tpl = tpl;
+    partsGroup.add(mesh);
+    const local = new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion(...(sh.rot ? qeuler(sh.rot) : [0, 0, 0, 1]))).setPosition(sh.at[0], sh.at[1], sh.at[2]);
+    return { mesh, local };
+  });
+  const nb = { meshes, uids: b ? b.uids : [], cap: n };
+  batches.set(tpl, nb);
+  return nb;
+}
+function dropPart(uid) {
+  const o = partObjs.get(uid);
+  if (!o) return;
+  partObjs.delete(uid);
+  const b = batches.get(o.tpl);
+  if (!b) return;
+  // Swap-remove: the last slot's part moves into the freed one.
+  const last = b.uids.length - 1, moved = b.uids[last];
+  b.uids[o.slot] = moved;
+  b.uids.pop();
+  if (moved !== uid) partObjs.get(moved).slot = o.slot;
+}
+function dropAllParts() {
+  for (const b of batches.values()) for (const x of b.meshes) { partsGroup.remove(x.mesh); x.mesh.dispose(); }
+  batches.clear();
+  partObjs.clear();
+}
+function placeParts(ps) {
+  for (const uid of [...partObjs.keys()]) if (!(uid in ps)) dropPart(uid);
+  if (!model) return;
+  for (const [uid, a] of Object.entries(ps)) {
+    let o = partObjs.get(uid);
+    if (!o) {
+      const tpl = partTpl[uid], b0 = batches.get(tpl), b = batchOf(tpl, (b0 ? b0.uids.length : 0) + 1);
+      if (!b) continue;
+      o = { tpl, slot: b.uids.length, a };
+      b.uids.push(uid);
+      partObjs.set(uid, o);
+    }
+    o.a = a;
+  }
+  for (const b of batches.values()) {
+    const n = b.uids.length;
+    for (const x of b.meshes) {
+      x.mesh.count = n;
+      for (let i = 0; i < n; i++) {
+        const uid = b.uids[i], a = partObjs.get(uid).a;
+        // The streamed pose times the shape's place in the part: the same product a Group would take.
+        _m.makeRotationFromQuaternion(_q.set(a[3], a[4], a[5], a[6])).setPosition(a[0], a[1], a[2]).multiply(x.local);
+        x.mesh.setMatrixAt(i, _m);
+        // A part in the hand glows, so it is obvious which one is being held or dragged.
+        x.mesh.setColorAt(i, pins.has(uid) ? LIT : PLAIN);
+      }
+      x.mesh.instanceMatrix.needsUpdate = true;
+      if (x.mesh.instanceColor) x.mesh.instanceColor.needsUpdate = true;
+    }
   }
 }
+/** The part a hit on a batch is. @param {any} hit */
+const partOfHit = hit => (hit ? batches.get(hit.object.userData.tpl)?.uids[hit.instanceId] ?? null : null);
 
 /**
  * Where a loose part is on screen, for tests/browser.test.js. A WebGL canvas cannot be hit-tested
@@ -290,9 +341,9 @@ function placeParts(ps) {
  * the sweep hit STOP and the line stopped feeding). Read-only, and used by nothing else.
  */
 window.mioPartScreen = uid => {
-  const g = partObjs.get(uid);
-  if (!g) return null;
-  const v = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld).project(camera);
+  const o = partObjs.get(uid);
+  if (!o) return null;
+  const v = new THREE.Vector3(o.a[0], o.a[1], o.a[2]).project(camera);
   const r = renderer.domElement.getBoundingClientRect();
   return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height];
 };
@@ -456,6 +507,7 @@ function updatePanel() {
     }
     const on = !!(it.tag && curIo[it.tag]);
     if (it.el.classList.contains(it.cls) !== on) it.el.classList.toggle(it.cls, on);
+    if (it.buzz) buzzer(on);
   }
   if (!model) return;
   for (const g of model.glows) {
@@ -519,12 +571,33 @@ function buildOpPanel(sc) {
       const el = document.createElement('span'); el.className = 'op-lamp'; el.textContent = label;
       el.style.setProperty('--c', COLORS[params(c).color] || '#888');
       body.append(el);
-      opItems.push({ el, tag: c.io?.lamp, cls: 'lit' });
+      opItems.push({ el, tag: c.io?.lamp, cls: 'lit', buzz: !!params(c).buzzer });
     }
   }
   $('oppanel').hidden = !opItems.length;
 }
 $('op-hide').onclick = () => { const b = $('op-body'); b.hidden = !b.hidden; $('op-hide').textContent = b.hidden ? 'show' : 'hide'; };
+
+// A buzzer lamp (`buzzer` on a lamp) SOUNDS while its tag is on: a 2.4 kHz beep, 0.4 s on 0.4 s
+// off, as a panel buzzer does. The browser allows sound only after the page was clicked once;
+// until then it stays silent, and the lamp still shows it.
+let audio = null, beep = null, beepOn = false;
+function buzzer(on) {
+  if (on === beepOn) return;
+  beepOn = on;
+  try {
+    if (on) {
+      audio ??= new AudioContext();
+      const osc = audio.createOscillator(), gain = audio.createGain();
+      osc.type = 'square'; osc.frequency.value = 2400; gain.gain.value = 0;
+      osc.connect(gain).connect(audio.destination);
+      const t0 = audio.currentTime;
+      for (let k = 0; k < 600; k++) { gain.gain.setValueAtTime(0.05, t0 + k * 0.8); gain.gain.setValueAtTime(0, t0 + k * 0.8 + 0.4); }
+      osc.start();
+      beep = osc;
+    } else if (beep) { beep.stop(); beep = null; }
+  } catch { /* no audio in this browser */ }
+}
 
 /** ms -> hh:mm:ss */
 function hms(ms) {
@@ -544,7 +617,8 @@ function onStatus(s) {
   conn.textContent = (io.driver || '?') + ': ' + (io.msg || '');
   conn.className = io.ok ? 'ok' : 'bad';
   $('banner').hidden = io.driver !== 'internal';
-  const mode = io.driver === 'internal' ? 'internal' : 'plc';
+  $('ladder-btn').hidden = $('hmi-btn').hidden = $('twin-btn').hidden = io.driver !== 'ladder';
+  const mode = io.driver === 'internal' || io.driver === 'ladder' ? 'internal' : 'plc';
   if (!$('mode-pick').disabled && $('mode-pick').value !== mode) $('mode-pick').value = mode;
   // Run only starts the plant's clock. The machine waits for the sequence, which the PLC (or the
   // internal controller) starts from the START button: say so instead of looking frozen.
@@ -642,9 +716,10 @@ renderer.domElement.addEventListener('pointerdown', e => {
   // Nothing pressable: try a loose part. Holding one still jams the line on purpose, and dragging
   // it puts it somewhere else - out of a gripper, off a belt, back into a nest. The plant does the
   // holding; this only sends edges.
-  const ph = pickAt(e, [...partObjs.values()].flatMap(g => g.children));
-  if (!ph) return;
-  grabbed = ph.object.userData.part;
+  const ph = pickAt(e, [...batches.values()].flatMap(b => b.meshes.map(x => x.mesh)));
+  const uid = partOfHit(ph);
+  if (!uid) return;
+  grabbed = uid;
   // Drag in the plane facing the camera through the grab point: left/right and up/down both work
   // from any orbit angle, with no mode to choose.
   dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(camDir), ph.point);
@@ -709,6 +784,12 @@ $('pov-btn').onclick = () => { if (!editor.active) pov.toggle(); };
  * headless browser cannot ask a WebGL canvas any of this.
  */
 window.mioView = () => ({ pov: pov.active, eye: camera.position.toArray(), panel: !aside.hidden, shop: workshop.visible, solids: solidList.length });
+/** Point the orbit camera (mm, world): for screenshots of a scene's detail. Moves the view only. */
+window.mioLook = (/** @type {number[]} */ eye, /** @type {number[]} */ target) => {
+  camera.position.set(eye[0], eye[1], eye[2]);
+  controls.target.set(target[0], target[1], target[2]);
+  controls.update();
+};
 $('shop-btn').onclick = () => setWorkshop(!workshop.visible);
 
 // ------------------------------------------------------------------ hiding the panels

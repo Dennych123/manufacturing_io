@@ -1374,6 +1374,88 @@ chk('a 1 s stall runs 50 steps and counts the rest as overruns', r.t === 100 && 
   await pl.close();
 }
 
+// ---------------------------------------------------------------- pin tracks
+// Feeder -> lane A (a gate) -> lane B -> escapement -> the pins FALL into a remover. The pins on
+// the lanes are kinematic and exactly where the lane says (tests/rapier.test.js: Rapier cannot hang
+// them); only the escapement hands them to physics.
+{
+  const trk = {
+    format: 'mio-scene/1', name: 'trk', sim: { dtMs: 2 },
+    components: [
+      { id: 'ce', type: 'workpiece', at: [0, 500, 0], params: { kind: 'pin', size: [2.73, 1.91, 21.6], headH: 2 } },
+      { id: 'gate', type: 'cylinder', at: [0, 300, 900], params: { bore: 6, stroke: 5, valve: '5/2-single', extendMs: 40, retractMs: 40, valveMs: 5 }, io: { solExt: 'GATE' } },
+      { id: 'sep', type: 'cylinder', at: [0, 400, 900], rot: [0, -90, 0], params: { bore: 20, stroke: 10, valve: '5/2-single', extendMs: 80, retractMs: 80, valveMs: 5 }, io: { solExt: 'SEP' } },
+      { id: 'push', type: 'cylinder', at: [0, 450, 900], rot: [90, 0, 0], params: { bore: 10, stroke: 10, valve: '5/2-single', extendMs: 80, retractMs: 80, valveMs: 5 }, io: { solExt: 'PUSH' } },
+      { id: 'tA', type: 'track', at: [0, 0, 1200], params: { lanes: [-20, 20], length: 100, next: 'tB', supply: [{ lanes: [0, 1], template: 'ce', rate: 20 }],
+        gates: [{ id: 'gate', at: 80, lanes: [0, 1], x: 2.5 }] }, io: { feed1: 'FEED' } },
+      { id: 'tB', type: 'track', at: [89.879, 0, 1156.163], params: { lanes: [-20, 20], length: 60, escape: { sep: 'sep', push: 'push', pushAt: 9.5 } }, io: { count: 'OUT_CNT' } },
+      { id: 'rm', type: 'remover', at: [0, 0, 0], params: { size: [3000, 3000, 900] }, io: { count: 'RM_CNT' } },
+    ],
+  };
+  let cyc = true;
+  const ctl = { scan(/** @type {any} */ io, /** @type {number} */ t) {
+    io.FEED = true;
+    io.GATE = t < 3000;
+    const c = cyc && t > 4000 ? (t - 4000) % 800 : -1;
+    io.SEP = c >= 0 && c < 200;
+    io.PUSH = c >= 300 && c < 500;
+  } };
+  const q = await createPlant(trk, { controller: ctl });
+  q.run(2500);                                                 // the gate opens at 3000
+
+  const inA = [...q.parts.values()].filter(p => p.track?.tr.id === 'tA');
+  const lane0 = inA.filter(p => p.track.i === 0).map(p => p.track.s).sort((a, b) => b - a);
+  chk('track: the gate holds the queue one pitch apart behind it', lane0.length > 20 && Math.abs(lane0[0] - 78.5) < 1e-9 && lane0.every((s, i) => i === 0 || Math.abs(lane0[i - 1] - s - 3) < 1e-9),
+    lane0.slice(0, 4).map(s => s.toFixed(2)).join(' '));
+  const front = inA.find(p => Math.abs(p.track.s - lane0[0]) < 1e-9 && p.track.i === 0);
+  const tz = front.body.translation().z / SK, want = 1200 - 78.5 * Math.sin(26 * Math.PI / 180) - (21.6 - 2);
+  chk('track: a pin hangs with its head on the rail tops (tip 19.6 mm below them), and is not a dynamic body',
+    Math.abs(tz - want) < 1e-3 && !front.body.isDynamic(), tz.toFixed(3) + ' vs ' + want.toFixed(3));
+  // The hand takes a pin out of the middle of a queue: the ones behind it close up.
+  const mid = inA.filter(p => p.track.i === 0).sort((a, b) => b.track.s - a.track.s)[5];
+  q.holdPart(mid.uid, true); q.run(200); q.holdPart(mid.uid, false); q.run(100);
+  const after = [...q.parts.values()].filter(p => p.track?.tr.id === 'tA' && p.track.i === 0).map(p => p.track.s).sort((a, b) => b - a);
+  chk('track: a pin the hand takes out of a queue leaves it, and the queue closes up', !mid.track && after.every((s, i) => i === 0 || Math.abs(after[i - 1] - s - 3) < 1e-9),
+    after.slice(3, 7).map(s => s.toFixed(1)).join(' '));
+  q.run(9000);
+  chk('track: the lanes hand over, and the escapement drops two pins per cycle into the remover', q.io.OUT_CNT >= 18 && q.io.OUT_CNT % 2 === 0 && q.io.RM_CNT >= q.io.OUT_CNT - 2,
+    'dropped ' + q.io.OUT_CNT + ', removed ' + q.io.RM_CNT);
+  chk('track: nothing lost, no warnings', !q.events.some(e => e.k === 'part' && e.ev === 'lost') && !q.events.some(e => e.k === 'warn'),
+    q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  await q.close();
+}
+
+// ---------------------------------------------------------------- scene ce-insert (Denny's CE INSERT machine)
+// Two bowl feeders, four lanes, a shuttle and a chute: several hundred pins at once. A machine that
+// keeps its parts balanced but stops cycling is the failure a soak must not call OK (CLAUDE.md), so
+// this demands cycles, and four pins into the insulators for every one.
+{
+  const sc = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'ce-insert.json'), 'utf8'));
+  const { create: createCE } = await import('../scenes/ce-insert.ctl.js');
+  const run = async (/** @type {number} */ ms, /** @type {boolean} */ type2 = false) => {
+    const q = await createPlant(sc, { controller: createCE() });
+    q.run(200);
+    if (type2) { q.press('pbType', 'pb', true); q.run(120); q.press('pbType', 'pb', false); q.run(120); }
+    powerUp(q);
+    q.run(ms);
+    return q;
+  };
+  const t0 = performance.now();
+  const q = await run(45000);
+  const ms = performance.now() - t0;
+  chk('ce-insert: the machine keeps cycling, four CE at a time', q.io.CYCLE_CNT >= 40 && q.io.ST1_STEP < 900, 'CYCLE_CNT ' + q.io.CYCLE_CNT + ', step ' + q.io.ST1_STEP);
+  chk('ce-insert: every cycle puts four CE into the insulators', Math.abs(q.io.CE_INS_CNT - 4 * q.io.CYCLE_CNT) <= 4, q.io.CE_INS_CNT + ' in, ' + q.io.CYCLE_CNT + ' cycles');
+  chk('ce-insert: nothing lost, no warnings', !q.events.some(e => e.k === 'part' && e.ev === 'lost') && !q.events.some(e => e.k === 'warn'),
+    q.events.filter(e => e.k === 'warn').map(e => e.msg).slice(0, 3).join(' | '));
+  chk('ce-insert: several hundred pins on the machine cost well under the 2 ms step', ms / (q.t / 2) < 1.5, (ms / (q.t / 2) * 1000).toFixed(0) + ' us a step, ' + q.parts.size + ' pins');
+  const q2 = await run(30000, true);
+  chk('ce-insert: type 2 runs from the right feeder, and cycles too', q2.io.CYCLE_CNT >= 20 && q2.io.CR_ST1_PART_FDR2_STR === true && q2.io.CR_ST1_PART_FDR1_STR === false,
+    'CYCLE_CNT ' + q2.io.CYCLE_CNT);
+  const a = await run(8000), b = await run(8000);
+  chk('ce-insert: two runs give identical event logs', JSON.stringify(a.events) === JSON.stringify(b.events), a.events.length + ' events');
+  for (const x of [q, q2, a, b]) await x.close();
+}
+
 // Static: physics never writes to the PLC. driver.write appears once, inside exchange().
 const src = fs.readFileSync(path.join(ROOT, 'server', 'plant.js'), 'utf8');
 const calls = src.match(/driver\.write\(/g) || [];

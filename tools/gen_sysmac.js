@@ -260,7 +260,9 @@ function main() {
   let outs;
   if (args.includes('--probe')) outs = [{ file: OUT, xml: projectXml(PROBE), cmd: '--probe', note: PROBE.globals.length + ' globals + PRG_MIO_PROBE (assign it to the primary task)' }];
   else if (i >= 0 && args[i + 1]) outs = [sceneOutput(args[i + 1])];
-  else if (args.includes('--scenes')) outs = fs.readdirSync(SCENES).filter(f => /^[a-z0-9_-]+\.json$/.test(f)).sort().map(f => sceneOutput(f.slice(0, -5)));
+  // A scene whose controller is a CX-Programmer project (io.driver 'ladder') has no .st to export.
+  else if (args.includes('--scenes')) outs = fs.readdirSync(SCENES).filter(f => /^[a-z0-9_-]+\.json$/.test(f)).sort()
+    .filter(f => JSON.parse(fs.readFileSync(path.join(SCENES, f), 'utf8')).io?.driver !== 'ladder').map(f => sceneOutput(f.slice(0, -5)));
   else { console.error('usage: node tools/gen_sysmac.js --probe | --scene NAME | --scenes  [--check]'); process.exit(1); }
 
   let stale = 0;

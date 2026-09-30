@@ -526,6 +526,7 @@ invented. Each has `scenes/<name>.json`, a PLC program `<name>.st`, its generate
 | blurobot | the rb4axis cell: rail + 3R arm, two ICC testers and two DW writers with covers |
 | robot-pitch | FANUC LR Mate 200iD from its URDF; a pitch-change cup head |
 | lathe-line | the TAKISAWA line from its video: NDESO-087 on a rail, two lathes, knife-blade escapement |
+| ce-insert | Denny's CE INSERT machine from its iCAD model and NX1P2 program: pin tracks, shuttle, escapement |
 | carton-sorter | Open Industry Project numbers: angled diverters and a shift-register tracker |
 | mps-sorting | Festo MPS sorting station from its manual: colour and metal sorting |
 
@@ -575,7 +576,7 @@ measured is kept in Appendix A. Against the code as it stands:
 | P3 parts and material flow | **done**: loose parts, belt slip, holders, the hand, pallets, index table, 17 scenes, watchdog + FAULT + operator panel | live PLC runs of the newer scenes; **sort-by-material's rare fault at 1204 s** (needs its own reproduction); **blurobot has no operator panel** (`joint` needs `ovr` and jog first) |
 | P4 analyzer | **not started**. Runs are recorded as NDJSON, and nothing reads them yet | all of it → V3 |
 | P5 IO list and ceinsert | **not started**. `gen_sysmac.js` has `--scene` only | `--iolist/--bind/--shim`, servo `mirror`, the ceinsert scene → V4 |
-| P6 more machines | **mostly done**: blurobot, robot-pitch, lathe-line, palletizing, press-station, carton-sorter, mps-sorting | the rb4axis PLC program driving blurobot (needs `mirror`) → V4 |
+| P6 more machines | **mostly done**: blurobot, robot-pitch, lathe-line, palletizing, press-station, carton-sorter, mps-sorting, ce-insert | the rb4axis PLC program driving blurobot (needs `mirror`) → V4 |
 | P7 twin and FUXA | **not started** | → V8 |
 
 ## 14. Emulate3D feature map

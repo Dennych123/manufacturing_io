@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twin</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #eef0f2; --panel: #ffffff; --ink: #1d2126; --muted: #6b7480; --line: #d9dde2;
+    --ok: #1f9d55; --okfill: rgba(31,157,85,.14); --bad: #c0392b; --badfill: rgba(192,57,43,.10); --busy: #3d7cc9; --neck: #d9822b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15181c; --panel: #1d2126; --ink: #e6e9ed; --muted: #8e98a4; --line: #2c3238;
+            --ok: #3ccf7c; --okfill: rgba(60,207,124,.14); --bad: #ff6b5b; --badfill: rgba(255,107,91,.12); --busy: #5b9be6; --neck: #f0a24a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header b { font-size: 15px; }
+  header .sp { flex: 1; }
+  .mono { font: 12px ui-monospace, Consolas, monospace; }
+  button { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+  a { color: inherit; }
+  main { flex: 1; display: grid; grid-template-columns: minmax(360px, 1fr) minmax(420px, 1.4fr); gap: 10px; padding: 10px; min-height: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: auto; min-height: 0; }
+  section > h2 { margin: 0; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 1; display: flex; gap: 8px; align-items: baseline; }
+  section > h2 small { color: var(--muted); font-weight: 400; }
+  h3 { margin: 10px 12px 4px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; }
+  h3 .n { color: var(--muted); font-weight: 400; }
+  .verdict { margin: 10px 12px; padding: 8px 10px; border-radius: 4px; font-weight: 600; }
+  .verdict.ok { background: var(--okfill); color: var(--ok); }
+  .verdict.bad { background: var(--badfill); color: var(--bad); }
+  ul.cond { list-style: none; margin: 0; padding: 0 12px 6px; }
+  ul.cond > li { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  ul.cond > li .h { display: flex; gap: 6px; align-items: baseline; cursor: pointer; }
+  .mark { width: 1.2em; text-align: center; font-weight: 700; flex: none; }
+  .on .mark { color: var(--ok); } .off .mark { color: var(--bad); }
+  .off > .h { color: var(--bad); }
+  .addr { color: var(--muted); font: 11px ui-monospace, Consolas, monospace; flex: none; }
+  .why { margin: 2px 0 4px 1.8em; font-size: 12px; }
+  .why .rung { color: var(--muted); font-size: 11px; }
+  .why .rung a { color: var(--muted); }
+  .why ul { list-style: none; margin: 0; padding-left: 1em; }
+  .why li.c { font: 12px ui-monospace, Consolas, monospace; }
+  .why li.c .cm { font-family: system-ui, sans-serif; color: var(--muted); }
+  .why li.any > span { color: var(--muted); font-style: italic; }
+  .al { color: var(--bad); font-weight: 600; padding: 2px 12px; }
+  .hide-ok ul.cond > li.on { display: none; }
+  table.units { border-collapse: collapse; width: calc(100% - 24px); margin: 6px 12px; font-size: 12px; }
+  table.units th { text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 3px 4px; }
+  table.units td { border-bottom: 1px solid var(--line); padding: 3px 4px; white-space: nowrap; }
+  table.units td.num { text-align: right; font: 12px ui-monospace, Consolas, monospace; }
+  table.units tr { cursor: pointer; }
+  table.units tr.sel td { background: var(--okfill); }
+  table.units tr.neck td:first-child { color: var(--neck); font-weight: 700; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar > i { display: block; height: 100%; background: var(--busy); }
+  tr.neck .bar > i { background: var(--neck); }
+  svg.gantt { display: block; width: calc(100% - 24px); margin: 4px 12px 10px; }
+  svg.gantt text { font: 11px system-ui, sans-serif; fill: var(--ink); }
+  svg.gantt text.t { fill: var(--muted); font-size: 10px; }
+  svg.gantt .grid { stroke: var(--line); }
+  svg.gantt rect.b { fill: var(--busy); }
+  svg.gantt rect.b.neck { fill: var(--neck); }
+  table.steps { border-collapse: collapse; width: calc(100% - 24px); margin: 4px 12px 12px; font-size: 12px; }
+  table.steps td { border-bottom: 1px solid var(--line); padding: 2px 4px; }
+  table.steps td.num { text-align: right; font: 12px ui-monospace, Consolas, monospace; white-space: nowrap; }
+  table.steps td.nm { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.steps tr.top td { font-weight: 700; }
+  table.steps .sbar { height: 10px; background: var(--busy); border-radius: 2px; }
+  table.steps tr.top .sbar { background: var(--neck); }
+  .muted { color: var(--muted); padding: 4px 12px; }
+  #tune input { width: 70px; font: 12px ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; }
+  #tune input.changed { border-color: var(--neck); }
+  #tune td.st { color: var(--muted); font-size: 11px; }
+  #stepper { list-style: none; margin: 0 12px 10px; padding: 0; counter-reset: st; }
+  #stepper > li { border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; padding: 8px 10px 8px 40px; position: relative; }
+  #stepper > li::before { counter-increment: st; content: counter(st); position: absolute; left: 10px; top: 8px; width: 20px; height: 20px; border-radius: 10px;
+    text-align: center; font: 700 12px/20px system-ui, sans-serif; background: var(--line); color: var(--ink); }
+  #stepper > li.ok::before { content: '✓'; background: var(--ok); color: #fff; }
+  #stepper > li.bad { border-color: var(--bad); background: var(--badfill); }
+  #stepper > li.bad::before { content: '!'; background: var(--bad); color: #fff; }
+  #stepper > li.wait { opacity: .55; }
+  #stepper .t { font-weight: 700; }
+  #stepper .off { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  #stepper .do { margin-top: 6px; font-size: 12px; }
+  #stepper .do li { margin: 2px 0; }
+  #stepper .do .k { display: inline-block; min-width: 58px; font: 600 10px system-ui; text-transform: uppercase; color: var(--muted); }
+  #stepper .do .a { font: 11px ui-monospace, Consolas, monospace; color: var(--muted); }
+  details#more { margin: 4px 12px 12px; }
+  details#more summary { cursor: pointer; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <b>DIGITAL TWIN</b>
+  <span id="proj" class="mono"></span>
+  <span id="state" class="mono"></span>
+  <span class="sp"></span>
+  <label title="Show only what is OFF"><input type="checkbox" id="onlyBad" checked> only what blocks</label>
+  <button id="reset" title="Forget the recorded cycles">Clear cycle log</button>
+  <a href="/" target="mio3d"><button>3D view ↗</button></a>
+  <a href="/ladder" target="mioladder"><button>Ladder ↗</button></a>
+  <a href="/hmi" target="miohmi"><button>HMI ↗</button></a>
+</header>
+<main>
+  <section id="cond">
+    <h2>Why is it not running? <small>the program's own conditions, live</small></h2>
+    <div id="verdict" class="verdict"></div>
+    <ol id="stepper"></ol>
+    <details id="more"><summary>All conditions, with the rung that drives each</summary>
+      <div id="alarms"></div>
+      <div id="groups"></div>
+    </details>
+  </section>
+  <section id="ct">
+    <h2>Where the cycle time goes <small id="neck"></small></h2>
+    <table class="units" id="units"></table>
+    <h3>Timeline <span class="n">last 60 s of sim time, each bar one unit cycle</span></h3>
+    <svg class="gantt" id="gantt"></svg>
+    <h3 id="stepsH">Steps</h3>
+    <table class="steps" id="steps"></table>
+    <h3>Actuator speeds <span class="n">what-if: change one and watch the busy times move · kept in <span id="tuneFile"></span> · empty = the design value</span></h3>
+    <table class="units" id="tune"></table>
+  </section>
+</main>
+<script type="module" src="/web/twin.js"></script>
+</body>
+</html>

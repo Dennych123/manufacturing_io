@@ -5,12 +5,17 @@ runs/
 plc/*.smc2
 plc/*.smc2.backup
 plc/*.bak
-# Imported CAD is confidential (docs/PLAN.md Part B). The robot meshes under assets/robots/ are
-# NOT: they are BSD, vendored with their licence, and the scenes need them to draw at all.
-assets/cad/
-
-# Vendor robot CAD and the shells built from it. A maker's CAD from a member area is not ours to
-# redistribute: tools/step_to_stl.py rebuilds these from the download, and every scene falls back
-# to its primitives when they are not there.
-assets/robots/ndeso087/
 tools/__pycache__/
+
+# Vendor robot CAD and the shells built from it: NDESO's own STEP files from a member-area
+# download, licensed to Denny for USE, not redistribution - unlike a client's own machine, this
+# is a third party's IP and no one on this project can waive that. tools/step_to_stl.py rebuilds
+# the shells locally, and every scene falls back to its primitives when they are not there.
+assets/robots/ndeso087/
+
+# Denny's own client machines (their CAD, PLC programs, HMI files): committed since 2026-10-01.
+# Confidential while the machine was live; Denny confirmed the line is decommissioned and cleared
+# it for this repo. A NEW client's machine is confidential again by default until the same is true.
+
+# What-if actuator speeds from /twin, local to this PC (server/http.js /api/tune)
+scenes/*.tune.json

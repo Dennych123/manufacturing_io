@@ -510,6 +510,43 @@ in the code but break things silently** when violated. Most were paid for once i
   (`OVR_SET` in, `OVR` out), never directly.
 - **Twin mode is read-only inside the driver's `write()`**, not in the UI. Never write to a real
   machine.
+- **A pin that hangs by its head is not a Rapier body: it is a part a TRACK moves.** A spark
+  plug's centre electrode (shank 1.91, head 2.73 mm) rests on a 0.4 mm ledge each side of a 2.5 mm
+  rail gap. Measured on Rapier 0.20: it falls straight through (gone in 0.2 s at `lengthUnit` 1,
+  0.8 s at 0.01), and with the head collider widened until it held, a queue of 30 flipped its pins
+  (pitch 1.7 mm against a 2.73 head) at 2.4 ms a step. So a `track` lane is a 1-D queue
+  (`laneAdvance` in `lib/components.js`): pins slide at g(sin - mu cos), stop a pitch behind the pin
+  ahead, gates stop the ones upstream and clamp the one under them, and a lane hands over where its
+  end meets the next track's lane start in the world - a shuttle that has moved away is a wall. The
+  pins are still parts: KINEMATIC while on a lane, seen by the photo-eyes' rays, taken by the hand,
+  and handed to physics only by the escapement. `tests/rapier.test.js` pins the trap,
+  `tests/plant.test.js` the rule.
+- **Four hundred pins in queues cost what they cost because Rapier updates every kinematic body
+  every step.** A pin that has stood still for five steps becomes a FIXED body and wakes when its
+  queue moves; pins on a track are also left out of the per-step centre read, the lost check and
+  the removers, and their colliders interact with nothing but rays (`G_TRACK`). Measured on
+  `ce-insert` with 358 pins: 1426 -> 705 us a step, world.step 641 -> 365.
+- **A 10 mm cylinder needs its own reed switches.** The type's 6 mm band is right for a 100 mm stroke:
+  on `ce-insert` FWD came on at 6.3 of 10 mm, the sequence reversed the pusher there, and the pins
+  never got over the pipes. Short strokes put the switches 0.3 mm from each end with a 0.6 mm band,
+  and 0.5 mm of hysteresis - with 0.1 a cylinder reversed the moment it arrived read FWD for 14-18 ms,
+  under the 20 ms pulse hold.
+- **A beam that must see a QUEUE stands at head level.** Touching 2.73 mm heads at a 3 mm pitch
+  overlap in projection and read as a solid row; at shank level the beam passes between two pins.
+  Pins arriving one by one from a bowl still leave dark gaps, so every beam on a track has a 60 ms
+  off-delay (30 ms left 14 ms gaps: "pulse stretched" every 100 ms while a lane filled).
+- **An SPM builder's own machine comes as an iCAD SX "3D Browser" export**, one .html
+  (`tools/icad.js` reads it; the layout is inferred, so every run checks each body's triangles
+  against the box the file stores for it). It is a client's design, confidential while their
+  machine is live: `assets/cad/<scene>/` and `tools/<scene>.cad.json` go in git only once the
+  client machine is confirmed decommissioned (ce-insert and final-caulking both are, 2026-10-01;
+  a new one defaults to gitignored again). Denny's rule for the CAD itself: this is a MOTION
+  simulation, so fasteners, fittings, sensor heads and covers are dropped, bought-in actuators
+  (SMC cylinders, the E-RBM6 slide) are drawn as the simulator's own primitives because those
+  move, and a pneumatic box is a box. 670k triangles became 102k.
+- **Loose parts are drawn INSTANCED** (one `InstancedMesh` per template shape, `web/app.js`): 400
+  pins drawn as 800 meshes put an integrated GPU at 98%. The renderer also asks for the
+  high-performance GPU; Windows can still overrule that per application.
 
 ## The operator panel
 
@@ -548,6 +585,78 @@ often than it is looked at.
 - **The plant times the cycle** from the tag the scene names in `cycle.countTag`, and averages the
   last `cycle.avgN`. The viewer shows the last cycle, the average, and two clocks side by side -
   sim and wall - because that is how you see at a glance whether the world is running fast or slow.
+
+## Ladder soft-PLC (a machine's own CX-Programmer project)
+
+A scene with `io.driver: 'ladder'` is run by the machine builder's `.cxp` (server/cxp.js reads and
+writes it, server/ladder.js runs it, server/ladderctl.js wires it to the scene, /ladder shows it).
+`final-caulking` is the first: the add-on's CJ2M program, on the line, unmodified.
+
+- **A `.cxp` is one PKWARE DCL implode stream of TEXT**, CX-Programmer's own `Key:=value;` / `BEGIN`
+  / `$?St$Bk?_#[n]` serialisation, rungs as mnemonic. `serializeText(parseText(t))` is byte-identical
+  and `writeCxp` only rewrites the rungs that changed; tests/ladder.test.js pins both. It is a
+  client's program, confidential while their machine is live: `plc/*.cxp` (and its `.vs4` touch
+  panel) is gitignored by default and the real-program checks SKIP without it - final-caulking's
+  is in git because Denny confirmed that line is decommissioned (2026-10-01). A live client's
+  program stays out.
+- **The soft-PLC scans once per plant step, inside it.** There is no network between program and
+  machine, so no latency and no sampling: a sensor edge is read by the next scan. Each program is
+  compiled to JS in 16-rung functions - one function per program ran interpreted for ~15000 scans
+  (240 us/scan) before V8 optimised it; chunked it warms in ~5000 and runs 13-33 us/scan for 1331
+  rungs. Timers are BCD (CX-Programmer's default) on SIM time.
+- **A differentiated NOT contact is NOT(edge), not edge(NOT).** `@ANDNOT X` is OFF for the one scan
+  X rises. Every one in the add-on program breaks a self-hold that way (AutoRunning on
+  Discharge_Complete, a magnet START on its STOP); read the other way AUTO RUN never latched.
+- **Memory the program reads and never writes is the CPU's retained state, not zero.** `H415.07
+  FAULT MOTION` is ANDed into ALL FAULT(OFF) and nothing sets it: on the line it is ON. Such values go
+  in `io.ladder.init`. List them before guessing: read-but-never-written H/D/E addresses. A plant
+  Reset is a COLD start (retained areas cleared, init re-applied): parts are gone, and work memory
+  that still says "have work" is a lie the program would act on.
+- **Wire an axis the way the program's INPUT section reads it, not by its labels.** 1EC2's
+  FORWARD/BACKWARD are swapped in the INPUT rungs (LS_EC2_BACKWARD <- 4.03 "FORWARD COMPLETE"), and
+  the newer project relabels 3.04 as "FWD START". Wired by the labels the rotary sat in "POS.2" after
+  homing and P16 never started.
+- **Debug a stalled cycle with the program's own start-condition rungs, live.** Each station has a
+  Condition section of W9x bits; printing that rung with every operand's value named what the model
+  lacked every time (a sensor's meaning, a handshake bit, an axis's home). /ladder shows the same.
+- **A confirm switch is a sensor, not the actuator's state.** PH 3302.13/.14 are photo-eyes on the
+  magnet heads that see the M&B as soon as the head is down on it; mapped to "magnet holding", FAULT
+  R37 (eye dark 1.5 s -> clear 'loader has work') wiped the memory at every pick.
+- **A neighbour machine is a model behind the data link, and its handshake is the program's.** The
+  add-on reads Final Caulking at E0_3300/3301 and writes E0_3200/3201; the table turns only when the
+  neighbour REQUESTS (E0_3300.15) and the add-on ALLOWS (E0_3200.14). An index table is done when
+  in-position has DROPPED and come back - the cam may still be in its dwell.
+- **A part a nest holds is kinematic: a pusher cannot move it.** The finish tray releases its horn
+  at DOWN (wiring), or the OK push goes out and the horn stays. And a belt's side guide is a wall to
+  a part pushed ONTO the belt sideways: the horn rode up it and jammed (guides 0 there).
+- **A locating pin is part of an orienting turntable.** The program raises the pin at PRE-END and
+  keeps the motor on until TERMINAL IN POSITION holds; with no pin the M&B went round and round
+  (the turntable's `lock`).
+- **A program's bench-test hooks can write into the data link's RECEIVE area.** `newwww mdf` has
+  `LD sim_mch AND 3303.13 OUT E0_3300.12` and `LD sim_mch OUT E0_3301.06`: with sim_mch OFF the OUT
+  clears the neighbour's own signal every scan, so every rung after it reads zero and P16 waits for
+  ever, no alarm (the link refreshes at the END of the scan on the real CPU too). The simulation
+  runs such rungs through `io.ladder.patches` - in memory, `[SIM PATCH]` in the rung comment, and
+  Save/Download write the ORIGINAL back. A patch names the IL it expects and is skipped, loudly,
+  if the program no longer says that. With sim_mch ON (Denny's default) INPUT R25 judges every horn
+  NG, so the scene has a SIM_MCH OFF button for line mode.
+- **A slide's TABLE moves and its BODY does not, and a CAD part is both.** Riding a whole MXQ16 on
+  its slide left the table behind and the gripper "floating" 125 mm off it; `BODY_RIDES` in the
+  generator names the table bodies one by one. Same for guide rails (rail fixed, `[SHS...]` block
+  rides) and for layout groups (`*LAYOUT` holds the station jigs next to the beam's guide blocks -
+  classify jigs by NAME, or they ride the beam). `tools/...` float check: a kept part that touches
+  nothing, or a static part that touches only moving ones, is the one Denny will call floating.
+- **An iCAD body is several meshes, each with its OWN colour** (`_ZZZ[4]`: r g b a start count;
+  a = 0 means the body's colour). Reading only the first mesh drew bought-in parts white and left
+  pieces out; `parts(b)` in tools/icad.js returns them per colour.
+- **A turntable that orients a part turns the PART, not its jig** (Denny): only the shaft rides it.
+- **The touch panel is the maker's VT STUDIO file** (`server/vs4.js`, `io.ladder.hmi`, /hmi): parts
+  are `[7089]` records whose device prefix (bit = word*16+bit, area 1 = W), labels and `0x8RGB`
+  colours were read off the add-on's own file and checked against its program. A held HMI switch is
+  written AFTER the scene's inputs each scan, so a W bit a scene pushbutton also drives is held.
+- **Mount `want` poses at ZERO dofs.** A component that starts extended (`start: 'ext'`/`'fwd'`: the
+  tray up, the loader beam forward) shifted everything riding it by a stroke when mounts were solved
+  at the power-up dofs.
 
 ## OPC UA and Sysmac Studio (each cost a round once)
 

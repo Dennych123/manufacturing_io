@@ -216,4 +216,28 @@ function belt(model, n, stopperX) {
   chk('rule: 12 mm of clearance per side lands it (and walls below the part need only 5 mm)', wide < 0.5 && low < 0.5, wide.toFixed(2) + ' / ' + low.toFixed(2) + ' mm');
 }
 
+// ---------------------------------------------------------------- a pin hanging in a rail track
+// A spark plug's centre electrode hangs by its head between two rails: shank 1.91 mm, head 2.73 mm,
+// a 0.4 mm ledge each side. Rapier 0.20 cannot hold that: the pin falls straight through, at any
+// lengthUnit (measured 0.2 s at 1, 0.8 s at 0.01). This is the trap; the rule is that a pin on a
+// track is KINEMATIC and moved by the track (lib/components.js `track`), pinned in plant.test.js.
+{
+  const qx90 = { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 };
+  const hang = (/** @type {number} */ lu) => {
+    const w = new R.World({ x: 0, y: 0, z: -9.81 });
+    w.timestep = DT; w.lengthUnit = lu;
+    const f = w.createRigidBody(R.RigidBodyDesc.fixed());
+    for (const sy of [-1, 1]) w.createCollider(R.ColliderDesc.cuboid(0.05, 0.007, 0.005).setTranslation(0, sy * (2.3 / 2 + 7) / 1000, -0.005), f);
+    const b = w.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0, 0, 0.0003).setCanSleep(false));
+    w.createCollider(R.ColliderDesc.cylinder(0.001, 0.001365).setTranslation(0, 0, 0.001).setRotation(qx90).setDensity(7850), b);
+    w.createCollider(R.ColliderDesc.cylinder(0.00975, 0.000955).setTranslation(0, 0, -0.00975).setRotation(qx90).setDensity(7850), b);
+    for (let i = 0; i < 1000; i++) w.step();
+    const z = b.translation().z * 1000;
+    w.free();
+    return z;
+  };
+  const z1 = hang(1), z2 = hang(0.01);
+  chk('trap: a CE pin hanging on a 0.4 mm ledge falls through the rails in 2 s, at lengthUnit 1 and 0.01', z1 < -30 && z2 < -30, z1.toFixed(0) + ' / ' + z2.toFixed(0) + ' mm');
+}
+
 process.exit(fail ? 1 : 0);

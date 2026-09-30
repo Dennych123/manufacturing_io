@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ladder</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #eef0f2; --panel: #ffffff; --ink: #1d2126; --muted: #6b7480; --line: #d9dde2; --wire: #3b4350;
+    --on: #1f9d55; --onfill: rgba(31,157,85,.18); --warn: #c0392b; --forced: #8e44ad; --sel: #fff4c2; --hit: #ffe08a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15181c; --panel: #1d2126; --ink: #e6e9ed; --muted: #8e98a4; --line: #2c3238; --wire: #aab4c0;
+            --on: #3ccf7c; --onfill: rgba(60,207,124,.18); --warn: #ff6b5b; --forced: #c38be0; --sel: #3a3522; --hit: #5a4a1a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header b { font-size: 15px; }
+  header .sp { flex: 1; }
+  .mono { font: 12px ui-monospace, Consolas, monospace; }
+  button, select, input { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
+  button { cursor: pointer; } button:hover { border-color: var(--muted); }
+  button.run { background: var(--on); color: #fff; border-color: var(--on); }
+  button.prog { background: var(--warn); color: #fff; border-color: var(--warn); }
+  a { color: inherit; }
+  main { flex: 1; display: flex; min-height: 0; }
+  nav { width: 250px; background: var(--panel); border-right: 1px solid var(--line); overflow: auto; padding: 6px 0; flex: none; }
+  nav .prog { padding: 4px 10px; font-weight: 600; cursor: pointer; }
+  nav .prog small { color: var(--muted); font-weight: 400; }
+  nav .sec { padding: 2px 10px 2px 24px; cursor: pointer; display: flex; }
+  nav .sec span { margin-left: auto; color: var(--muted); font-size: 11px; }
+  nav .sec:hover, nav .prog:hover { background: var(--bg); }
+  nav .sec.cur { background: var(--sel); font-weight: 600; }
+  nav .sec.err { color: var(--warn); }
+  #search { margin: 4px 10px 8px; width: calc(100% - 20px); }
+  #xref { padding: 0 10px 8px; font-size: 12px; }
+  #xref div { cursor: pointer; padding: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #xref div:hover { text-decoration: underline; }
+  #rungs { flex: 1; overflow: auto; min-width: 0; padding: 8px 12px 200px; }
+  .rung { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; margin-bottom: 8px; }
+  .rung.hit { outline: 2px solid var(--hit); }
+  .rung .rh { display: flex; gap: 8px; align-items: baseline; padding: 3px 8px; border-bottom: 1px solid var(--line); }
+  .rung .rh .no { color: var(--muted); font: 12px ui-monospace, Consolas, monospace; min-width: 3.5em; }
+  .rung .rh .cm { white-space: pre-wrap; flex: 1; font-weight: 600; }
+  .rung .rh .tools { display: none; gap: 4px; }
+  .rung:hover .rh .tools { display: flex; }
+  .rung .rh .tools button { padding: 0 6px; font-size: 12px; }
+  .rung .body { overflow-x: auto; padding: 2px 0; }
+  .rung .err { color: var(--warn); padding: 4px 8px; font: 12px ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+  .rung pre.il { margin: 0; padding: 4px 8px; font: 12px ui-monospace, Consolas, monospace; }
+  svg.lad { display: block; }
+  svg.lad text { font: 11px ui-monospace, Consolas, monospace; fill: var(--ink); }
+  svg.lad text.c { fill: var(--muted); font-size: 10px; }
+  svg.lad text.v { fill: var(--on); font-size: 10.5px; }
+  svg.lad .w { stroke: var(--wire); stroke-width: 1.5; fill: none; }
+  svg.lad .el { cursor: pointer; }
+  svg.lad .el rect.hl { fill: transparent; }
+  svg.lad .el.on rect.hl { fill: var(--onfill); }
+  svg.lad .el.on .w { stroke: var(--on); stroke-width: 2.5; }
+  svg.lad .el.forced rect.hl { stroke: var(--forced); stroke-width: 2; stroke-dasharray: 3 2; }
+  svg.lad .box { fill: var(--panel); stroke: var(--wire); stroke-width: 1.5; }
+  svg.lad .el.on .box { stroke: var(--on); }
+  aside { width: 330px; background: var(--panel); border-left: 1px solid var(--line); overflow: auto; flex: none; display: flex; flex-direction: column; }
+  aside h3 { margin: 0; padding: 6px 10px; font-size: 13px; border-bottom: 1px solid var(--line); display: flex; gap: 6px; align-items: center; }
+  aside h3 span { flex: 1; }
+  aside table { border-collapse: collapse; width: 100%; font: 12px ui-monospace, Consolas, monospace; }
+  aside td { padding: 2px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  aside td.n { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+  aside td.val { text-align: right; }
+  aside tr { cursor: pointer; }
+  aside tr.on td.val { color: var(--on); font-weight: 700; }
+  aside tr.forced td { color: var(--forced); }
+  .scroll { overflow: auto; max-height: 40vh; }
+  #errs { color: var(--warn); font: 12px ui-monospace, Consolas, monospace; padding: 4px 10px; white-space: pre-wrap; }
+  #menu { position: fixed; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+          padding: 8px; z-index: 10; min-width: 240px; }
+  #menu .t { font-weight: 700; } #menu .a { color: var(--muted); font: 12px ui-monospace, Consolas, monospace; }
+  #menu .row { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .editor { padding: 6px 8px; display: grid; gap: 6px; }
+  .editor textarea { width: 100%; font: 12px ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 4px; }
+  .editor .msg { color: var(--warn); font: 12px ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+  .editor .msg.ok { color: var(--on); }
+  #toast { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 6px 12px; border-radius: 4px; display: none; z-index: 20; }
+</style>
+</head>
+<body>
+<header>
+  <b>LADDER</b>
+  <span id="proj" class="mono"></span>
+  <select id="file" title="Program file (plc/*.cxp)"></select>
+  <button id="mode" title="RUN / PROGRAM mode of the soft-PLC">…</button>
+  <span id="stats" class="mono"></span>
+  <span class="sp"></span>
+  <label title="Show the mnemonic under each rung"><input type="checkbox" id="showIl"> IL</label>
+  <button id="release" title="Release every forced bit">Release forces</button>
+  <button id="save" title="Write the edited program back to its .cxp (the previous file is kept as .bak)">Save</button>
+  <a id="dl" href="/api/ladder/download"><button>Download .cxp</button></a>
+  <a href="/" target="mio3d"><button>3D view ↗</button></a>
+  <a href="/hmi" target="miohmi"><button>HMI ↗</button></a>
+  <a href="/twin" target="miotwin"><button>Twin ↗</button></a>
+</header>
+<main>
+  <nav>
+    <input id="search" placeholder="Find address / symbol / comment…">
+    <div id="xref"></div>
+    <div id="tree"></div>
+  </nav>
+  <div id="rungs"></div>
+  <aside>
+    <h3><span>Watch</span><input id="watchAdd" class="mono" placeholder="add: D100, W100.01…" style="width:150px"></h3>
+    <div class="scroll"><table id="watch"></table></div>
+    <h3><span>IO map (scene ↔ PLC)</span><input id="ioFilter" placeholder="filter" style="width:90px"></h3>
+    <div class="scroll" style="max-height:none;flex:1"><table id="iomap"></table></div>
+    <div id="errs"></div>
+  </aside>
+</main>
+<div id="menu" hidden></div>
+<div id="toast"></div>
+<script type="module" src="/web/ladder.js"></script>
+</body>
+</html>

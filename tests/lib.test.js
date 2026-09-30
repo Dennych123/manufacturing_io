@@ -233,7 +233,9 @@ for (const f of fs.readdirSync(path.join(ROOT, 'scenes')).filter(f => /^[a-z0-9_
     const motors = [...by('servoLinear'), ...by('conveyor'), ...by('indexTable')];
     const servos = by('servoLinear');
     const tags = new Set(sc.components.flatMap((/** @type {any} */ c) => Object.values(c.io || {})));
-    if (motors.length) {
+    // A scene run by the machine's OWN program (io.driver 'ladder') has that program's panel: the
+    // add-on has no override dial, and giving it one would be a control the real machine lacks.
+    if (motors.length && sc.io?.driver !== 'ladder') {
       const unbound = motors.filter((/** @type {any} */ c) => !c.io?.ovr).map((/** @type {any} */ c) => c.id);
       chk(sc.name + ': every motor takes the speed override', unbound.length === 0, unbound.join(' '));
       chk(sc.name + ': the panel has the speed dial', by('speedDial').length === 1, by('speedDial').length + ' dials');
@@ -501,6 +503,55 @@ chk('key order in the input does not change the output', stringify(shuffled) ===
   chk('a +10 mm world X drag of cyl1 (on the carriage) moves its at by +10 in X', Math.abs(nm.at[0] - ((cyl.at?.[0] ?? 0) + 10)) < 1e-3 && Math.abs(nm.at[1] - (cyl.at?.[1] ?? 0)) < 1e-3, JSON.stringify(nm));
   chk('mountPoses of the base frame is the world', mountPoses(scene, {}, 'base').base.p.every(v => v === 0) && !!W.base);
   chk('mountPoses of an unknown id is null', mountPoses(scene, {}, 'nope') === null);
+}
+
+// ---------------------------------------------------------------- ce-insert generator
+// The scene, the controller's servo positions and the ST twin's are written from ONE file, and the
+// shells from Denny's iCAD model are gitignored: --check must pass from the committed manifest alone.
+{
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'gen_ce_insert.js'), '--check'], { encoding: 'utf8' });
+  chk('ce-insert: the scene and both controllers are what tools/gen_ce_insert.js writes (--check)', r.status === 0, (r.stdout + r.stderr).trim());
+}
+
+// ---------------------------------------------------------------- pin tracks (ce-insert)
+// A lane is a 1-D queue: pins slide at a = g(sin - mu cos), stop one pitch behind the pin ahead,
+// and a closed gate stops the pins upstream of it, never the ones already past.
+{
+  const { laneAdvance, trackAccel } = await import('../lib/components.js');
+  const { partRoles } = await import('../lib/scene.js');
+  const k = { a: 1650, vmax: 250, dt: 0.002, pitch: 3 };
+  const lane = [{ s: 50, v: 0 }, { s: 49, v: 0 }, { s: 10, v: 0 }];
+  for (let i = 0; i < 2000; i++) laneAdvance(lane, 100, [], k);
+  chk('lane: a queue closes up against the end, one pitch apart', Math.abs(lane[0].s - 100) < 1e-9 && Math.abs(lane[1].s - 97) < 1e-9 && Math.abs(lane[2].s - 94) < 1e-9,
+    lane.map(p => p.s.toFixed(3)).join(' '));
+  const g = [{ s: 60, v: 0 }, { s: 30, v: 0 }, { s: 20, v: 0 }];
+  for (let i = 0; i < 2000; i++) laneAdvance(g, 100, [40], k);
+  chk('lane: a closed gate stops the pins behind it and lets the one past it run on', g[0].s === 100 && g[1].s === 38.5 && g[2].s === 35.5,
+    g.map(p => p.s).join(' '));
+  const h = [{ s: 50, v: 0, hold: true }, { s: 10, v: 0 }];
+  for (let i = 0; i < 2000; i++) laneAdvance(h, 100, [], k);
+  chk('lane: a clamped pin stays put and is an obstacle', h[0].s === 50 && h[1].s === 47);
+  const one = [{ s: 0, v: 0 }];
+  laneAdvance(one, 1000, [], { ...k, dt: 0.1 });
+  chk('lane: a pin accelerates at g(sin - mu cos), capped at vmax', Math.abs(one[0].v - 165) < 1e-9 && Math.abs(trackAccel({ angle: 26, mu: 0.3 }) - 9810 * (Math.sin(26 * Math.PI / 180) - 0.3 * Math.cos(26 * Math.PI / 180))) < 1e-9);
+  chk('lane: friction that wins means the pins do not slide at all', trackAccel({ angle: 10, mu: 0.3 }) === 0);
+
+  const pin = withDefaults(TYPES.workpiece, { kind: 'pin', size: [2.73, 1.91, 21.6], headH: 2 });
+  const sh = TYPES.workpiece.shapes(pin);
+  chk('pin: a shank then a head, origin at the tip, the head\'s top at the pin length',
+    sh[0].r === 1.91 / 2 && sh[1].r === 2.73 / 2 && Math.abs(sh[1].at[2] + sh[1].h / 2 - 21.6) < 1e-9 && Math.abs(sh[0].at[2] - sh[0].h / 2) < 1e-9);
+  chk('pin: a shank as thick as its head is refused (it could not hang)', TYPES.workpiece.check(withDefaults(TYPES.workpiece, { kind: 'pin', size: [2, 2, 20] })).length > 0);
+
+  const base = (/** @type {any} */ tp) => ({ format: 'mio-scene/1', name: 't', components: [
+    { id: 'ce', type: 'workpiece', params: { kind: 'pin', size: [2.73, 1.91, 21.6] } },
+    { id: 'g', type: 'cylinder' },
+    { id: 'tk', type: 'track', params: { lanes: [-20, 20], supply: [{ lanes: [0, 1], template: 'ce', rate: 5 }], ...tp }, io: { feed1: 'FEED' } } ] });
+  chk('track: a valid track validates, and its feeder is an io', validate(base({ gates: [{ id: 'g', at: 50, lanes: [0], x: 1 }] })).length === 0,
+    validate(base({})).join(' | '));
+  chk('track: a gate naming a component that is not there is refused', validate(base({ gates: [{ id: 'nope', at: 50, lanes: [0], x: 1 }] })).some(m => /gates\[0\]\.id names "nope"/.test(m)));
+  chk('track: a gate on a lane that is not there is refused', validate(base({ gates: [{ id: 'g', at: 50, lanes: [5], x: 1 }] })).some(m => /lane indices/.test(m)));
+  chk('track: the pin its feeder copies is a template (never drawn, never simulated)', partRoles(base({})).get('ce') === 'template');
 }
 
 process.exit(fail ? 1 : 0);

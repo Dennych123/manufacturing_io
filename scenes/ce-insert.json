@@ -1,0 +1,1255 @@
+{
+  "format": "mio-scene/1",
+  "name": "ce-insert",
+  "sim": { "dtMs": 2 },
+  "io": {
+    "driver": "opcua",
+    "endpoint": "opc.tcp://127.0.0.1:4840",
+    "prefix": "GlobalVars.",
+    "mode": "sim",
+    "minPulseMs": 20
+  },
+  "stations": [
+    {
+      "id": "ST1",
+      "name": "Supply feeder",
+      "members": [
+        "st1Stp2",
+        "st1Stp3",
+        "st1Stp4",
+        "st1Stp5",
+        "st1DivL",
+        "st1DivR",
+        "st1Trk",
+        "st1Full1",
+        "st1Full2",
+        "st1Full3",
+        "st1Full4",
+        "st1Out"
+      ],
+      "stepTag": "ST1_STEP"
+    },
+    {
+      "id": "ST2",
+      "name": "Buffer",
+      "members": ["st2Srv", "st2Trk", "st2Stp1", "st2Out"],
+      "stepTag": "ST2_STEP"
+    },
+    {
+      "id": "ST3",
+      "name": "CE eject",
+      "members": [
+        "st3Sep",
+        "st3Psh",
+        "st3Trk",
+        "rmIns",
+        "st3Full",
+        "st3Exs1",
+        "st3Flw1",
+        "st3Exs2",
+        "st3Flw2",
+        "st3Exs3",
+        "st3Flw3",
+        "st3Exs4",
+        "st3Flw4"
+      ],
+      "stepTag": "ST3_STEP"
+    }
+  ],
+  "cycle": {
+    "exitTag": "PH_ST3_SHT1_FLW_OUT",
+    "autoTag": "AUTO_RUN",
+    "countTag": "CYCLE_CNT",
+    "exclude": 1,
+    "avgN": 10
+  },
+  "components": [
+    {
+      "id": "ce19",
+      "type": "workpiece",
+      "label": "CE 1.9 (TYPE 1) TEMPLATE",
+      "at": [0, 600, 0],
+      "params": {
+        "kind": "pin",
+        "size": [2.73, 1.91, 21.6],
+        "headH": 2,
+        "color": "#b87333",
+        "material": "steel"
+      }
+    },
+    {
+      "id": "ce23",
+      "type": "workpiece",
+      "label": "CE 2.3 (TYPE 2) TEMPLATE",
+      "at": [0, 600, 0],
+      "params": {
+        "kind": "pin",
+        "size": [2.95, 2.3, 22.9],
+        "headH": 1.5,
+        "color": "#9aa3ad",
+        "material": "steel"
+      }
+    },
+    {
+      "id": "st1Stp2",
+      "type": "cylinder",
+      "label": "ST1 STOPPER-2",
+      "station": "ST1",
+      "at": [-45.05, -59.766, 1319.582],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 2,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 60,
+        "retractMs": 60,
+        "cushionMm": 0,
+        "valveMs": 10,
+        "extWord": "CHUCK",
+        "retWord": "UNCHUCK",
+        "reedBand": 1,
+        "reedHyst": 0.2,
+        "switches": [{ "id": "ret", "pos": 0.2 }, { "id": "ext", "pos": 1.8 }],
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_ST1_STP2_CHK",
+        "solRet": "SOL_ST1_STP2_UCHK",
+        "sw.ret": "AS_ST1_STP2_UCHK",
+        "sw.ext": "AS_ST1_STP2_CHK"
+      }
+    },
+    {
+      "id": "st1Stp3",
+      "type": "cylinder",
+      "label": "ST1 STOPPER-3",
+      "station": "ST1",
+      "at": [-5.05, -59.766, 1319.582],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 2,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 60,
+        "retractMs": 60,
+        "cushionMm": 0,
+        "valveMs": 10,
+        "extWord": "CHUCK",
+        "retWord": "UNCHUCK",
+        "reedBand": 1,
+        "reedHyst": 0.2,
+        "switches": [{ "id": "ret", "pos": 0.2 }, { "id": "ext", "pos": 1.8 }],
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_ST1_STP3_CHK",
+        "solRet": "SOL_ST1_STP3_UCHK",
+        "sw.ret": "AS_ST1_STP3_UCHK",
+        "sw.ext": "AS_ST1_STP3_CHK"
+      }
+    },
+    {
+      "id": "st1Stp4",
+      "type": "cylinder",
+      "label": "ST1 STOPPER-4",
+      "station": "ST1",
+      "at": [34.95, -59.766, 1319.582],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 2,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 60,
+        "retractMs": 60,
+        "cushionMm": 0,
+        "valveMs": 10,
+        "extWord": "CHUCK",
+        "retWord": "UNCHUCK",
+        "reedBand": 1,
+        "reedHyst": 0.2,
+        "switches": [{ "id": "ret", "pos": 0.2 }, { "id": "ext", "pos": 1.8 }],
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_ST1_STP4_CHK",
+        "solRet": "SOL_ST1_STP4_UCHK",
+        "sw.ret": "AS_ST1_STP4_UCHK",
+        "sw.ext": "AS_ST1_STP4_CHK"
+      }
+    },
+    {
+      "id": "st1Stp5",
+      "type": "cylinder",
+      "label": "ST1 STOPPER-5",
+      "station": "ST1",
+      "at": [74.95, -59.766, 1319.582],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 2,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 60,
+        "retractMs": 60,
+        "cushionMm": 0,
+        "valveMs": 10,
+        "extWord": "CHUCK",
+        "retWord": "UNCHUCK",
+        "reedBand": 1,
+        "reedHyst": 0.2,
+        "switches": [{ "id": "ret", "pos": 0.2 }, { "id": "ext", "pos": 1.8 }],
+        "hidden": true
+      },
+      "io": {
+        "solExt": "SOL_ST1_STP5_CHK",
+        "solRet": "SOL_ST1_STP5_UCHK",
+        "sw.ret": "AS_ST1_STP5_UCHK",
+        "sw.ext": "AS_ST1_STP5_CHK"
+      }
+    },
+    {
+      "id": "st1DivL",
+      "type": "cylinder",
+      "label": "ST1 LEFT DIVIDER",
+      "station": "ST1",
+      "at": [-74, -128, 1281],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 10,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 120,
+        "retractMs": 120,
+        "cushionMm": 1,
+        "valveMs": 10,
+        "extWord": "FWD",
+        "retWord": "BWD",
+        "reedBand": 0.6,
+        "reedHyst": 0.5,
+        "switches": [{ "id": "ret", "pos": 0.3 }, { "id": "ext", "pos": 9.7 }]
+      },
+      "io": {
+        "solExt": "SOL_ST1_LFT_DIV_FWD",
+        "solRet": "SOL_ST1_LFT_DIV_BWD",
+        "sw.ret": "AS_ST1_LFT_DIV_BWD",
+        "sw.ext": "AS_ST1_LFT_DIV_FWD"
+      }
+    },
+    {
+      "id": "st1DivR",
+      "type": "cylinder",
+      "label": "ST1 RIGHT DIVIDER",
+      "station": "ST1",
+      "at": [80, -128, 1281],
+      "rot": [0, 90, 0],
+      "params": {
+        "bore": 6,
+        "stroke": 10,
+        "rod": 3,
+        "valve": "5/2-double",
+        "extendMs": 120,
+        "retractMs": 120,
+        "cushionMm": 1,
+        "valveMs": 10,
+        "extWord": "FWD",
+        "retWord": "BWD",
+        "reedBand": 0.6,
+        "reedHyst": 0.5,
+        "switches": [{ "id": "ret", "pos": 0.3 }, { "id": "ext", "pos": 9.7 }]
+      },
+      "io": {
+        "solExt": "SOL_ST1_RGT_DIV_FWD",
+        "solRet": "SOL_ST1_RGT_DIV_BWD",
+        "sw.ret": "AS_ST1_RGT_DIV_BWD",
+        "sw.ext": "AS_ST1_RGT_DIV_FWD"
+      }
+    },
+    {
+      "id": "st1Trk",
+      "type": "track",
+      "label": "ST1 FEEDER LANES",
+      "station": "ST1",
+      "at": [0, 40, 1348.242],
+      "rot": [0, 0, -90],
+      "params": {
+        "lanes": [-57.05, -17.05, 22.95, 62.95],
+        "length": 210.504,
+        "angle": 26,
+        "next": "st2Trk",
+        "supply": [
+          { "lanes": [0, 1], "rate": 10, "template": "ce19" },
+          { "lanes": [2, 3], "rate": 10, "template": "ce23" }
+        ],
+        "gates": [
+          { "at": 111, "id": "st1Stp2", "lanes": [0], "x": 1 },
+          { "at": 111, "id": "st1Stp3", "lanes": [1], "x": 1 },
+          { "at": 111, "id": "st1Stp4", "lanes": [2], "x": 1 },
+          { "at": 111, "id": "st1Stp5", "lanes": [3], "x": 1 },
+          { "at": 199.712, "id": "st1DivL", "lanes": [0, 1], "x": 5 },
+          { "at": 199.712, "id": "st1DivR", "lanes": [2, 3], "x": 5 }
+        ],
+        "drawRails": false
+      },
+      "io": { "feed1": "CR_ST1_PART_FDR1_STR", "feed2": "CR_ST1_PART_FDR2_STR" }
+    },
+    {
+      "id": "st2Srv",
+      "type": "servoLinear",
+      "label": "ST2 SERVO (E-RBM6)",
+      "station": "ST2",
+      "at": [2.95, -171.5, 1083],
+      "params": { "stroke": 220, "vmax": 200, "acc": 2000, "body": [384, 60, 67], "jogPct": 10 },
+      "io": {
+        "target": "SV_ST2_TGT",
+        "exec": "SV_ST2_EXEC",
+        "done": "SV_ST2_DONE",
+        "busy": "SV_ST2_BUSY",
+        "actPos": "SV_ST2_POS",
+        "inPos": "SV_ST2_INPOS",
+        "ovr": "OVR",
+        "jogP": "SV_ST2_JOG_P",
+        "jogN": "SV_ST2_JOG_N"
+      }
+    },
+    {
+      "id": "st2Trk",
+      "type": "track",
+      "label": "ST2 SHUTTLE",
+      "station": "ST2",
+      "parent": "st2Srv",
+      "socket": "carriage",
+      "at": [0, 22.3, 105.963],
+      "rot": [0, 0, -90],
+      "params": {
+        "lanes": [-60, -20, 20, 60],
+        "length": 92.68,
+        "angle": 26,
+        "next": "st3Trk",
+        "gates": [{ "at": 90.455, "id": "st2Stp1", "lanes": [0, 1, 2, 3], "x": 5 }],
+        "drawRails": false
+      }
+    },
+    {
+      "id": "st2Stp1",
+      "type": "cylinder",
+      "label": "ST2 STOPPER-1",
+      "station": "ST2",
+      "parent": "st2Srv",
+      "socket": "carriage",
+      "at": [16, -75.5, 154],
+      "rot": [180, 0, 0],
+      "params": {
+        "bore": 20,
+        "stroke": 10,
+        "valve": "5/2-double",
+        "extendMs": 120,
+        "retractMs": 120,
+        "cushionMm": 1,
+        "valveMs": 10,
+        "extWord": "DOWN",
+        "retWord": "UP",
+        "reedBand": 0.6,
+        "reedHyst": 0.5,
+        "switches": [{ "id": "ret", "pos": 0.3 }, { "id": "ext", "pos": 9.7 }]
+      },
+      "io": {
+        "solExt": "SOL_ST2_STP1_DN",
+        "solRet": "SOL_ST2_STP1_UP",
+        "sw.ret": "AS_ST2_STP1_UP",
+        "sw.ext": "AS_ST2_STP1_DN"
+      }
+    },
+    {
+      "id": "st3Sep",
+      "type": "cylinder",
+      "label": "ST3 SEPARATOR (CE EJECTOR)",
+      "station": "ST3",
+      "at": [-79, -352, 1131],
+      "rot": [0, -90, 0],
+      "params": {
+        "bore": 20,
+        "stroke": 10,
+        "valve": "5/2-double",
+        "extendMs": 150,
+        "retractMs": 150,
+        "cushionMm": 1,
+        "valveMs": 10,
+        "extWord": "FWD",
+        "retWord": "BWD",
+        "reedBand": 0.6,
+        "reedHyst": 0.5,
+        "switches": [{ "id": "ret", "pos": 0.3 }, { "id": "ext", "pos": 9.7 }]
+      },
+      "io": {
+        "solExt": "SOL_ST3_EJC_FWD",
+        "solRet": "SOL_ST3_EJC_BWD",
+        "sw.ret": "AS_ST3_EJC_BWD",
+        "sw.ext": "AS_ST3_EJC_FWD"
+      }
+    },
+    {
+      "id": "st3Psh",
+      "type": "cylinder",
+      "label": "ST3 PUSHER",
+      "station": "ST3",
+      "at": [-5, -474, 1122],
+      "rot": [-90, 0, 0],
+      "params": {
+        "bore": 10,
+        "stroke": 10,
+        "valve": "5/2-double",
+        "extendMs": 150,
+        "retractMs": 150,
+        "cushionMm": 1,
+        "valveMs": 10,
+        "extWord": "FWD",
+        "retWord": "BWD",
+        "reedBand": 0.6,
+        "reedHyst": 0.5,
+        "switches": [{ "id": "ret", "pos": 0.3 }, { "id": "ext", "pos": 9.7 }]
+      },
+      "io": {
+        "solExt": "SOL_ST3_PSH_FWD",
+        "solRet": "SOL_ST3_PSH_BWD",
+        "sw.ret": "AS_ST3_PSH_BWD",
+        "sw.ext": "AS_ST3_PSH_FWD"
+      }
+    },
+    {
+      "id": "st3Trk",
+      "type": "track",
+      "label": "ST3 CHUTE",
+      "station": "ST3",
+      "at": [0, -232.5, 1215.334],
+      "rot": [0, 0, -90],
+      "params": {
+        "lanes": [-57.05, -17.05, 22.95, 62.95],
+        "length": 185.026,
+        "angle": 26,
+        "escape": { "push": "st3Psh", "pushAt": 9, "sep": "st3Sep" },
+        "drawRails": false
+      },
+      "io": { "count": "ST3_DROP_CNT" }
+    },
+    {
+      "id": "rmIns",
+      "type": "remover",
+      "label": "INSULATORS",
+      "station": "ST3",
+      "at": [-7.049999999999997, -385, 950],
+      "params": { "size": [170, 30, 50] },
+      "io": { "count": "CE_INS_CNT" }
+    },
+    {
+      "id": "st1Full1",
+      "type": "photoEye",
+      "label": "ST1 SHUTTER-1 FULL",
+      "station": "ST1",
+      "at": [-49.05, -62.642, 1299.18],
+      "rot": [0, 0, 180],
+      "params": { "range": 16, "offDelayMs": 60 },
+      "io": { "out": "PH_ST1_SHT1_FULL" }
+    },
+    {
+      "id": "st1Full2",
+      "type": "photoEye",
+      "label": "ST1 SHUTTER-2 FULL",
+      "station": "ST1",
+      "at": [-9.05, -62.642, 1299.18],
+      "rot": [0, 0, 180],
+      "params": { "range": 16, "offDelayMs": 60 },
+      "io": { "out": "PH_ST1_SHT2_FULL" }
+    },
+    {
+      "id": "st1Full3",
+      "type": "photoEye",
+      "label": "ST1 SHUTTER-3 FULL",
+      "station": "ST1",
+      "at": [30.95, -62.642, 1299.18],
+      "rot": [0, 0, 180],
+      "params": { "range": 16, "offDelayMs": 60 },
+      "io": { "out": "PH_ST1_SHT3_FULL" }
+    },
+    {
+      "id": "st1Full4",
+      "type": "photoEye",
+      "label": "ST1 SHUTTER-4 FULL",
+      "station": "ST1",
+      "at": [70.95, -62.642, 1299.18],
+      "rot": [0, 0, 180],
+      "params": { "range": 16, "offDelayMs": 60 },
+      "io": { "out": "PH_ST1_SHT4_FULL" }
+    },
+    {
+      "id": "st1Out",
+      "type": "photoEye",
+      "label": "ST1 INSERT FLOW OUT",
+      "station": "ST1",
+      "at": [-110, -144.6, 1248.206],
+      "rot": [0, 0, 0],
+      "params": { "range": 220, "offDelayMs": 60 },
+      "io": { "out": "PH_ST1_INS_FLW_OUT" }
+    },
+    {
+      "id": "st2Out",
+      "type": "photoEye",
+      "label": "ST2 INSERT FLOW OUT",
+      "station": "ST2",
+      "at": [-110, -233.5, 1204.847],
+      "rot": [0, 0, 0],
+      "params": { "range": 220, "offDelayMs": 60 },
+      "io": { "out": "PH_ST2_INS_FLW_OUT" }
+    },
+    {
+      "id": "st3Full",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER FULL",
+      "station": "ST3",
+      "at": [-110, -320.5, 1173.414],
+      "rot": [0, 0, 0],
+      "params": { "range": 220, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT_FULL" }
+    },
+    {
+      "id": "st3Exs1",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-1 EXIST",
+      "station": "ST3",
+      "at": [-52.05, -397.452, 1131.882],
+      "rot": [0, 0, 180],
+      "params": { "range": 20, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT1_EXS" }
+    },
+    {
+      "id": "st3Flw1",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-1 FLOW OUT",
+      "station": "ST3",
+      "at": [-67.05, -420, 1033],
+      "rot": [0, 0, 90],
+      "params": { "range": 70, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT1_FLW_OUT" }
+    },
+    {
+      "id": "st3Exs2",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-2 EXIST",
+      "station": "ST3",
+      "at": [-12.05, -397.452, 1131.882],
+      "rot": [0, 0, 180],
+      "params": { "range": 20, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT2_EXS" }
+    },
+    {
+      "id": "st3Flw2",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-2 FLOW OUT",
+      "station": "ST3",
+      "at": [-27.05, -420, 1033],
+      "rot": [0, 0, 90],
+      "params": { "range": 70, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT2_FLW_OUT" }
+    },
+    {
+      "id": "st3Exs3",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-3 EXIST",
+      "station": "ST3",
+      "at": [27.95, -397.452, 1131.882],
+      "rot": [0, 0, 180],
+      "params": { "range": 20, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT3_EXS" }
+    },
+    {
+      "id": "st3Flw3",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-3 FLOW OUT",
+      "station": "ST3",
+      "at": [12.95, -420, 1033],
+      "rot": [0, 0, 90],
+      "params": { "range": 70, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT3_FLW_OUT" }
+    },
+    {
+      "id": "st3Exs4",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-4 EXIST",
+      "station": "ST3",
+      "at": [67.95, -397.452, 1131.882],
+      "rot": [0, 0, 180],
+      "params": { "range": 20, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT4_EXS" }
+    },
+    {
+      "id": "st3Flw4",
+      "type": "photoEye",
+      "label": "ST3 SHUTTER-4 FLOW OUT",
+      "station": "ST3",
+      "at": [52.95, -420, 1033],
+      "rot": [0, 0, 90],
+      "params": { "range": 70, "offDelayMs": 60 },
+      "io": { "out": "PH_ST3_SHT4_FLW_OUT" }
+    },
+    { "id": "sel", "type": "selector", "label": "AUTO / INDIVIDUAL", "io": { "sel": "SEL_AUTO" } },
+    {
+      "id": "pbMaster",
+      "type": "pushbutton",
+      "label": "MASTER ON",
+      "params": { "kind": "momentary", "color": "white", "lamp": true },
+      "io": { "pb": "PB_MASTER", "lamp": "PL_MASTER" }
+    },
+    {
+      "id": "pbEstop",
+      "type": "pushbutton",
+      "label": "EMERGENCY STOP",
+      "params": { "kind": "alternate", "color": "red", "lamp": false },
+      "io": { "pb": "PB_ESTOP" }
+    },
+    {
+      "id": "pbStart",
+      "type": "pushbutton",
+      "label": "START",
+      "params": { "kind": "momentary", "color": "green", "lamp": true },
+      "io": { "pb": "PB_START", "lamp": "PL_START" }
+    },
+    {
+      "id": "pbCstop",
+      "type": "pushbutton",
+      "label": "CYCLE STOP",
+      "params": { "kind": "momentary", "color": "yellow", "lamp": false },
+      "io": { "pb": "PB_CSTOP" }
+    },
+    {
+      "id": "pbHome",
+      "type": "pushbutton",
+      "label": "HOME POS",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "PB_HOME", "lamp": "PL_HOME" }
+    },
+    {
+      "id": "pbType",
+      "type": "pushbutton",
+      "label": "TYPE 2 (CE 2.3)",
+      "params": { "kind": "alternate", "color": "white", "lamp": false },
+      "io": { "pb": "SEL_TYPE2" }
+    },
+    {
+      "id": "lampAuto",
+      "type": "lamp",
+      "label": "AUTO RUNNING",
+      "params": { "color": "amber" },
+      "io": { "lamp": "AUTO_RUN" }
+    },
+    {
+      "id": "dialOvr",
+      "type": "speedDial",
+      "label": "SPEED OVERRIDE",
+      "params": { "min": 10 },
+      "io": { "ovr": "OVR_SET" }
+    },
+    {
+      "id": "pbJogP",
+      "type": "pushbutton",
+      "label": "JOG SHUTTLE +",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SV_P", "lamp": "SV_ST2_JOG_P" }
+    },
+    {
+      "id": "pbJogN",
+      "type": "pushbutton",
+      "label": "JOG SHUTTLE -",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SV_N", "lamp": "SV_ST2_JOG_N" }
+    },
+    {
+      "id": "pbIndF1",
+      "type": "pushbutton",
+      "label": "FEEDER-1 (LEFT)",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_FDR1", "lamp": "CR_ST1_PART_FDR1_STR" }
+    },
+    {
+      "id": "pbIndF2",
+      "type": "pushbutton",
+      "label": "FEEDER-2 (RIGHT)",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_FDR2", "lamp": "CR_ST1_PART_FDR2_STR" }
+    },
+    {
+      "id": "pbIndS2",
+      "type": "pushbutton",
+      "label": "STOPPER-2",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STP2", "lamp": "SOL_ST1_STP2_UCHK" }
+    },
+    {
+      "id": "pbIndS3",
+      "type": "pushbutton",
+      "label": "STOPPER-3",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STP3", "lamp": "SOL_ST1_STP3_UCHK" }
+    },
+    {
+      "id": "pbIndS4",
+      "type": "pushbutton",
+      "label": "STOPPER-4",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STP4", "lamp": "SOL_ST1_STP4_UCHK" }
+    },
+    {
+      "id": "pbIndS5",
+      "type": "pushbutton",
+      "label": "STOPPER-5",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STP5", "lamp": "SOL_ST1_STP5_UCHK" }
+    },
+    {
+      "id": "pbIndDL",
+      "type": "pushbutton",
+      "label": "LEFT DIVIDER",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DIVL", "lamp": "SOL_ST1_LFT_DIV_BWD" }
+    },
+    {
+      "id": "pbIndDR",
+      "type": "pushbutton",
+      "label": "RIGHT DIVIDER",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_DIVR", "lamp": "SOL_ST1_RGT_DIV_BWD" }
+    },
+    {
+      "id": "pbIndS1",
+      "type": "pushbutton",
+      "label": "ST2 STOPPER-1",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_STP1", "lamp": "SOL_ST2_STP1_UP" }
+    },
+    {
+      "id": "pbIndSep",
+      "type": "pushbutton",
+      "label": "SEPARATOR",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SEP", "lamp": "SOL_ST3_EJC_FWD" }
+    },
+    {
+      "id": "pbIndPsh",
+      "type": "pushbutton",
+      "label": "PUSHER",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_PSH", "lamp": "SOL_ST3_PSH_FWD" }
+    },
+    {
+      "id": "pbSvC",
+      "type": "pushbutton",
+      "label": "SHUTTLE CENTER",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SV_CTR", "lamp": "PL_SV_CTR" }
+    },
+    {
+      "id": "pbSvL",
+      "type": "pushbutton",
+      "label": "SHUTTLE LEFT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SV_LFT", "lamp": "PL_SV_LFT" }
+    },
+    {
+      "id": "pbSvR",
+      "type": "pushbutton",
+      "label": "SHUTTLE RIGHT",
+      "params": { "kind": "momentary", "color": "blue", "lamp": true },
+      "io": { "pb": "IND_SV_RGT", "lamp": "PL_SV_RGT" }
+    },
+    {
+      "id": "shlDivL",
+      "type": "shell",
+      "label": "shlDivL",
+      "parent": "st1DivL",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlDivL.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [
+          [-14.2, -11.2, -78.5, 13.4, 10.7, 113],
+          [-11.6, -2.5, -20, 24, 28.1, 4],
+          [-11.7, 5.4, -21.5, 12.3, 11.5, 9]
+        ]
+      }
+    },
+    {
+      "id": "shlDivR",
+      "type": "shell",
+      "label": "shlDivR",
+      "parent": "st1DivR",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlDivR.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [
+          [14.2, -11.2, -78.5, 13.4, 10.7, 113],
+          [11.6, -2.5, -20, 24, 28.1, 4],
+          [11.7, 5.4, -21.5, 12.3, 11.5, 9]
+        ]
+      }
+    },
+    {
+      "id": "shlPsh",
+      "type": "shell",
+      "label": "shlPsh",
+      "parent": "st3Psh",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlPsh.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [[0, -3, -7, 130, 23.7, 31.8], [0, 24.2, -25.1, 36, 32.3, 46.6]]
+      }
+    },
+    {
+      "id": "shlSep",
+      "type": "shell",
+      "label": "shlSep",
+      "parent": "st3Sep",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlSep.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [
+          [-11.4, -45.7, -144.5, 30.4, 25.8, 197],
+          [-6.6, -48, -10, 19.1, 19.1, 54],
+          [-4.5, -28, 10, 20, 58, 10],
+          [-6.6, -48, -48, 8, 8, 20]
+        ]
+      }
+    },
+    {
+      "id": "shlShuttle",
+      "type": "shell",
+      "label": "shlShuttle",
+      "parent": "st2Srv",
+      "socket": "carriage",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlShuttle.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [
+          [0, -9, 46.6, 156, 62.8, 37.5],
+          [0, -70.6, 104.5, 156, 40.4, 25.2],
+          [-59.9, -13.3, 64.6, 26, 78.8, 59],
+          [-20, -13.3, 64.6, 26, 78.8, 59],
+          [20, -13.3, 64.6, 26, 78.8, 59],
+          [60.1, -13.3, 64.6, 26, 78.8, 59],
+          [0, -8, 6, 116, 65, 12],
+          [-79.9, -53.1, 68.5, 8, 75.4, 97.1],
+          [80.1, -53.1, 68.5, 8, 75.4, 97.1],
+          [-68.2, -19.6, 81.5, 14, 86.2, 46.2],
+          [-51.7, -19.6, 81.5, 14, 86.2, 46.2],
+          [-28.2, -19.6, 81.5, 14, 86.2, 46.2],
+          [-11.7, -19.6, 81.5, 14, 86.2, 46.2],
+          [11.8, -19.6, 81.5, 14, 86.2, 46.2],
+          [28.3, -19.6, 81.5, 14, 86.2, 46.2],
+          [51.8, -19.6, 81.5, 14, 86.2, 46.2],
+          [68.3, -19.6, 81.5, 14, 86.2, 46.2],
+          [-43.9, -3, 32.5, 20, 55, 45],
+          [44.1, -3, 32.5, 20, 55, 45]
+        ]
+      }
+    },
+    {
+      "id": "shlStp1",
+      "type": "shell",
+      "label": "shlStp1",
+      "parent": "st2Stp1",
+      "socket": "rodEnd",
+      "params": {
+        "asset": "assets/cad/ce-insert/shlStp1.stl",
+        "scale": 1,
+        "color": "#d8d0b0",
+        "boxes": [[-16, -16.7, -7.6, 130, 23.2, 22.3]]
+      }
+    },
+    {
+      "id": "shl_00ff9f",
+      "type": "shell",
+      "label": "CAD #00ff9f",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_00ff9f.stl",
+        "scale": 1,
+        "color": "#00ff9f",
+        "boxes": [
+          [3, -22.4, 1272.6, 152, 86.2, 50.2],
+          [-47, -20, 1243.6, 10, 90, 81.2],
+          [53, -20, 1243.6, 10, 90, 81.2],
+          [-65, -385, 1026.5, 19, 30, 73],
+          [-25, -385, 1026.5, 19, 30, 73],
+          [15, -385, 1026.5, 19, 30, 73],
+          [55, -385, 1026.5, 19, 30, 73]
+        ]
+      }
+    },
+    {
+      "id": "shl_0bf4f4",
+      "type": "shell",
+      "label": "CAD #0bf4f4",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_0bf4f4.stl",
+        "scale": 1,
+        "color": "#0bf4f4",
+        "boxes": [
+          [-57, -53.2, 1278.7, 26, 174.9, 105.9],
+          [-17, -53.2, 1278.7, 26, 174.9, 105.9],
+          [23, -53.2, 1278.7, 26, 174.9, 105.9],
+          [63, -53.2, 1278.7, 26, 174.9, 105.9],
+          [-5, -385, 1069.5, 188, 30, 31],
+          [-5, -405, 1036, 152, 10, 12]
+        ]
+      }
+    },
+    {
+      "id": "shl_1ca42d",
+      "type": "shell",
+      "label": "CAD #1ca42d",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_1ca42d.stl",
+        "scale": 1,
+        "color": "#1ca42d",
+        "boxes": [[0.5, -396.4, 1144.2, 199, 36.2, 29.3], [0.5, -416.8, 1131.4, 199, 17.8, 16.9]]
+      }
+    },
+    {
+      "id": "shl_6363f1",
+      "type": "shell",
+      "label": "CAD #6363f1",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_6363f1.stl",
+        "scale": 1,
+        "color": "#6363f1",
+        "boxes": [
+          [3, -78, 1060, 190, 22, 50],
+          [-98.5, -361.9, 1167.1, 5, 87.9, 52.5],
+          [99.5, -361.9, 1167.1, 5, 87.9, 52.5]
+        ]
+      }
+    },
+    {
+      "id": "shl_63f175",
+      "type": "shell",
+      "label": "CAD #63f175",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_63f175.stl",
+        "scale": 1,
+        "color": "#63f175",
+        "boxes": [[-7, -277, 1077.5, 390, 272, 15]]
+      }
+    },
+    {
+      "id": "shl_aaaaaa",
+      "type": "shell",
+      "label": "CAD #aaaaaa",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_aaaaaa.stl",
+        "scale": 1,
+        "color": "#aaaaaa",
+        "boxes": [
+          [-65, -385, 911.5, 40, 40, 32],
+          [-25, -385, 911.5, 40, 40, 32],
+          [15, -385, 911.5, 40, 40, 32],
+          [55, -385, 911.5, 40, 40, 32],
+          [-65, -385, 934, 37, 37, 17],
+          [-25, -385, 934, 37, 37, 17],
+          [15, -385, 934, 37, 37, 17],
+          [55, -385, 934, 37, 37, 17]
+        ]
+      }
+    },
+    {
+      "id": "shl_bc63f1",
+      "type": "shell",
+      "label": "CAD #bc63f1",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_bc63f1.stl",
+        "scale": 1,
+        "color": "#bc63f1",
+        "boxes": [
+          [31.3, -52.6, 1299.1, 14, 195.9, 99.6],
+          [71.3, -52.6, 1299.1, 14, 195.9, 99.6],
+          [-48.7, -55.3, 1297.8, 14, 190.5, 97],
+          [-8.7, -55.3, 1297.8, 14, 190.5, 97]
+        ]
+      }
+    },
+    {
+      "id": "shl_bebebe",
+      "type": "shell",
+      "label": "CAD #bebebe",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_bebebe.stl",
+        "scale": 1,
+        "color": "#bebebe",
+        "boxes": [
+          [-162.2, 168.6, 894.3, 113.4, 73.1, 31.4],
+          [17.8, 168.6, 894.3, 113.4, 73.1, 31.4],
+          [-162.2, 168.6, 769, 113.4, 73.2, 30.9],
+          [17.8, 168.6, 769, 113.4, 73.2, 30.9],
+          [-162.5, 160.6, 735.3, 64.4, 56.1, 36.5],
+          [17.5, 160.6, 735.3, 64.4, 56.1, 36.5],
+          [-342, 265, 1107, 35, 35, 74],
+          [-106, 265, 1107, 35, 35, 74],
+          [-342, -55, 1107, 35, 35, 74],
+          [-106, -55, 1107, 35, 35, 74],
+          [112, 265, 1107, 35, 35, 74],
+          [348, 265, 1107, 35, 35, 74],
+          [112, -55, 1107, 35, 35, 74],
+          [348, -55, 1107, 35, 35, 74],
+          [-162.2, 153.8, 791.5, 113.4, 42.6, 17.8],
+          [-162.2, 153.8, 807.5, 113.4, 42.6, 17.8],
+          [-162.2, 153.8, 823.5, 113.4, 42.6, 17.8],
+          [-162.2, 153.8, 839.5, 113.4, 42.6, 17.8],
+          [-162.2, 153.8, 855.5, 113.4, 42.6, 17.8],
+          [-162.2, 153.8, 871.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 791.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 807.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 823.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 839.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 855.5, 113.4, 42.6, 17.8],
+          [17.8, 153.8, 871.5, 113.4, 42.6, 17.8],
+          [-233.6, 150, 735, 77.8, 31.2, 31.2],
+          [-53.6, 150, 735, 77.8, 31.2, 31.2],
+          [237.9, 162.5, 733.3, 37.5, 37.5, 29.7],
+          [237.9, 162.5, 697.7, 40, 28, 32.1],
+          [237.9, 162.5, 720.6, 32.2, 46.6, 15.7],
+          [-57, -54.9, 1339.2, 20.1, 26, 39.3],
+          [-17, -54.9, 1339.2, 20.1, 26, 39.3],
+          [23, -54.9, 1339.2, 20.1, 26, 39.3],
+          [63, -54.9, 1339.2, 20.1, 26, 39.3],
+          [-267.7, 178, 750, 23.5, 41.6, 18],
+          [-267.7, 178, 786, 23.5, 41.6, 18],
+          [-267.7, 178, 768, 23.5, 41.6, 18],
+          [-267.7, 178, 804, 23.5, 41.6, 18],
+          [-267.7, 178, 822, 23.5, 41.6, 18],
+          [-267.7, 178, 840, 23.5, 41.6, 18],
+          [-267.7, 178, 858, 23.5, 41.6, 18],
+          [-267.7, 178, 876, 23.5, 41.6, 18],
+          [173.1, 139.7, 699.5, 15.5, 14.4, 67],
+          [216.3, 139.7, 699.5, 15.5, 14.4, 67],
+          [-163.5, 185.6, 770.3, 72, 6, 20],
+          [16.5, 185.6, 770.3, 72, 6, 20],
+          [-163.5, 185.5, 892.6, 72, 6, 20],
+          [16.5, 185.5, 892.6, 72, 6, 20],
+          [173, 162, 704, 5.2, 33.4, 31.2],
+          [216.3, 162, 704, 5.2, 33.4, 31.2],
+          [-49.2, -60.6, 1356.3, 4.6, 19.8, 35],
+          [-49.2, -67.1, 1358.7, 4.6, 19.8, 35],
+          [-9.2, -60.6, 1356.3, 4.6, 19.8, 35],
+          [-9.2, -67.1, 1358.7, 4.6, 19.8, 35],
+          [30.8, -60.6, 1356.3, 4.6, 19.8, 35],
+          [30.8, -67.1, 1358.7, 4.6, 19.8, 35],
+          [70.8, -60.6, 1356.3, 4.6, 19.8, 35],
+          [70.8, -67.1, 1358.7, 4.6, 19.8, 35]
+        ]
+      }
+    },
+    {
+      "id": "shl_beebc4",
+      "type": "shell",
+      "label": "CAD #beebc4",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_beebc4.stl",
+        "scale": 1,
+        "color": "#beebc4",
+        "boxes": [[-224, 105, 1125, 266, 350, 10], [230, 105, 1125, 266, 350, 10]]
+      }
+    },
+    {
+      "id": "shl_df2222",
+      "type": "shell",
+      "label": "CAD #df2222",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_df2222.stl",
+        "scale": 1,
+        "color": "#df2222",
+        "boxes": [
+          [-25, -385, 940.6, 11.5, 11.5, 68.7],
+          [15, -385, 940.6, 11.5, 11.5, 68.7],
+          [-65, -385, 940.6, 11.4, 11.5, 68.7],
+          [55, -385, 940.6, 11.4, 11.5, 68.7]
+        ]
+      }
+    },
+    {
+      "id": "shl_ebbebe",
+      "type": "shell",
+      "label": "CAD #ebbebe",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_ebbebe.stl",
+        "scale": 1,
+        "color": "#ebbebe",
+        "boxes": [
+          [-116, 171.8, 1372.3, 115.6, 162.4, 24.6],
+          [-76, 171.8, 1372.3, 115.6, 162.4, 24.6],
+          [82, 171.8, 1372.3, 115.6, 162.4, 24.6],
+          [122, 171.8, 1372.3, 115.6, 162.4, 24.6],
+          [-113.4, 177.1, 1368, 119.7, 173.6, 15.9],
+          [-73.4, 177.1, 1368, 119.7, 173.6, 15.9],
+          [79.4, 177.1, 1368, 119.7, 173.6, 15.9],
+          [119.4, 177.1, 1368, 119.7, 173.6, 15.9],
+          [-59.8, 109.3, 1372.3, 30.3, 6.6, 37.5],
+          [-19.8, 109.3, 1372.3, 30.3, 6.6, 37.5],
+          [25.8, 109.3, 1372.3, 30.3, 6.6, 37.5],
+          [65.8, 109.3, 1372.3, 30.3, 6.6, 37.5],
+          [-59.9, 86.7, 1330.8, 28.5, 3.5, 47.7],
+          [-59.9, 56.7, 1330.8, 28.5, 3.5, 47.7],
+          [-19.9, 56.7, 1330.8, 28.5, 3.5, 47.7],
+          [-19.9, 86.7, 1330.8, 28.5, 3.5, 47.7],
+          [25.9, 56.7, 1330.8, 28.5, 3.5, 47.7],
+          [25.9, 86.7, 1330.8, 28.5, 3.5, 47.7],
+          [65.9, 56.7, 1330.8, 28.5, 3.5, 47.7],
+          [65.9, 86.7, 1330.8, 28.5, 3.5, 47.7]
+        ]
+      }
+    },
+    {
+      "id": "shl_ebebbe",
+      "type": "shell",
+      "label": "CAD #ebebbe",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_ebebbe.stl",
+        "scale": 1,
+        "color": "#ebebbe",
+        "boxes": [
+          [0.5, -394.7, 1107, 230, 58.4, 65.3],
+          [3, 131.3, 813, 570, 2.5, 315],
+          [-65.2, -52.6, 1299.1, 14, 195.9, 99.6],
+          [-25.2, -52.6, 1299.1, 14, 195.9, 99.6],
+          [14.8, -55.3, 1297.8, 14, 190.5, 97],
+          [54.8, -55.3, 1297.8, 14, 190.5, 97],
+          [3, 205, 654.3, 570, 150, 2.5],
+          [3, 205, 971.8, 570, 150, 2.5],
+          [-48.7, -313.6, 1170.7, 14, 165.3, 86.1],
+          [-8.7, -313.6, 1170.7, 14, 165.3, 86.1],
+          [31.3, -313.6, 1170.7, 14, 165.3, 86.1],
+          [71.3, -313.6, 1170.7, 14, 165.3, 86.1],
+          [-65, -313.6, 1170.7, 13.5, 165.3, 86.1],
+          [-25, -313.6, 1170.7, 13.5, 165.3, 86.1],
+          [15, -313.6, 1170.7, 13.5, 165.3, 86.1],
+          [55, -313.6, 1170.7, 13.5, 165.3, 86.1],
+          [-280.7, 206.3, 813, 2.5, 147.5, 315],
+          [286.8, 206.3, 813, 2.5, 147.5, 315],
+          [3, -20, 1081, 120, 80, 12],
+          [-86, -129.1, 1250.6, 32, 33.6, 47.9],
+          [92, -129.1, 1250.6, 32, 33.6, 47.9],
+          [-45, -400.5, 1050, 9, 5, 40],
+          [35, -400.5, 1050, 9, 5, 40]
+        ]
+      }
+    },
+    {
+      "id": "shl_f16363",
+      "type": "shell",
+      "label": "CAD #f16363",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_f16363.stl",
+        "scale": 1,
+        "color": "#f16363",
+        "boxes": [
+          [3, 105, 1067.5, 720, 350, 15],
+          [0.5, -368.6, 1108.8, 155, 68.2, 75.1],
+          [-34.5, -20, 1162.5, 35, 90, 155],
+          [40.5, -20, 1162.5, 35, 90, 155],
+          [3, -255.5, 1142, 155, 15, 114],
+          [3, -63.3, 1322.2, 152, 25.4, 24],
+          [3, -90, 1065, 190, 10, 40],
+          [-64.5, -155, 1065, 15, 120, 40],
+          [70.5, -155, 1065, 15, 120, 40],
+          [3, -112.5, 1065, 120, 35, 10]
+        ]
+      }
+    },
+    {
+      "id": "shl_ff6aff",
+      "type": "shell",
+      "label": "CAD #ff6aff",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_ff6aff.stl",
+        "scale": 1,
+        "color": "#ff6aff",
+        "boxes": [[-131, -359, 1113.8, 22, 36, 57.5], [106, -400.1, 1124.6, 11, 43.3, 38.3]]
+      }
+    },
+    {
+      "id": "shl_ffe300",
+      "type": "shell",
+      "label": "CAD #ffe300",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_ffe300.stl",
+        "scale": 1,
+        "color": "#ffe300",
+        "boxes": [[172, -218.5, 1297.5, 3, 30, 35]]
+      }
+    },
+    {
+      "id": "shl_ffffff",
+      "type": "shell",
+      "label": "CAD #ffffff",
+      "params": {
+        "asset": "assets/cad/ce-insert/shl_ffffff.stl",
+        "scale": 1,
+        "color": "#ffffff",
+        "boxes": [
+          [-227, 105, 1256.5, 400, 400, 253],
+          [233, 105, 1256.5, 400, 400, 253],
+          [313, 255, 572.5, 50, 50, 945],
+          [-307, -45, 572.5, 50, 50, 945],
+          [-307, 255, 572.5, 50, 50, 945],
+          [313, -45, 572.5, 50, 50, 945],
+          [3, -45, 125, 570, 50, 50],
+          [3, 255, 125, 570, 50, 50],
+          [3, 255, 1020, 570, 50, 50],
+          [3, -45, 1020, 570, 50, 50],
+          [-164, -90, 1296, 164, 81, 60],
+          [170, -90, 1296, 164, 81, 60],
+          [313, 105, 125, 50, 250, 50],
+          [-307, 105, 125, 50, 250, 50],
+          [-307, 105, 1020, 50, 250, 50],
+          [3, 105, 1020, 50, 250, 50],
+          [313, 105, 1020, 50, 250, 50],
+          [-197, -90, 1266, 117, 101, 22],
+          [203, -90, 1266, 117, 101, 22],
+          [313, -45, 92.5, 60, 60, 15],
+          [313, 255, 92.5, 60, 60, 15],
+          [-307, -45, 92.5, 60, 60, 15],
+          [-307, 255, 92.5, 60, 60, 15],
+          [-302, 250, 1052.5, 60, 60, 15],
+          [-302, -40, 1052.5, 60, 60, 15],
+          [3, 105, 1052.5, 60, 60, 15],
+          [308, 250, 1052.5, 60, 60, 15],
+          [308, -40, 1052.5, 60, 60, 15],
+          [43, -49.9, 1294.8, 9, 49.8, 59.9],
+          [-37, -49.9, 1294.8, 9, 49.8, 59.9],
+          [-232.5, -90, 1155, 10, 10, 200],
+          [-162.5, -90, 1155, 10, 10, 200],
+          [168.5, -90, 1155, 10, 10, 200],
+          [238.5, -90, 1155, 10, 10, 200],
+          [-65, -385, 1089, 17, 17, 52],
+          [-25, -385, 1089, 17, 17, 52],
+          [15, -385, 1089, 17, 17, 52],
+          [55, -385, 1089, 17, 17, 52],
+          [-13.2, 63.8, 1339.5, 5, 52.4, 45],
+          [19.2, 63.8, 1339.5, 5, 52.4, 45],
+          [59.2, 63.8, 1339.5, 5, 52.4, 45],
+          [-53.2, 63.8, 1339.5, 5, 52.4, 45],
+          [66.7, 66.5, 1339.5, 5, 46.9, 45],
+          [-60.7, 66.5, 1339.5, 5, 46.9, 45],
+          [26.7, 66.5, 1339.5, 5, 46.9, 45],
+          [-20.7, 66.5, 1339.5, 5, 46.9, 45]
+        ]
+      }
+    }
+  ]
+}
