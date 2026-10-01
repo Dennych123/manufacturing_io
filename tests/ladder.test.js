@@ -254,8 +254,16 @@ for (const name of ['final-caulking.cxp', 'final-caulking-mdf.cxp']) {
     for (const s of pr.sections) for (const r of s.rungs) if (r.il.length && network(checkRung(r.il, { find: x => L.get(x) ?? G.get(x) }).lines).error) undrawable++;
   }
   chk(name + ': every rung draws as a ladder network', undrawable === 0, undrawable + ' undrawable');
+  // V8 optimises a chunk after about 6500 calls, and only what has RUN: 3000 idle scans measured
+  // the unoptimised plateau (247-566 us on this laptop, over the limit on a slow day), which is
+  // also what stalled the plant through every first cycle. warm() is what the controller does at
+  // load, and it must leave no trace: the memory afterwards is a cold start's.
+  const io = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'final-caulking.json'), 'utf8')).io.ladder.map).map(String);
+  plc.warm(7000, io);
+  const cold = createLadder(project);
+  chk(name + ': warm() leaves the memory of a cold start', plc.M.every((/** @type {number} */ v, /** @type {number} */ i) => v === cold.M[i])
+    && plc.TF.every((/** @type {number} */ v) => v === 0) && plc.CF.every((/** @type {number} */ v) => v === 0) && plc.stats.scans === 0);
   let t = 0;
-  for (let i = 0; i < 3000; i++) plc.scan(t += 2);
   const t0 = performance.now();
   for (let i = 0; i < 2000; i++) plc.scan(t += 2);
   const us = (performance.now() - t0) / 2000 * 1000;

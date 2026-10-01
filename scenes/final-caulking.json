@@ -1,7 +1,7 @@
 {
   "format": "mio-scene/1",
   "name": "final-caulking",
-  "sim": { "dtMs": 2 },
+  "sim": { "dtMs": 4 },
   "io": {
     "driver": "ladder",
     "mode": "sim",
@@ -303,9 +303,21 @@
         "color": "#7d8894",
         "material": "steel",
         "meshes": [
-          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#ffe300" },
-          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
-          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl",
+            "color": "#ffe300",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl",
+            "color": "#a41c1c",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl",
+            "color": "#6363f1",
+            "rot": [0, 0, 180]
+          }
         ]
       }
     },
@@ -320,9 +332,21 @@
         "color": "#5fa27a",
         "material": "steel",
         "meshes": [
-          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#5fa27a" },
-          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
-          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl",
+            "color": "#5fa27a",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl",
+            "color": "#a41c1c",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl",
+            "color": "#6363f1",
+            "rot": [0, 0, 180]
+          }
         ]
       }
     },
@@ -337,9 +361,21 @@
         "color": "#c0504d",
         "material": "steel",
         "meshes": [
-          { "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl", "color": "#c0504d" },
-          { "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl", "color": "#a41c1c" },
-          { "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl", "color": "#6363f1" }
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_ffe300.stl",
+            "color": "#c0504d",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_a41c1c.stl",
+            "color": "#a41c1c",
+            "rot": [0, 0, 180]
+          },
+          {
+            "asset": "assets/cad/final-caulking/prod_unit_6363f1.stl",
+            "color": "#6363f1",
+            "rot": [0, 0, 180]
+          }
         ]
       }
     },

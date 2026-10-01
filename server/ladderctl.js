@@ -60,8 +60,11 @@ export function createLadderController(scene, { root, wiring = {}, log = console
     const { tree, project } = readCxp(fs.readFileSync(f));
     const plc = createLadder(project, { binaryTimers: !!cfg.binaryTimers });
     for (const e of plc.errors) log('ladder: ' + project.programs[e.prog]?.name + ' rung ' + e.rung + ': ' + e.msg);
+    const twin = createTwin(project, plc, cfg.map || {}), patched = patch(project, plc);
+    // After the patches, so it is the code that will run that gets compiled (plc.warm says why).
+    plc.warm(cfg.warmScans ?? 7000, Object.values(cfg.map || {}).map(String));
     initMemory(plc);
-    return { tree, project, plc, twin: createTwin(project, plc, cfg.map || {}), patched: patch(project, plc) };
+    return { tree, project, plc, twin, patched };
   }
 
   /**
