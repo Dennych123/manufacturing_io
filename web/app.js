@@ -25,9 +25,24 @@ const view = $('view');
 // high-performance: a laptop with a discrete GPU otherwise renders this on the integrated one
 // (measured on Denny's: Intel UHD at 98% while the RTX 3050 sat idle). Windows can still overrule
 // it per application (Settings > Display > Graphics).
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+// The viewer shares the laptop with the plant, and what it costs the plant pays for. Measured on
+// `final-caulking` (219k shell triangles, drawn twice a frame because every mesh casts a shadow) on
+// an Intel UHD 620: at 60 fps with a shadow pass every frame the browser took 160-270% of a core,
+// the CPU lost its turbo, and the plant's step went from 0.5 to 2-5 ms against a 2 ms dt - "plant
+// stalled" for ever, with the plant's own code innocent. At 30 fps (the server streams 30 frames a
+// second anyway) it is 40-60%. The knobs are in the URL: ?fps=60 is the old picture (0 = no cap)
+// for a faster PC, and ?shadow=0, ?aa=0, ?px=1 go further down for a slower one.
+// The shadow map is redrawn on EVERY drawn frame. ?shadowHz=10 redraws it less often and saves
+// little more, but a mesh that moves is then shaded by the shadow of where it WAS: its own stale
+// shadow falls across it and the shading flickers for as long as it moves (Denny saw it at once).
+const QS = new URLSearchParams(location.search);
+const qn = (/** @type {string} */ k, /** @type {number} */ d) => (QS.has(k) && Number.isFinite(+QS.get(k)) ? +QS.get(k) : d);
+const FPS = qn('fps', 30), PX = qn('px', 2), AA = qn('aa', 1) !== 0, SHADOW = qn('shadow', 1) !== 0, SHADOW_HZ = qn('shadowHz', 0);
+const renderer = new THREE.WebGLRenderer({ antialias: AA, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, PX));
+renderer.shadowMap.enabled = SHADOW;
+if (SHADOW_HZ) renderer.shadowMap.autoUpdate = false;
+let shadowAt = 0;
 renderer.shadowMap.type = THREE.PCFShadowMap;          // PCFSoftShadowMap is gone since r18x
 view.prepend(renderer.domElement);
 const scene3 = new THREE.Scene();
@@ -438,6 +453,7 @@ let lastFrame = performance.now();
 function loop() {
   requestAnimationFrame(loop);
   const now = performance.now();
+  if (FPS && now - lastFrame < 1000 / FPS - 3) return;
   const dt = (now - lastFrame) / 1000;
   lastFrame = now;
   if (model && offset != null) {
@@ -448,6 +464,7 @@ function loop() {
   // Walking is the camera's own business: OrbitControls is off while it runs, or the two fight
   // over the same camera and the picture shakes.
   if (pov.active) { pov.update(dt); dragFromCrosshair(now); } else controls.update();
+  if (SHADOW_HZ && now - shadowAt >= 1000 / SHADOW_HZ) { shadowAt = now; renderer.shadowMap.needsUpdate = true; }
   renderer.render(scene3, camera);
 }
 requestAnimationFrame(loop);

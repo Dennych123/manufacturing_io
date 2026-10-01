@@ -39,6 +39,20 @@ chk('cyl-on-slide validates', errs.length === 0, errs.join(' | '));
   chk('a component mounted on a moving link is never cached', a.cyl1.body.p.join() !== b.cyl1.body.p.join(),
     a.cyl1.body.p.join() + ' vs ' + b.cyl1.body.p.join());
   chk('a part standing on the frame is cached (nothing under it moves)', a.part1 === b.part1);
+  // What CAN move mostly stands still on any one step, and is handed back as it was
+  // (final-caulking: 2182 -> 471 us a step). The trap is a stale pose: whatever rides a link that
+  // DID move must follow it, even though its own DOF value is the one it had.
+  const c = worldPoses(scene, { cyl1: 50, slide1: 300 });
+  chk('worldPoses hands back a moving component that did not move', b.slide1 === c.slide1 && b.cyl1 === c.cyl1);
+  const d = worldPoses(scene, { cyl1: 50, slide1: 310 });
+  chk('a component riding a link that moved follows it, with its own DOF unchanged',
+    d.cyl1 !== c.cyl1 && Math.abs(Math.hypot(...d.cyl1.body.p.map((/** @type {number} */ v, /** @type {number} */ i) => v - c.cyl1.body.p[i])) - 10) < 1e-6,
+    d.cyl1.body.p.join() + ' vs ' + c.cyl1.body.p.join());
+  // The plant leaves out what is only drawn (130 CAD shells on final-caulking): `skip` drops a
+  // component from the result and changes nothing else.
+  const e = worldPoses(scene, { cyl1: 50, slide1: 310 }, new Set(['part1']));
+  chk('worldPoses(skip) leaves that component out and the rest as it was', !('part1' in e) && e.cyl1 === d.cyl1 && e.base === d.base);
+  chk('the poses handed out earlier are not written to', c.cyl1.body.p.join() === b.cyl1.body.p.join() && a.cyl1.rod.p.join() === worldPoses(scene, { cyl1: 0, slide1: 0 }).cyl1.rod.p.join());
 }
 
 const broken = (f, re, label) => {

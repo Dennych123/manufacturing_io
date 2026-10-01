@@ -259,6 +259,13 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     }
   }
   const kin = bodies.filter(b => b.kinematic);
+  // What is only DRAWN, with nothing riding on it, is the viewer's business: no collider, no model,
+  // no child - the plant never reads its pose. On `final-caulking` that is 130 CAD shells bolted to
+  // the actuators, and whenever the rotary transfer moved the plant was posing every one of them
+  // every 2 ms for nobody (the worst seconds of the cycle cost 1.9 ms a step against a 2 ms dt).
+  const unseen = new Set(order.filter((/** @type {any} */ c) => { const d = defs.get(c.id);
+    return !roles.has(c.id) && !d.t.step && !d.shapes.some((/** @type {any} */ s) => s.collide !== false) && !order.some((/** @type {any} */ x) => x.parent === c.id); })
+    .map((/** @type {any} */ c) => c.id));
 
   // ------------------------------------------------------------ loose parts
   // Dynamic Rapier bodies: CCD on, and they NEVER sleep (a sleeping part is swept through by a
@@ -585,9 +592,14 @@ export async function createPlant(scene, { driver = null, controller = null, rec
     sample(dt);
     // 3. kinematic targets from THE pose function
     plant.dof = dofOf();
-    const W = worldPoses(scene, plant.dof);
+    const W = worldPoses(scene, plant.dof, unseen);
     for (const b of kin) {
-      const P = W[b.id][b.link];
+      const P = W[b.id][b.link], o = b.P;
+      // worldPoses() hands back the very pose object of the last step when nothing under this link
+      // moved, and a kinematic body that is given no new target stays where it is: most of a
+      // machine is standing still on any one step, and telling Rapier so again was two boundary
+      // calls and two objects per link.
+      if (o === P && !b.off && !b.moved) continue;
       b.body.setNextKinematicTranslation({ x: P.p[0] * SK, y: P.p[1] * SK, z: P.p[2] * SK });
       b.body.setNextKinematicRotation({ x: P.q[0], y: P.q[1], z: P.q[2], w: P.q[3] });
       // Contact refresh (measured, tests/rapier.test.js): a part that was pressed against a
@@ -595,11 +607,11 @@ export async function createPlant(scene, { driver = null, controller = null, rec
       // 20 mm clear. When a kinematic link comes to rest, its colliders sit out one step, so
       // the next contacts are computed fresh from the real geometry.
       if (b.off) { for (const c of b.cols) c.setEnabled(true); b.off = false; }
-      const now = [...P.p, ...P.q];
-      const moving = !!b.last && now.some((v, i) => Math.abs(v - /** @type {number[]} */ (b.last)[i]) > 1e-9);
+      const moving = !!o && o !== P && (Math.abs(P.p[0] - o.p[0]) > 1e-9 || Math.abs(P.p[1] - o.p[1]) > 1e-9 || Math.abs(P.p[2] - o.p[2]) > 1e-9
+        || Math.abs(P.q[0] - o.q[0]) > 1e-9 || Math.abs(P.q[1] - o.q[1]) > 1e-9 || Math.abs(P.q[2] - o.q[2]) > 1e-9 || Math.abs(P.q[3] - o.q[3]) > 1e-9);
       if (b.moved && !moving) { for (const c of b.cols) c.setEnabled(false); b.off = true; }
       b.moved = moving;
-      b.last = now;
+      b.P = P;
     }
     // 4. conveyors: friction-clamped slip toward the belt velocity (beltDv, spike A0). A stopped
     // belt brakes parts the same way, as a real one does.

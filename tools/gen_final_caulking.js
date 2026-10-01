@@ -149,12 +149,18 @@ export function build(shells, products = {}) {
   // --------------------------------------------------------------- parts
   // The products are drawn from the CAD when it is there (products, from --cad): the M&B's
   // connector is what the turntable orients, so a plain disc would hide the point of the station.
-  const pm = (/** @type {string} */ k, /** @type {string} [main] */ main) => (products[k] || []).map((x, i) => ({ asset: x.asset, color: i === 0 && main ? main : x.color }));
+  const pm = (/** @type {string} */ k, /** @type {string} [main] */ main, /** @type {number[]} [rot] */ rot) =>
+    (products[k] || []).map((x, i) => ({ asset: x.asset, color: i === 0 && main ? main : x.color, ...(rot ? { rot } : {}) }));
+  // The CAD draws its unit dummy with the connector towards -Y and its M&B dummy with it towards +Y
+  // (measured on the STLs: the far points of prod_mb sit at +90 deg, of prod_unit at -90). The unit
+  // is MADE from the M&B where it lands on the diaphragm, at the same yaw, so drawn as the CAD has
+  // it the connector jumped half a turn the moment the loader set the M&B down (Denny saw it).
+  const UNIT_ROT = [0, 0, 180];
   add({ id: 'diaph', type: 'workpiece', label: 'DIAPHRAGM TEMPLATE', at: [0, -2000, 0], params: { kind: 'cyl', size: [72, 72, T_D], color: '#c9cfd6', material: 'steel', meshes: pm('diaph', '#c9cfd6') } });
   add({ id: 'mb', type: 'workpiece', label: 'M&B TEMPLATE', at: [200, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_M], color: '#3b4048', material: 'steel', meshes: pm('mb') } });
-  add({ id: 'unit', type: 'workpiece', label: 'UNIT (NOT CAULKED) TEMPLATE', at: [400, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#7d8894', material: 'steel', meshes: pm('unit') } });
-  add({ id: 'unitOk', type: 'workpiece', label: 'HORN OK TEMPLATE', at: [600, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#5fa27a', material: 'steel', meshes: pm('unit', '#5fa27a') } });
-  add({ id: 'unitNg', type: 'workpiece', label: 'HORN NG TEMPLATE', at: [800, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#c0504d', material: 'steel', meshes: pm('unit', '#c0504d') } });
+  add({ id: 'unit', type: 'workpiece', label: 'UNIT (NOT CAULKED) TEMPLATE', at: [400, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#7d8894', material: 'steel', meshes: pm('unit', undefined, UNIT_ROT) } });
+  add({ id: 'unitOk', type: 'workpiece', label: 'HORN OK TEMPLATE', at: [600, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#5fa27a', material: 'steel', meshes: pm('unit', '#5fa27a', UNIT_ROT) } });
+  add({ id: 'unitNg', type: 'workpiece', label: 'HORN NG TEMPLATE', at: [800, -2000, 0], params: { kind: 'cyl', size: [100, 100, T_U], color: '#c0504d', material: 'steel', meshes: pm('unit', '#c0504d', UNIT_ROT) } });
 
   // --------------------------------------------------------------- P13/P14 diaphragm: covers, stations, walking beam
   // Shutter 1 (the OUTER cover) is off the machine - a light curtain guards that opening now - but
@@ -407,7 +413,7 @@ export function build(shells, products = {}) {
   const st = (/** @type {string} */ id, /** @type {string} */ name) => ({ id, name, members: comps.filter(c => c.station === id).map(c => c.id) });
   const scene = {
     format: 'mio-scene/1', name: NAME,
-    sim: { dtMs: 2 },
+    sim: { dtMs: 4 },
     // One cycle per horn caulked (OK or NG): the machine's output rate.
     cycle: { countTag: 'CYCLE_CNT', avgN: 10 },
     io: { driver: 'ladder', mode: 'sim', minPulseMs: 20, ladder: { cxp: 'plc/final-caulking-mdf.cxp', hmi: 'plc/final-caulking-mdf.vs4', map: MAP, init: INIT, patches: PATCHES } },

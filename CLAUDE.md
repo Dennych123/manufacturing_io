@@ -194,6 +194,32 @@ in the code but break things silently** when violated. Most were paid for once i
   when no link of it has a DOF AND nothing it is mounted on moves, so anything riding a carriage
   is still recomputed. The cached poses are SHARED between calls: never write to a pose you were
   given. `tests/lib.test.js` pins both halves.
+- **What CAN move mostly stands still, and what is only DRAWN the plant never reads.** Measured on
+  `final-caulking` (187 components that can move, 130 of them CAD shells bolted to actuators):
+  2182 us a step against a 2 ms dt, stalled for good. Three things, in the order they paid:
+  `worldPoses()` hands back a component whose DOF value AND parent pose object are the ones it had
+  (`last` in `lib/scene.js`; a parent that moved makes a NEW pose object, which is what tells its
+  riders to follow); the plant leaves out components with no collider, no model and nothing riding
+  on them (`unseen` in `server/plant.js`, `skip` in `worldPoses()`); and a kinematic link handed
+  the very pose object of the last step is not sent to Rapier again. 471 us, and the step no
+  longer rises when the rotary transfer moves.
+- **`const [x, y, z, w] = q` goes through the array iterator.** In `qmul`/`qrot` that was 40% of
+  478 KB allocated per step and a 5-10 ms scavenge every ten steps - the "spikes" in a step that
+  was otherwise 1 ms. Read hot-path vectors by index.
+- **The viewer shares the laptop with the plant, and the plant pays for it.** Reproduced with the
+  same code beside a 60 fps viewer on an Intel UHD 620: browser 154-253% of a core, the CPU off
+  its turbo, the plant's step 0.5 -> 2.4-5.8 ms. Triangles are not in the plant at all; what the
+  viewer costs is frames times passes (219k shell triangles, drawn twice because every mesh casts
+  a shadow). It now draws 30 fps (`?fps=`), and the knobs `?shadow=0 ?aa=0 ?px=1` are in the URL.
+  **The shadow map is redrawn on every drawn frame**: at 10 Hz (`?shadowHz=10`) a mesh that moves
+  is shaded by the shadow of where it was, and black patches flash across it for as long as it
+  moves - Denny saw it at once, and the tell in a recording is clean on the refresh frame and
+  wrong on the one or two after it.
+- **A CAD dummy is drawn the way it stood in the maker's assembly, not the way the part it is made
+  from arrives.** `final-caulking`'s unit dummy has its connector towards -Y and the M&B dummy
+  towards +Y (measured on the STLs), so the connector jumped half a turn the moment the M&B was set
+  down on the diaphragm, with the part's own pose unchanged. `rot` on a workpiece `meshes` entry
+  turns the drawing; the generator sets it (`UNIT_ROT`).
 - **The first pacer tick after `start()` is not an overrun** (`firstTick` in `server/plant.js`).
   Measured on every scene: one stall of 240-440 ms lands exactly on the first tick - a major GC
   right after setup - and counting it left a permanent "overruns 171" on a plant that then held
@@ -602,8 +628,16 @@ writes it, server/ladder.js runs it, server/ladderctl.js wires it to the scene, 
 - **The soft-PLC scans once per plant step, inside it.** There is no network between program and
   machine, so no latency and no sampling: a sensor edge is read by the next scan. Each program is
   compiled to JS in 16-rung functions - one function per program ran interpreted for ~15000 scans
-  (240 us/scan) before V8 optimised it; chunked it warms in ~5000 and runs 13-33 us/scan for 1331
-  rungs. Timers are BCD (CX-Programmer's default) on SIM time.
+  (240 us/scan) before V8 optimised it; chunked, a chunk is optimised after about 6500 calls.
+  Timers are BCD (CX-Programmer's default) on SIM time.
+- **The program is WARMED at load, on fuzzed inputs, and then cold-reset** (`warm()` in
+  `server/ladder.js`). Until V8 has compiled it a scan costs 500-1100 us against 50-120 warm, and
+  code that has never run is thrown out again the first time it does: every run stalled from sim
+  27 to 45 s, as the first product reached each station, and never after. Proven by running the
+  same start-up twice in one process (662 -> 367 us a step). Idle inputs do not warm it (159 us
+  after 8000 scans); V8's own flags (`--always-sparkplug`, `--no-lazy-feedback-allocation`) change
+  nothing. `final-caulking` also steps at 4 ms, not 2: a scan per step is half as many scans.
+  `tests/ladder.test.js` pins that warm() leaves a cold start's memory.
 - **A differentiated NOT contact is NOT(edge), not edge(NOT).** `@ANDNOT X` is OFF for the one scan
   X rises. Every one in the add-on program breaks a self-hold that way (AutoRunning on
   Discharge_Complete, a magnet START on its STOP); read the other way AUTO RUN never latched.

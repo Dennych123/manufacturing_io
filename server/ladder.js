@@ -18,6 +18,7 @@
 // Forcing is the PLC's own: a forced bit keeps its value whatever the program or the plant
 // writes to it, until it is released.
 import { parseLine, parseOperand, checkRung, addrText, parseAddr } from '../lib/ladder.js';
+import { rng } from '../lib/math.js';
 
 const SIZE = /** @type {Record<string, number>} */ ({
   CIO: 6144, W: 512, H: 1536, A: 11536, D: 32768, E0: 32768, E1: 32768, E2: 32768, E3: 32768, T: 4096, C: 4096,
@@ -440,6 +441,26 @@ export function createLadder(project, { binaryTimers = false } = {}) {
       scanUs = scans === 1 ? us : scanUs * 0.98 + us * 0.02;
       if (us > scanMaxUs) scanMaxUs = us;
     },
+    /**
+     * Runs the program `n` times on scratch inputs and then clears every trace of it (a cold
+     * reset), so that V8 has compiled it before the machine starts. Measured on final-caulking: a
+     * chunk is optimised after about 6500 calls, and until then a scan costs 500-1100 us against
+     * 50-120 warm - thirteen seconds of plant in which the step is over its 2 ms budget on a busy
+     * laptop, and again whenever the first product reaches a station whose rungs had never been
+     * true ("plant stalled" at sim 27-45 s of every run, none after). The inputs are FUZZED, not
+     * idle: with idle inputs the code is still at 159 us after 8000 scans, because half of every
+     * rung has never run and is thrown out again the first time it does.
+     * @param {number} n @param {string[]} addrs the addresses to toggle (the scene's io map)
+     */
+    warm(n, addrs) {
+      const r = rng(1);
+      for (let i = 0; i < n; i++) {
+        if (i % 8 === 0) for (const a of addrs) plc.set(a, r() < 0.5 ? 1 : 0);
+        plc.scan(i * 2);
+      }
+      plc.reset(true);
+      scanUs = 0;
+    },
     /** RUN / PROGRAM mode. PROGRAM stops scanning; the adapter drives every output OFF. */
     setRunning(/** @type {boolean} */ on) { if (on && !running) first = true; running = on; },
     /**
@@ -451,6 +472,7 @@ export function createLadder(project, { binaryTimers = false } = {}) {
       const keep = cold ? new Set() : new Set(['H', 'D', 'E0', 'E1', 'E2', 'E3', 'C']);
       for (const [a, n] of Object.entries(SIZE)) if (!keep.has(a)) M.fill(0, BASE[a], BASE[a] + n);
       TF.fill(0); TS.fill(NaN); TR.fill(0); FL.fill(0);
+      if (cold) CF.fill(0);                       // counter PVs are cleared above: their flags go with them
       for (const p of progs) p.ed.fill(0);
       applyForces();
       first = true; scans = 0; scanMaxUs = 0;
