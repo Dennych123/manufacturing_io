@@ -24,6 +24,16 @@ chk('rot is X THEN Y about fixed axes: [90,90,0] turns +Y into +X', near(apply({
 
 // ---------------------------------------------------------------- scene
 const scene = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'cyl-on-slide.json'), 'utf8'));
+
+// A photo-eye the maker's CAD already draws is `hidden`: nothing of the primitive is drawn (no box
+// floating beside the real sensor, no beam from mid-air), and it senses exactly as before.
+{
+  const t = TYPES.photoEye, on = t.shapes({ range: 150, hidden: true }), off = t.shapes({ range: 150, hidden: false });
+  chk('photoEye hidden: no shape is drawn, and none was added or lost', on.length === off.length && on.every((/** @type {any} */ x) => x.draw === false) && off.every((/** @type {any} */ x) => x.draw !== false));
+  const fc = JSON.parse(fs.readFileSync(path.join(ROOT, 'scenes', 'final-caulking.json'), 'utf8')).components.filter((/** @type {any} */ c) => c.type === 'photoEye');
+  const drawn = fc.filter((/** @type {any} */ c) => !c.params.hidden).map((/** @type {any} */ c) => c.id);
+  chk('final-caulking: only the eyes of the Final Caulking machine itself are drawn as primitives (the CAD has the rest)', drawn.join() === 'phCv,phSt1,phSt2', drawn.join());
+}
 const errs = validate(scene);
 chk('cyl-on-slide validates', errs.length === 0, errs.join(' | '));
 

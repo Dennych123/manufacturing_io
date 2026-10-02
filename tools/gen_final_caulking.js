@@ -236,8 +236,12 @@ export function build(shells, products = {}) {
   // The M&B lands on the diaphragm here and the two become one unit (the rotary gripper carries
   // them together; the CAD's parts nest into each other, rigid bodies stack).
   add({ id: 'jStack', type: 'joiner', label: 'STACK DIAPH + M&B', station: 'SLIDE', at: [X_ST, Y, Z_S], params: { size: [110, 110, 70], template: 'unit', mode: 'auto', n: 2, settleMs: 120 } });
-  const eye = (/** @type {string} */ id, /** @type {string} */ label, /** @type {string} */ st, /** @type {number[]} */ p, /** @type {number[]} */ rot, /** @type {number} */ range, /** @type {[string, string]} */ io, offDelayMs = 30) =>
-    add({ id, type: 'photoEye', label, station: st, at: r3(p), rot, params: { range, offDelayMs }, io: bind({ out: io }) });
+  // A photo-eye the CAD draws (PR-MB30P3 at the transfer station, PZ-V11 on the magnet heads,
+  // PZ-M51 at the NG chute) is `hidden`: Denny - the sensor is already there, a teal box floating
+  // beside it is not. The Final Caulking machine's own eyes (`drawn`) have no CAD: that machine is
+  // the simple model, and its sensors are drawn with it.
+  const eye = (/** @type {string} */ id, /** @type {string} */ label, /** @type {string} */ st, /** @type {number[]} */ p, /** @type {number[]} */ rot, /** @type {number} */ range, /** @type {[string, string]} */ io, offDelayMs = 30, drawn = false) =>
+    add({ id, type: 'photoEye', label, station: st, at: r3(p), rot, params: { range, offDelayMs, ...(drawn ? {} : { hidden: true }) }, io: bind({ out: io }) });
   eye('phSide', 'PH TRANSFER STATION DIAPH SIDE', 'SLIDE', [XS[3], Y - 75, Z_S + 6], [0, 0, 90], 150, ['PH_TS_DIAPH_SIDE', '3302.10']);
   // The two beams at the station, as the program reads them (AL46 is 'slide has work, at ADV, and
   // 3302.12 off'; the M&B head drops only with 3302.12 on and 3302.11 off): 3302.12 is the LOW beam
@@ -271,7 +275,7 @@ export function build(shells, products = {}) {
   // PH 3302.13/.14 'M&B LOADER WORK CONF' are photo-eyes ON the heads (PZ-V11): they see the M&B as
   // soon as the head is down on it, before the magnet is on. The program relies on it - FAULT R37
   // clears 'loader 2 has work' when the eye has been dark 1.5 s, which a magnet-holding signal lost.
-  on('phMag1', 'mbLoad', 'rodEnd', [ROT[0] - 65, Y, Z_IN - 12], [0, 0, 0], { type: 'photoEye', label: 'PH M&B LOADER WORK CONF 1', station: 'MB', params: { range: 130, offDelayMs: 30 },
+  on('phMag1', 'mbLoad', 'rodEnd', [ROT[0] - 65, Y, Z_IN - 12], [0, 0, 0], { type: 'photoEye', label: 'PH M&B LOADER WORK CONF 1', station: 'MB', params: { range: 130, offDelayMs: 30, hidden: true },
     io: bind({ out: ['PH_MB_LOADER_1', '3302.13'] }) });
   // LOAD OUT: an MXQ20L-125 (the UNIT stage, down at M2 only) carries an MXQ16L-40 (down at M2 and
   // at the station, where only it goes down: the unit stage is ANDNOT GSB000 there).
@@ -283,7 +287,7 @@ export function build(shells, products = {}) {
     { solExt: ['SOL_MBOUT_DN', '3211.06'], solRet: ['SOL_MBOUT_UP', '3211.07'], 'sw.ext': ['AS_MBOUT_DN', '3303.02'], 'sw.ret': ['AS_MBOUT_UP', '3303.03'] }, ['mbOutU', 'rodEnd']);
   on('mag2', 'mbOut', 'rodEnd', [X_M2, Y, Z_OUT], [180, 0, 0], { type: 'vacuumCup', label: 'MAGNET 2 (KE-4E)', station: 'MB', params: { d: 60, reach: 4, buildMs: 60, dropMs: 60, hidden: true },
     io: bind({ on: ['MAG2_ON', ''], vac: ['MAG2_HOLDS', ''] }) });
-  on('phMag2', 'mbOut', 'rodEnd', [X_M2 - 65, Y, Z_OUT - 12], [0, 0, 0], { type: 'photoEye', label: 'PH M&B LOADER WORK CONF 2', station: 'MB', params: { range: 130, offDelayMs: 30 },
+  on('phMag2', 'mbOut', 'rodEnd', [X_M2 - 65, Y, Z_OUT - 12], [0, 0, 0], { type: 'photoEye', label: 'PH M&B LOADER WORK CONF 2', station: 'MB', params: { range: 130, offDelayMs: 30, hidden: true },
     io: bind({ out: ['PH_MB_LOADER_2', '3302.14'] }) });
 
   // --------------------------------------------------------------- P16 rotary transfer: lift, rotary, two slides, two grippers
@@ -353,7 +357,7 @@ export function build(shells, products = {}) {
   const cvLen = 2500, cvX = 545 - cvLen / 2;
   add({ id: 'cv', type: 'conveyor', label: 'LINE CONVEYOR (MMX2)', station: 'FINAL', at: [cvX, CV_Y, 0], rot: [0, 0, 180],
     params: { length: cvLen, width: 150, height: Z_CV, speed: 200, guides: 0, centering: 150, hidden: true }, io: { run: 'FC_CV_RUN' } });
-  eye('phCv', 'PH CONVEYOR (FINAL CAULKING)', 'FINAL', [X_ST - 20, CV_Y - 90, Z_CV + 20], [0, 0, 90], 180, ['FC_CV_PH', ''], 300);
+  eye('phCv', 'PH CONVEYOR (FINAL CAULKING)', 'FINAL', [X_ST - 20, CV_Y - 90, Z_CV + 20], [0, 0, 90], 180, ['FC_CV_PH', ''], 300, true);
   add({ id: 'cvEnd', type: 'remover', label: 'TO NEXT PROCESS', station: 'FINAL', at: [cvX - cvLen / 2 - 60, CV_Y, Z_CV - 100], params: { size: [160, 260, 300] }, io: bind({ count: ['OUT_CNT', ''] }) });
   // The existing machine, as a simple model: its two-station table and its press.
   add({ id: 'fcTable', type: 'indexTable', label: 'FINAL CAULKING TABLE (model)', station: 'FINAL', at: [X_ST, Y_ST1 + 200, Z_S - 140], rot: [0, 0, -90],
@@ -361,8 +365,8 @@ export function build(shells, products = {}) {
   // Every nest a 39 mm unit sits in is 30 deep: a nest takes a part whose CENTRE is inside the
   // pocket (CLAUDE.md), and with 18 the unit was never taken, so the table flung it off when it turned.
   for (const i of [0, 1]) add({ id: 'fcN' + i, type: 'nest', label: 'FINAL CAULKING JIG ' + (i + 1), station: 'FINAL', parent: 'fcTable', socket: 's' + i, params: { size: [106, 106, 30], wall: 6, hidden: true } });
-  eye('phSt1', 'PH FINAL CAULKING ST1', 'FINAL', [X_ST - 75, Y_ST1, Z_S + 10], [0, 0, 0], 150, ['FC_ST1_PH', '']);
-  eye('phSt2', 'PH FINAL CAULKING ST2', 'FINAL', [X_ST - 75, Y_ST1 + 400, Z_S + 10], [0, 0, 0], 150, ['FC_ST2_PH', '']);
+  eye('phSt1', 'PH FINAL CAULKING ST1', 'FINAL', [X_ST - 75, Y_ST1, Z_S + 10], [0, 0, 0], 150, ['FC_ST1_PH', ''], 30, true);
+  eye('phSt2', 'PH FINAL CAULKING ST2', 'FINAL', [X_ST - 75, Y_ST1 + 400, Z_S + 10], [0, 0, 0], 150, ['FC_ST2_PH', ''], 30, true);
   cyl('fcPress', 'CAULKING PRESS (model)', 'FINAL', [X_ST, Y_ST1 + 400, Z_S + T_U + 3 + 10 + 60], 'down',
     { bore: 40, stroke: 60, extendMs: 400, retractMs: 400, extWord: 'DOWN', retWord: 'UP', head: 'plate', headSize: [80, 80, 10] },
     { solExt: ['FC_PRESS_DN', ''], solRet: ['FC_PRESS_UP', ''], 'sw.ext': ['FC_PRESS_DN_END', ''], 'sw.ret': ['FC_PRESS_UP_END', ''] });

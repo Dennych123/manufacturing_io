@@ -752,7 +752,7 @@
       "station": "SLIDE",
       "at": [355, 147, 944],
       "rot": [0, 0, 90],
-      "params": { "range": 150, "offDelayMs": 30 },
+      "params": { "range": 150, "offDelayMs": 30, "hidden": true },
       "io": { "out": "PH_TS_DIAPH_SIDE" }
     },
     {
@@ -762,7 +762,7 @@
       "station": "SLIDE",
       "at": [475, 147, 944],
       "rot": [0, 0, 90],
-      "params": { "range": 150, "offDelayMs": 30 },
+      "params": { "range": 150, "offDelayMs": 30, "hidden": true },
       "io": { "out": "PH_TS_WORK_LOW" }
     },
     {
@@ -772,7 +772,7 @@
       "station": "SLIDE",
       "at": [475, 147, 971],
       "rot": [0, 0, 90],
-      "params": { "range": 150, "offDelayMs": 30 },
+      "params": { "range": 150, "offDelayMs": 30, "hidden": true },
       "io": { "out": "PH_TS_WORK_HIGH" }
     },
     {
@@ -943,7 +943,7 @@
       "socket": "rodEnd",
       "at": [-65, 58, 35],
       "rot": [90, 0, 0],
-      "params": { "range": 130, "offDelayMs": 30 },
+      "params": { "range": 130, "offDelayMs": 30, "hidden": true },
       "io": { "out": "PH_MB_LOADER_1" }
     },
     {
@@ -1023,7 +1023,7 @@
       "socket": "rodEnd",
       "at": [-138, -138, 37],
       "rot": [180, 0, 0],
-      "params": { "range": 130, "offDelayMs": 30 },
+      "params": { "range": 130, "offDelayMs": 30, "hidden": true },
       "io": { "out": "PH_MB_LOADER_2" }
     },
     {
@@ -1295,7 +1295,7 @@
       "station": "DISCH",
       "at": [375, -30, 805],
       "rot": [0, 0, 0],
-      "params": { "range": 200, "offDelayMs": 1500 },
+      "params": { "range": 200, "offDelayMs": 1500, "hidden": true },
       "io": { "out": "PH_WORK_NG" }
     },
     {
